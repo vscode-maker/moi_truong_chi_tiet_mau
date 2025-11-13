@@ -1,0 +1,42 @@
+[
+    {
+        "id_cai_dat": "id_01",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "1.Chờ quan trắc (nhận mẫu)"
+    },
+    {
+        "id_cai_dat": "id_02",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "2.Chờ phân tích"
+    },
+    {
+        "id_cai_dat": "id_03",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "3.Chờ duyệt KQ"
+    },
+    {
+        "id_cai_dat": "id_04",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "4.Chờ trả KQ"
+    },
+    {
+        "id_cai_dat": "id_05",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "5.Chờ gửi thư"
+    },
+    {
+        "id_cai_dat": "id_06",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "6.Chờ đóng đơn"
+    },
+    {
+        "id_cai_dat": "id_07",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "7.Hoàn thành"
+    },
+    {
+        "id_cai_dat": "id_08",
+        "phan_loai": "TRANG_THAI_DON_HANG",
+        "gia_tri": "8.Hủy"
+    }
+]
