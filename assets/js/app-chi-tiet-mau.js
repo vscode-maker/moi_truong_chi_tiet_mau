@@ -601,7 +601,7 @@
       });
     }   
 
-    await window.PostgreSQL_ChiTietMau.layTheoId(chitietmauID)
+    window.PostgreSQL_ChiTietMau.layTheoId(chitietmauID)
     .then(res => {      
       if (res.id) {
         res["ma_mau"] = "VD-001";
@@ -613,7 +613,7 @@
       // showNotification('Lỗi tải dữ liệu', 'error');
     });
     
-    await window.PostgreSQLAPI.layDanhSachChiTietMau({
+    window.PostgreSQLAPI.layDanhSachChiTietMau({
       limit: 100,
       offset: 0
     }).then(res => {
@@ -2581,10 +2581,9 @@
       "ket_qua_phan_tich": "7.2",
       "tien_do_phan_tich": "1.Chờ lấy mẫu"
     };    
-
     
     // Thêm dữ liệu vào database server
-    await window.PostgreSQL_ChiTietMau.taoMoi(data)
+    window.PostgreSQL_ChiTietMau.taoMoi(data)
     .then((res) => {
       console.error("TẠO MỚI KẾT QUẢ:");
       console.error(res)    
@@ -2621,12 +2620,13 @@
     console.log(JSON.stringify(data));
     let id = data.id;
 
+    // Test
     data = {        
       "tien_do_phan_tich": "4.Đã có kết quả"
     }
 
     // Cập nhật dữ liệu vào database
-    await window.PostgreSQL_ChiTietMau.capNhat(id, data)
+    window.PostgreSQL_ChiTietMau.capNhat(id, data)
     .then((res) => {
       console.log("CẬP NHẬT KẾT QUẢ:");
       console.log(res);
@@ -2676,7 +2676,7 @@
     showLoading(true);   
 
     // Mock API call
-    await window.PostgreSQL_ChiTietMau.xoa(id)
+    window.PostgreSQL_ChiTietMau.xoa(id)
     .then((res) => {
       
       if (!res.ok) {
