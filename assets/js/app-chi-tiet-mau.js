@@ -6,6 +6,8 @@
 (function () {
   'use strict';
 
+  let chitietmauID = new URLSearchParams(window.location.search).get('id');
+
   // Global variables
   let chiTietMauTable;
   let chiTietMauData = [];
@@ -599,16 +601,27 @@
       });
     }   
 
-    await window.PostgreSQL_ChiTietMau.layTheoMaMau('1').then(res => {    
-      console.error(res);
+    await window.PostgreSQL_ChiTietMau.layTheoId(chitietmauID)
+    .then(res => {      
+      if (res.id) {
+        res["ma_mau"] = "VD-001";
+        chiTietMauData = [res];
+      }    
+    })    
+    .catch(error => {
+      // console.error('❌ Lỗi khởi tạo:', error);
+      // showNotification('Lỗi tải dữ liệu', 'error');
     });
     
     await window.PostgreSQLAPI.layDanhSachChiTietMau({
-      limit: 20,
+      limit: 100,
       offset: 0
     }).then(res => {
       console.log(res);
-      chiTietMauData = res.data;
+      chiTietMauData = [
+        ...chiTietMauData,
+        ...res.data
+      ];
       return loadDanhSachChiTieu(); // Load danh sách chỉ tiêu
       })
       .then(() => {
@@ -1085,7 +1098,7 @@
       scrollCollapse: true, // Thu gọn khi ít dữ liệu
       autoWidth: false, // Tắt auto width để kiểm soát width từng cột
       responsive: false, // TẮT RESPONSIVE - Hiển thị tất cả cột
-      pageLength: 10,
+      pageLength: 10,      
       lengthMenu: [
         [10, 25, 50, 100, -1],
         [10, 25, 50, 100, 'Tất cả']
@@ -1328,7 +1341,7 @@
             'Nước Thải': 'warning',
             'Không khí xung quanh': 'secondary',
             'Khí Thải': 'danger',
-            Đất: 'success',
+            "Đất": 'success',
             'Trầm tích': 'success',
             'Bùn thải': 'warning',
             'Chất thải rắn': 'danger',
@@ -2530,33 +2543,94 @@
     // Tính toán thành tiền
     const donGia = parseFloat(data.don_gia) || 0;
     const chietKhau = parseFloat(data.chiet_khau) || 0;
-    data.thanh_tien = donGia - (donGia * chietKhau) / 100;      
+    data.thanh_tien = donGia - (donGia * chietKhau) / 100;   
+    
+    console.log(JSON.stringify(data));
 
-    // Thêm vào danh sách
-    chiTietMauData.unshift(data);
+    // data = {
+    //   "id": "chi_tiet_mau_1763035399840",
+    //   "don_hang_id": "cefineatest",
+    //   "ma_mau": "cefineatest",
+    //   "noi_phan_tich": "Nội bộ",
+    //   "ten_chi_tieu": "cefineatest",
+    //   "phan_loai_chi_tieu": "cefineatest",
+    //   "nguoi_phan_tich": "cefineatest",
+    //   "tien_do_phan_tich": "1.Chờ QT",
+    //   "ket_qua_thuc_te": "1",
+    //   "ket_qua_in_phieu": "1",
+    //   "phe_duyet": "",
+    //   "nhom_mau": "cefineatest",
+    //   "ngay_nhan_mau": "2025-11-13",
+    //   "han_hoan_thanh_pt_gm": "2025-11-19",
+    //   "ngay_hoan_thanh_pt_gm": "",
+    //   "don_gia": "50000",
+    //   "chiet_khau": "5",
+    //   "thanh_tien": 47500,
+    //   "ma_nguoi_phan_tich": "cefineatest",
+    //   "ma_nguoi_duyet": "",
+    //   "ghi_chu": "cefineatest",
+    //   "created_at": "2025-11-13T12:03:19.840Z",
+    //   "updated_at": "2025-11-13T12:03:19.840Z"
+    // }
 
+    data = {
+      "id_don_hang": "25-0001",
+      "id_ma_mau": "7f18ebcd",
+      "ten_chi_tieu": "pH",
+      "don_vi_tinh": "pH",
+      "ket_qua_phan_tich": "7.2",
+      "tien_do_phan_tich": "1.Chờ lấy mẫu"
+    };    
+
+    
     // Thêm dữ liệu vào database server
-    const res = await window.PostgreSQL_ChiTietMau.taoMoi(data);
-    console.log(res);    
+    await window.PostgreSQL_ChiTietMau.taoMoi(data)
+    .then((res) => {
+      console.error("TẠO MỚI KẾT QUẢ:");
+      console.error(res)    
+      
+      // Thêm vào danh sách
+      chiTietMauData.unshift(data);
 
-    // Refresh DataTable
-    chiTietMauTable.clear().rows.add(chiTietMauData).draw();
+      // Refresh DataTable
+      chiTietMauTable.clear().rows.add(chiTietMauData).draw();
 
-    // Đóng modal
-    elements.modal.modal('hide');
+      // Đóng modal
+      elements.modal.modal('hide');
 
-    showLoading(false);
-    showNotification('Thêm mới thành công', 'success');
+      showLoading(false);
+      showNotification('Thêm mới thành công', 'success');
+
+      // Refresh progress statistics
+      refreshProgressStats();
+    }).catch((error) => {
+      console.error('❌ Lỗi khi thêm mới bản ghi:', error);
+      showLoading(false);
+      showNotification('Thêm mới thất bại', 'error');
+    });
+    
   }
 
   /**
    * Cập nhật bản ghi (mock function)
    */
-  function updateRecord(data) {
+  async function updateRecord(data) {
     showLoading(true);
 
     // Mock API call
-    setTimeout(() => {
+    console.log(JSON.stringify(data));
+    let id = data.id;
+
+    data = {        
+      "tien_do_phan_tich": "4.Đã có kết quả"
+    }
+
+    // Cập nhật dữ liệu vào database
+    await window.PostgreSQL_ChiTietMau.capNhat(id, data)
+    .then((res) => {
+      console.log("CẬP NHẬT KẾT QUẢ:");
+      console.log(res);
+
       // Tìm và cập nhật bản ghi
       const index = chiTietMauData.findIndex(item => item.id === data.id);
       if (index !== -1) {
@@ -2580,21 +2654,37 @@
 
         showLoading(false);
         showNotification('Cập nhật thành công', 'success');
+
+        // Refresh progress statistics
+        refreshProgressStats();
       } else {
         showLoading(false);
         showNotification('Không tìm thấy bản ghi để cập nhật', 'error');
       }
-    }, 1000);
+    }).catch((error) => {
+      console.error('❌ Lỗi khi cập nhật bản ghi:', error);
+      showLoading(false);
+      showNotification('Cập nhật thất bại', 'error');
+    });
+   
   }
 
   /**
    * Xóa bản ghi (mock function)
    */
-  function deleteRecord(id) {
-    showLoading(true);
+  async function deleteRecord(id) {
+    showLoading(true);   
 
     // Mock API call
-    setTimeout(() => {
+    await window.PostgreSQL_ChiTietMau.xoa(id)
+    .then((res) => {
+      
+      if (!res.ok) {
+        showLoading(false);
+        showNotification('Xóa thất bại!', 'error');
+        return;
+      }
+
       // Xóa khỏi danh sách
       chiTietMauData = chiTietMauData.filter(item => item.id !== id);
 
@@ -2603,7 +2693,10 @@
 
       showLoading(false);
       showNotification('Xóa thành công', 'success');
-    }, 500);
+
+      // Refresh progress statistics
+      refreshProgressStats();
+    })   
   }
 
   /**
@@ -4603,7 +4696,7 @@
 
   // Initialize when document is ready
   $(document).ready(function () {
-    initializeApp();
+    initializeApp();   
 
     // Test SweetAlert2 (for debugging)
     window.testSweetAlert = function () {

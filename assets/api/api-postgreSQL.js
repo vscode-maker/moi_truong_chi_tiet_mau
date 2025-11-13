@@ -76,6 +76,26 @@
   };
 
   /**
+   * Bổ sung các trường còn thiếu mặc định để tránh lỗi
+   */
+  const supplementDefaultFields = record => ({
+    ...record,
+    "loai_phan_tich": record["loai_phan_tich"] || "LPT-DF",
+    "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "TTPT-DF",
+    "loai_don_hang": record["loai_don_hang"] || "LDH-DF",
+    "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "2025-11-20",
+    "ma_khach_hang": record["ma_khach_hang"] || "MKH-DF",
+    "ten_khach_hang": record["ten_khach_hang"] || "TKH-DF",
+    "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "TNPT-DF",
+    "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "TND-DF",
+    "ten_don_hang": record["ten_don_hang"] || "TDH-DF",
+    "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "MNPT-DF",
+    "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "MND-DF",
+    "ten_mau": record["ten_mau"] || "TM-DF",
+    "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "TTTH-DF"
+  });
+
+  /**
    * Lấy danh sách chi tiết mẫu với server-side processing
    * @param {Object} params - Parameters từ DataTable hoặc options khác
    * @returns {Promise<Object>} Response với format DataTable hoặc standard API
@@ -144,22 +164,7 @@
       let data = apiResponse.data || [];
 
       // Bổ sung các trường còn thiếu mặc định để tránh lỗi
-      data = data.map(record => ({         
-        ...record,
-        "loai_phan_tich": record["loai_phan_tich"] || "LPT-DF",
-        "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "TTPT-DF",
-        "loai_don_hang": record["loai_don_hang"] || "LDH-DF",
-        "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "2025-06-02",
-        "ma_khach_hang": record["ma_khach_hang"] || "MKH-DF",
-        "ten_khach_hang": record["ten_khach_hang"] || "TKH-DF",
-        "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "TNPT-DF",
-        "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "TND-DF",
-        "ten_don_hang": record["ten_don_hang"] || "TDH-DF",
-        "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "MNPT-DF",
-        "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "MND-DF",
-        "ten_mau": record["ten_mau"] || "TM-DF",
-        "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "TTTH-DF"
-      }));
+      data = data.map(record => (supplementDefaultFields(record)));
 
       // Calculate pending count (optional, có thể được API trả về riêng)
       const pendingCount =
@@ -232,7 +237,8 @@
 
       clearTimeout(timeoutId);
 
-      const data = await handleApiResponse(response);
+      let data = await handleApiResponse(response);
+      data = supplementDefaultFields(data);
 
       console.log('✅ Chi tiết mẫu updated:', data);
       return data;
@@ -265,7 +271,8 @@
 
       clearTimeout(timeoutId);
 
-      const data = await handleApiResponse(response);
+      let data = await handleApiResponse(response);
+      data = supplementDefaultFields(data);
 
       console.log('✅ Chi tiết mẫu created:', data);
       return data;
@@ -295,12 +302,12 @@
         signal: controller.signal
       });
 
-      clearTimeout(timeoutId);
+      console.error(response);      
 
-      const data = await handleApiResponse(response);
+      clearTimeout(timeoutId);      
 
-      console.log('✅ Chi tiết mẫu deleted:', data);
-      return data;
+      console.log('✅ Chi tiết mẫu deleted:', { id });
+      return response;
     } catch (error) {
       console.error('❌ Lỗi khi xóa chi tiết mẫu:', error);
       throw error;
@@ -329,7 +336,8 @@
 
       clearTimeout(timeoutId);
 
-      const data = await handleApiResponse(response);
+      let data = await handleApiResponse(response);
+      data = supplementDefaultFields(data);
 
       console.log('✅ Chi tiết mẫu detail loaded:', data);
       return data;
