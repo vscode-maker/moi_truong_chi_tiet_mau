@@ -97,5 +97,3 @@ if (typeof TemplateCustomizer !== 'undefined') {
     ]
   });
 }
-
-localStorage.setItem("templateCustomizer-vertical-menu-template--Color", "#2092EC")

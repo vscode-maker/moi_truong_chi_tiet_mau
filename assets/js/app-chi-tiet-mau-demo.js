@@ -597,19 +597,12 @@
         grow: false,
         backdrop: true
       });
-    }   
+    }            
 
-    await window.PostgreSQL_ChiTietMau.layTheoMaMau('1').then(res => {    
-      console.error(res);
-    });
-    
-    await window.PostgreSQLAPI.layDanhSachChiTietMau({
-      limit: 20,
-      offset: 0
-    }).then(res => {
-      console.log(res);
-      chiTietMauData = res.data;
-      return loadDanhSachChiTieu(); // Load danh sách chỉ tiêu
+    loadChiTietMauData()
+      .then(data => {
+        chiTietMauData = data;        
+        return loadDanhSachChiTieu(); // Load danh sách chỉ tiêu
       })
       .then(() => {
         initializeDataTable();
@@ -621,25 +614,6 @@
         console.error('❌ Lỗi khởi tạo:', error);
         showNotification('Lỗi tải dữ liệu', 'error');
       });
-
-    // console.log(chiTietMauData);
-
-    // loadChiTietMauData()
-    //   .then(data => {
-    //     chiTietMauData = data;
-        
-    //     return loadDanhSachChiTieu(); // Load danh sách chỉ tiêu
-    //   })
-    //   .then(() => {
-    //     initializeDataTable();
-    //     initializeProgressStats();
-    //     bindEvents();
-    //     console.log('✅ Khởi tạo thành công');
-    //   })
-    //   .catch(error => {
-    //     console.error('❌ Lỗi khởi tạo:', error);
-    //     showNotification('Lỗi tải dữ liệu', 'error');
-    //   });
   }
 
   /**
@@ -673,70 +647,70 @@
     return new Promise((resolve, reject) => {
       showLoading(true);
 
-      fetch("https://api-cefinea.tamk.win/cefinea/chi-tiet-mau?limit=10&offset=0", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer GPEMS-zzzz"
-        }
-      })
-      .then(response => {                
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        data = data.data;
+      // fetch("https://api-cefinea.tamk.win/cefinea/chi-tiet-mau?limit=10&offset=0", {
+      //   method: "GET",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     "Authorization": "Bearer GPEMS-zzzz"
+      //   }
+      // })
+      // .then(response => {                
+      //   if (!response.ok) {
+      //     throw new Error(`HTTP error! status: ${response.status}`);
+      //   }
+      //   return response.json();
+      // })
+      // .then(data => {
+      //   data = data.data;
         
-        // Bổ sung các trường còn thiếu mặc định để tránh lỗi
-        data = data.map(record => ({         
-          ...record,
-          "loai_phan_tich": record["loai_phan_tich"] || "LPT-DF",
-          "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "TTPT-DF",
-          "loai_don_hang": record["loai_don_hang"] || "LDH-DF",
-          "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "2025-06-02",
-          "ma_khach_hang": record["ma_khach_hang"] || "MKH-DF",
-          "ten_khach_hang": record["ten_khach_hang"] || "TKH-DF",
-          "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "TNPT-DF",
-          "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "TND-DF",
-          "ten_don_hang": record["ten_don_hang"] || "TDH-DF",
-          "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "MNPT-DF",
-          "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "MND-DF",
-          "ten_mau": record["ten_mau"] || "TM-DF",
-          "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "TTTH-DF"
-        }));
+      //   // Bổ sung các trường còn thiếu mặc định để tránh lỗi
+      //   data = data.map(record => ({         
+      //     ...record,
+      //     "loai_phan_tich": record["loai_phan_tich"] || "LPT-DF",
+      //     "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "TTPT-DF",
+      //     "loai_don_hang": record["loai_don_hang"] || "LDH-DF",
+      //     "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "2025-06-02",
+      //     "ma_khach_hang": record["ma_khach_hang"] || "MKH-DF",
+      //     "ten_khach_hang": record["ten_khach_hang"] || "TKH-DF",
+      //     "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "TNPT-DF",
+      //     "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "TND-DF",
+      //     "ten_don_hang": record["ten_don_hang"] || "TDH-DF",
+      //     "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "MNPT-DF",
+      //     "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "MND-DF",
+      //     "ten_mau": record["ten_mau"] || "TM-DF",
+      //     "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "TTTH-DF"
+      //   }));
 
-        console.log(`📊 Đã tải ${data.length} bản ghi chi tiết mẫu từ API`);
-        console.log('✅ Dữ liệu đã sử dụng hệ thống 13 trạng thái tổng hợp');
-        showLoading(false);
-          resolve(data);
-        })
-      .catch(error => {
-        showLoading(false);
-        console.error('❌ Lỗi tải dữ liệu:', error);
-        reject(error);
-      });
-
-      // fetch('../../assets/json/chi_tiet_mau.json')
-      //   .then(response => {
-      //     if (!response.ok) {
-      //       throw new Error(`HTTP error! status: ${response.status}`);
-      //     }
-      //     return response.json();
-      //   })
-      //   .then(data => {
-      //     console.log(`📊 Đã tải ${data.length} bản ghi chi tiết mẫu`);
-      //     console.log('✅ Dữ liệu đã sử dụng hệ thống 13 trạng thái tổng hợp');
-
-      //     showLoading(false);
+      //   console.log(`📊 Đã tải ${data.length} bản ghi chi tiết mẫu từ API`);
+      //   console.log('✅ Dữ liệu đã sử dụng hệ thống 13 trạng thái tổng hợp');
+      //   showLoading(false);
       //     resolve(data);
       //   })
-      //   .catch(error => {
-      //     showLoading(false);
-      //     console.error('❌ Lỗi tải dữ liệu:', error);
-      //     reject(error);
-      //   });
+      // .catch(error => {
+      //   showLoading(false);
+      //   console.error('❌ Lỗi tải dữ liệu:', error);
+      //   reject(error);
+      // });
+
+      fetch('../../assets/json/chi_tiet_mau.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(`📊 Đã tải ${data.length} bản ghi chi tiết mẫu`);
+          console.log('✅ Dữ liệu đã sử dụng hệ thống 13 trạng thái tổng hợp');
+
+          showLoading(false);
+          resolve(data);
+        })
+        .catch(error => {
+          showLoading(false);
+          console.error('❌ Lỗi tải dữ liệu:', error);
+          reject(error);
+        });
     });
   }
 
@@ -1328,7 +1302,7 @@
             'Nước Thải': 'warning',
             'Không khí xung quanh': 'secondary',
             'Khí Thải': 'danger',
-            Đất: 'success',
+            "Đất": 'success',
             'Trầm tích': 'success',
             'Bùn thải': 'warning',
             'Chất thải rắn': 'danger',
@@ -2490,6 +2464,7 @@
     }
 
     // Lưu dữ liệu
+    // #TEST
     if (mode === 'add') {
       saveRecord(formData);
     } else if (mode === 'edit') {
@@ -2519,34 +2494,33 @@
   /**
    * Lưu bản ghi mới (mock function)
    */
-  async function saveRecord(data) {
+  function saveRecord(data) {
     showLoading(true);
 
-    // Generate ID mới
-    data.id = 'chi_tiet_mau_' + Date.now();
-    data.created_at = new Date().toISOString();
-    data.updated_at = new Date().toISOString();
+    // Mock API call
+    setTimeout(() => {
+      // Generate ID mới
+      data.id = 'chi_tiet_mau_' + Date.now();
+      data.created_at = new Date().toISOString();
+      data.updated_at = new Date().toISOString();
 
-    // Tính toán thành tiền
-    const donGia = parseFloat(data.don_gia) || 0;
-    const chietKhau = parseFloat(data.chiet_khau) || 0;
-    data.thanh_tien = donGia - (donGia * chietKhau) / 100;      
+      // Tính toán thành tiền
+      const donGia = parseFloat(data.don_gia) || 0;
+      const chietKhau = parseFloat(data.chiet_khau) || 0;
+      data.thanh_tien = donGia - (donGia * chietKhau) / 100;     
 
-    // Thêm vào danh sách
-    chiTietMauData.unshift(data);
+      // Thêm vào danh sách
+      chiTietMauData.unshift(data);
 
-    // Thêm dữ liệu vào database server
-    const res = await window.PostgreSQL_ChiTietMau.taoMoi(data);
-    console.log(res);    
+      // Refresh DataTable
+      chiTietMauTable.clear().rows.add(chiTietMauData).draw();
 
-    // Refresh DataTable
-    chiTietMauTable.clear().rows.add(chiTietMauData).draw();
+      // Đóng modal
+      elements.modal.modal('hide');
 
-    // Đóng modal
-    elements.modal.modal('hide');
-
-    showLoading(false);
-    showNotification('Thêm mới thành công', 'success');
+      showLoading(false);
+      showNotification('Thêm mới thành công', 'success');
+    }, 1000);
   }
 
   /**
