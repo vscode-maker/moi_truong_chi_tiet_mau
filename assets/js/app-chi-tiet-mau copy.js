@@ -6,6 +6,9 @@
 (function () {
   'use strict';
 
+  // Service instance
+  const sampleDetailsService = window.SampleDetailsService;
+
   let chitietmauID = new URLSearchParams(window.location.search).get('id');
 
   // Global variables
@@ -601,39 +604,72 @@
       });
     }   
 
-    window.PostgreSQL_ChiTietMau.layTheoId(chitietmauID)
-    .then(res => {      
-      if (res.id) {
-        res["ma_mau"] = "VD-001";
+    // Bước 1: Lấy chi tiết mẫu theo ID
+    try {
+      showLoading(true);
+
+      const response = await sampleDetailsService.getList({
+        limit: 10,
+        offset: 0
+      })
+
+      chiTietMauData = response.data;
+
+      // Load danh sách chỉ tiêu
+      await loadDanhSachChiTieu();
+
+      // Khởi tạo UI
+      initializeDataTable();
+      initializeProgressStats();
+      bindEvents();
+
+      showLoading(false);
+      console.log('✅ Khởi tạo thành công');
+
+      const res = await window.PostgreSQL_ChiTietMau.layTheoId(chitietmauID);
+      if (res && res.id) {
+        // res["ma_mau"] = "VD-001";
         chiTietMauData = [res];
-      }    
-    })    
-    .catch(error => {
-      // console.error('❌ Lỗi khởi tạo:', error);
-      // showNotification('Lỗi tải dữ liệu', 'error');
-    });
+      }
+    } catch (error) {
+      console.warn('⚠️ Không lấy được chi tiết mẫu theo ID:', error);
+      // Không hiển thị thông báo lỗi cho user vì có thể là trường hợp bình thường
+    }
     
-    window.PostgreSQLAPI.layDanhSachChiTietMau({
-      limit: 100,
-      offset: 0
-    }).then(res => {
-      console.log(res);
-      chiTietMauData = [
-        ...chiTietMauData,
-        ...res.data
-      ];
-      return loadDanhSachChiTieu(); // Load danh sách chỉ tiêu
-      })
-      .then(() => {
-        initializeDataTable();
-        initializeProgressStats();
-        bindEvents();
-        console.log('✅ Khởi tạo thành công');
-      })
-      .catch(error => {
-        console.error('❌ Lỗi khởi tạo:', error);
-        showNotification('Lỗi tải dữ liệu', 'error');
+    // Bước 2: Lấy danh sách chi tiết mẫu và khởi tạo
+    try {
+      const result = await window.PostgreSQLAPI.layDanhSachChiTietMau({
+        limit: 10,
+        offset: 0
       });
+      
+      console.log(result);
+
+      let item = result.data.filter(item => item.id == chitietmauID)
+      if (!item) {
+        chiTietMauData = [
+          ...chiTietMauData,
+          ...result.data
+        ];      
+      } else {
+        chiTietMauData = [         
+          ...result.data
+        ];   
+      }
+      
+      // Bước 3: Load danh sách chỉ tiêu
+      await loadDanhSachChiTieu();
+      
+      // Bước 4: Khởi tạo giao diện
+      initializeDataTable();
+      initializeProgressStats();
+      bindEvents();
+      console.log('✅ Khởi tạo thành công');
+      
+    } catch (error) {
+      console.error('❌ Lỗi khởi tạo:', error);
+      showNotification('Lỗi tải dữ liệu', 'error');
+    }
 
     // console.log(chiTietMauData);
 
@@ -658,78 +694,87 @@
   /**
    * Tải dữ liệu danh sách chỉ tiêu từ file JSON
    */
-  function loadDanhSachChiTieu() {
-    return new Promise((resolve, reject) => {
-      fetch('../../assets/json/danh-sach-chi-tieu.json')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          danhSachChiTieuData = data;
-          console.log(`📊 Đã tải ${data.length} chỉ tiêu`);
-          resolve(data);
-        })
-        .catch(error => {
-          console.error('❌ Lỗi tải danh sách chỉ tiêu:', error);
-          reject(error);
-        });
-    });
+  async function loadDanhSachChiTieu() {
+    try {
+      const response = await fetch('../../assets/json/danh-sach-chi-tieu.json');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      danhSachChiTieuData = data;
+      console.log(`📊 Đã tải ${data.length} chỉ tiêu`);
+      return data;
+      
+    } catch (error) {
+      console.error('❌ Lỗi tải danh sách chỉ tiêu:', error);
+      throw error;
+    }
   }
 
   /**
-   * Tải dữ liệu từ file JSON
+   * Tải dữ liệu từ API
    */
-  function loadChiTietMauData() {
-    return new Promise((resolve, reject) => {
-      showLoading(true);
+  async function loadChiTietMauData() {
+    showLoading(true);
 
-      fetch("https://api-cefinea.tamk.win/cefinea/chi-tiet-mau?limit=10&offset=0", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer GPEMS-zzzz"
+    try {
+      const response = await fetch(
+        "https://api-cefinea.tamk.win/cefinea/chi-tiet-mau?limit=10&offset=0",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer GPEMS-zzzz"
+          }
         }
-      })
-      .then(response => {                
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        data = data.data;
-        
-        // Bổ sung các trường còn thiếu mặc định để tránh lỗi
-        data = data.map(record => ({         
-          ...record,
-          "loai_phan_tich": record["loai_phan_tich"] || "LPT-DF",
-          "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "TTPT-DF",
-          "loai_don_hang": record["loai_don_hang"] || "LDH-DF",
-          "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "2025-06-02",
-          "ma_khach_hang": record["ma_khach_hang"] || "MKH-DF",
-          "ten_khach_hang": record["ten_khach_hang"] || "TKH-DF",
-          "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "TNPT-DF",
-          "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "TND-DF",
-          "ten_don_hang": record["ten_don_hang"] || "TDH-DF",
-          "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "MNPT-DF",
-          "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "MND-DF",
-          "ten_mau": record["ten_mau"] || "TM-DF",
-          "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "TTTH-DF"
-        }));
+      );
 
-        console.log(`📊 Đã tải ${data.length} bản ghi chi tiết mẫu từ API`);
-        console.log('✅ Dữ liệu đã sử dụng hệ thống 13 trạng thái tổng hợp');
-        showLoading(false);
-          resolve(data);
-        })
-      .catch(error => {
-        showLoading(false);
-        console.error('❌ Lỗi tải dữ liệu:', error);
-        reject(error);
-      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Kiểm tra data tồn tại
+      if (!result.data || !Array.isArray(result.data)) {
+        throw new Error('Invalid data format from API');
+      }
+
+      let data = result.data;
+      
+      // Bổ sung các trường còn thiếu mặc định để tránh lỗi
+      data = data.map(record => ({         
+        ...record,
+        "loai_phan_tich": record["loai_phan_tich"] || "LPT-DF",
+        "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "TTPT-DF",
+        "loai_don_hang": record["loai_don_hang"] || "LDH-DF",
+        "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "2025-06-02",
+        "ma_khach_hang": record["ma_khach_hang"] || "MKH-DF",
+        "ten_khach_hang": record["ten_khach_hang"] || "TKH-DF",
+        "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "TNPT-DF",
+        "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "TND-DF",
+        "ten_don_hang": record["ten_don_hang"] || "TDH-DF",
+        "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "MNPT-DF",
+        "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "MND-DF",
+        "ten_mau": record["ten_mau"] || "TM-DF",
+        "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "TTTH-DF"
+      }));
+
+      console.log(`📊 Đã tải ${data.length} bản ghi chi tiết mẫu từ API`);
+      console.log('✅ Dữ liệu đã sử dụng hệ thống 13 trạng thái tổng hợp');
+      showLoading(false);
+      return data;
+      
+    } catch (error) {
+      showLoading(false);
+      console.error('❌ Lỗi tải dữ liệu:', error);
+      throw error;
+    }
+  }
+      //   reject(error);
+      // });
 
       // fetch('../../assets/json/chi_tiet_mau.json')
       //   .then(response => {
@@ -750,8 +795,8 @@
       //     console.error('❌ Lỗi tải dữ liệu:', error);
       //     reject(error);
       //   });
-    });
-  }
+  //   });
+  // }
 
   // === PROGRESS STATISTICS AND FILTERING ===
 
@@ -1103,9 +1148,9 @@
         [10, 25, 50, 100, -1],
         [10, 25, 50, 100, 'Tất cả']
       ],
-      language: {
-        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
-      },
+      // language: {
+      //   url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
+      // },
       dom:
         '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
         '<"row"<"col-sm-12"tr>>' +
@@ -2535,8 +2580,10 @@
   async function saveRecord(data) {
     showLoading(true);
 
+    console.warn(JSON.stringify(data));
+
     // Generate ID mới
-    data.id = 'chi_tiet_mau_' + Date.now();
+    // data.id = 'chi_tiet_mau_' + Date.now();
     data.created_at = new Date().toISOString();
     data.updated_at = new Date().toISOString();
 
@@ -2545,103 +2592,92 @@
     const chietKhau = parseFloat(data.chiet_khau) || 0;
     data.thanh_tien = donGia - (donGia * chietKhau) / 100;   
     
-    console.log(JSON.stringify(data));
+    console.warn(JSON.stringify(data));
 
-    // data = {
-    //   "id": "chi_tiet_mau_1763035399840",
-    //   "don_hang_id": "cefineatest",
-    //   "ma_mau": "cefineatest",
-    //   "noi_phan_tich": "Nội bộ",
-    //   "ten_chi_tieu": "cefineatest",
-    //   "phan_loai_chi_tieu": "cefineatest",
-    //   "nguoi_phan_tich": "cefineatest",
-    //   "tien_do_phan_tich": "1.Chờ QT",
-    //   "ket_qua_thuc_te": "1",
-    //   "ket_qua_in_phieu": "1",
-    //   "phe_duyet": "",
-    //   "nhom_mau": "cefineatest",
-    //   "ngay_nhan_mau": "2025-11-13",
-    //   "han_hoan_thanh_pt_gm": "2025-11-19",
-    //   "ngay_hoan_thanh_pt_gm": "",
-    //   "don_gia": "50000",
-    //   "chiet_khau": "5",
-    //   "thanh_tien": 47500,
-    //   "ma_nguoi_phan_tich": "cefineatest",
-    //   "ma_nguoi_duyet": "",
-    //   "ghi_chu": "cefineatest",
-    //   "created_at": "2025-11-13T12:03:19.840Z",
-    //   "updated_at": "2025-11-13T12:03:19.840Z"
-    // }
+    return
 
-    data = {
-      "id_don_hang": "25-0001",
-      "id_ma_mau": "7f18ebcd",
-      "ten_chi_tieu": "pH",
-      "don_vi_tinh": "pH",
-      "ket_qua_phan_tich": "7.2",
-      "tien_do_phan_tich": "1.Chờ lấy mẫu"
-    };    
-    
-    // Thêm dữ liệu vào database server
-    window.PostgreSQL_ChiTietMau.taoMoi(data)
-    .then((res) => {
-      console.error("TẠO MỚI KẾT QUẢ:");
-      console.error(res)    
-      
-      // Thêm vào danh sách
-      chiTietMauData.unshift(data);
-
-      // Refresh DataTable
-      chiTietMauTable.clear().rows.add(chiTietMauData).draw();
-
-      // Đóng modal
-      elements.modal.modal('hide');
-
-      showLoading(false);
-      showNotification('Thêm mới thành công', 'success');
-
-      // Refresh progress statistics
-      refreshProgressStats();
-    }).catch((error) => {
-      console.error('❌ Lỗi khi thêm mới bản ghi:', error);
-      showLoading(false);
-      showNotification('Thêm mới thất bại', 'error');
-    });
     
   }
 
   /**
    * Cập nhật bản ghi (mock function)
    */
-  async function updateRecord(data) {
-    showLoading(true);
+  async function updateRecord(updateData) {
+    showLoading(true);            
+   
+    let id = updateData.id;
 
-    // Mock API call
-    console.log(JSON.stringify(data));
-    let id = data.id;
-
-    // Test
-    data = {        
-      "tien_do_phan_tich": "4.Đã có kết quả"
-    }
+    console.warn(JSON.stringify(updateData));   
 
     // Cập nhật dữ liệu vào database
-    window.PostgreSQL_ChiTietMau.capNhat(id, data)
-    .then((res) => {
+    try {
+      const resData = await window.PostgreSQL_ChiTietMau.capNhat(id, updateData);
+      console.warn(resData);
+      
+      if (!resData.success) {
+        showLoading(false);
+        showNotification('Cập nhật thất bại!', 'error');
+        return;
+      }
+
+      // Tìm và cập nhật bản ghi 
+      const index = chiTietMauData.findIndex(item => item.id == id);      
+      
+      if (index !== -1) {
+        // // Giữ lại một số thông tin gốc
+        // data.created_at = chiTietMauData[index].created_at;
+        // data.updated_at = new Date().toISOString();
+
+        // // Tính toán thành tiền
+        // const donGia = parseFloat(data.don_gia) || 0;
+        // const chietKhau = parseFloat(data.chiet_khau) || 0;
+        // data.thanh_tien = donGia - (donGia * chietKhau) / 100;
+
+        // Cập nhật dữ liệu
+        chiTietMauData[index] = { ...chiTietMauData[index], ...resData.data };
+
+        // Refresh DataTable
+        chiTietMauTable.clear().rows.add(chiTietMauData).draw();        
+               
+        // Làm mới thống kê tiến độ
+        refreshProgressStats();
+
+        showNotification('Cập nhật thành công', 'success');
+      } else {
+        showNotification('Không tìm thấy bản ghi để cập nhật', 'error');
+      }
+
+      showLoading(false);
+      // Đóng modal
+      elements.modal.modal('hide');
+
+    } catch (error) {
+      console.error('❌ Lỗi khi cập nhật bản ghi:', error);
+      showLoading(false);
+      elements.modal.modal('hide');
+      showNotification('Cập nhật thất bại', 'error');
+    }
+    
+    return
+
+    
+    then((res) => {
       console.log("CẬP NHẬT KẾT QUẢ:");
       console.log(res);
 
       // Tìm và cập nhật bản ghi
-      const index = chiTietMauData.findIndex(item => item.id === data.id);
+      const index = chiTietMauData.findIndex(item => item.id == id);
+      console.warn(index);
+      
       if (index !== -1) {
-        // Giữ lại một số thông tin gốc
-        data.created_at = chiTietMauData[index].created_at;
-        data.updated_at = new Date().toISOString();
+        // // Giữ lại một số thông tin gốc
+        // data.created_at = chiTietMauData[index].created_at;
+        // data.updated_at = new Date().toISOString();
 
-        // Tính toán thành tiền
-        const donGia = parseFloat(data.don_gia) || 0;
-        const chietKhau = parseFloat(data.chiet_khau) || 0;
-        data.thanh_tien = donGia - (donGia * chietKhau) / 100;
+        // // Tính toán thành tiền
+        // const donGia = parseFloat(data.don_gia) || 0;
+        // const chietKhau = parseFloat(data.chiet_khau) || 0;
+        // data.thanh_tien = donGia - (donGia * chietKhau) / 100;
 
         // Cập nhật dữ liệu
         chiTietMauData[index] = { ...chiTietMauData[index], ...data };
@@ -2651,16 +2687,15 @@
 
         // Đóng modal
         elements.modal.modal('hide');
-
-        showLoading(false);
+       
         showNotification('Cập nhật thành công', 'success');
 
         // Refresh progress statistics
         refreshProgressStats();
       } else {
-        showLoading(false);
         showNotification('Không tìm thấy bản ghi để cập nhật', 'error');
       }
+      showLoading(false);
     }).catch((error) => {
       console.error('❌ Lỗi khi cập nhật bản ghi:', error);
       showLoading(false);

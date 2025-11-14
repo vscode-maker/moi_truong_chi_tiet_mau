@@ -3550,221 +3550,25 @@
       </div>
     </div>
 
-    <!-- Modal: Add/Edit Chi Tiet Mau -->
-    <div class="modal fade" id="chiTietMauModal" tabindex="-1" aria-hidden="true">
+    <!-- Modal: Add/Edit Chi Tiet Mau -->    
+    <div class="modal fade" id="chiTietMauModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="chiTietMauModalTitle"><i class="ri-add-line me-2"></i>Thêm chi tiết mẫu mới</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <h5 class="modal-title" id="chiTietMauModalTitle">Chi tiết mẫu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <form id="chiTietMauForm">
-            <div class="modal-body">
-              <input type="hidden" id="formId" />
-              <input type="hidden" id="formMode" />
-
-              <!-- Thông tin cơ bản -->
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Đơn hàng ID</label>
-                    <input type="text" class="form-control" id="formDonHangId" />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Mã mẫu <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="formMaMau" required />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Nơi phân tích</label>
-                    <select class="form-select" id="formNoiPhanTich">
-                      <option value="">Chọn nơi phân tích</option>
-                      <option value="Nội bộ">Nội bộ</option>
-                      <option value="Bên ngoài">Bên ngoài</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Tên chỉ tiêu <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="formTenChiTieu" required />
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Phân loại chỉ tiêu</label>
-                    <input type="text" class="form-control" id="formPhanLoaiChiTieu" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Thông tin phân tích -->
-              <h6 class="mt-4 mb-3"><i class="ri-microscope-line me-2"></i>Thông tin phân tích</h6>
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Người phân tích</label>
-                    <input type="text" class="form-control" id="formNguoiPhanTich" />
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Tiến độ phân tích</label>
-                    <select class="form-select" id="formTienDoPhanTich">
-                      <option value="">Chọn tiến độ</option>
-                      <option value="1.Chờ QT">1.Chờ QT</option>
-                      <option value="2.Chờ mã hóa">2.Chờ mã hóa</option>
-                      <option value="3.Chờ chuyển mẫu">3.Chờ chuyển mẫu</option>
-                      <option value="4.Chờ nhận mẫu PT">4.Chờ nhận mẫu PT</option>
-                      <option value="5.Chờ kết quả PT">5.Chờ kết quả PT</option>
-                      <option value="6.Chờ duyệt KQ">6.Chờ duyệt KQ</option>
-                      <option value="7.Chờ trả KQ">7.Chờ trả KQ</option>
-                      <option value="8.Hoàn thành">8.Hoàn thành</option>
-                      <option value="9.Cần xét lại">9.Cần xét lại</option>
-                      <option value="10.Hủy">10.Hủy</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Kết quả thực tế</label>
-                    <input type="text" class="form-control" id="formKetQuaThucTe" />
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Kết quả in phiếu</label>
-                    <input type="text" class="form-control" id="formKetQuaInPhieu" />
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Phê duyệt</label>
-                    <select class="form-select" id="formPheDuyet">
-                      <option value="">Chưa duyệt</option>
-                      <option value="1.Đạt">1.Đạt</option>
-                      <option value="2.Không đạt">2.Không đạt</option>
-                      <option value="3.Chờ duyệt">3.Chờ duyệt</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Nhóm mẫu</label>
-                    <input type="text" class="form-control" id="formNhomMau" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Thông tin thời gian -->
-              <h6 class="mt-4 mb-3"><i class="ri-time-line me-2"></i>Thông tin thời gian</h6>
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Ngày nhận mẫu</label>
-                    <input type="date" class="form-control" id="formNgayNhanMau" />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Hạn hoàn thành PT&GM</label>
-                    <input type="date" class="form-control" id="formHanHoanThanhPtGm" />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Ngày hoàn thành PT&GM</label>
-                    <input type="date" class="form-control" id="formNgayHoanThanhPtGm" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Thông tin tài chính -->
-              <h6 class="mt-4 mb-3"><i class="ri-money-dollar-circle-line me-2"></i>Thông tin tài chính</h6>
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Đơn giá</label>
-                    <input type="number" class="form-control" id="formDonGia" min="0" step="1000" />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Chiết khấu (%)</label>
-                    <input type="number" class="form-control" id="formChietKhau" min="0" max="100" step="0.1" />
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="mb-3">
-                    <label class="form-label">Thành tiền</label>
-                    <input type="number" class="form-control" id="formThanhTien" readonly />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Thông tin người dùng -->
-              <h6 class="mt-4 mb-3"><i class="ri-user-line me-2"></i>Thông tin người xử lý</h6>
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Người nhận</label>
-                    <input type="text" class="form-control" id="formNguoiNhan" />
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">Người duyệt</label>
-                    <input type="text" class="form-control" id="formNguoiDuyet" />
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-12">
-                  <div class="mb-3">
-                    <label class="form-label">Cảnh báo phân tích</label>
-                    <div class="form-control-static">
-                      <span class="badge bg-secondary" id="formCanhBaoDisplay">N/A</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Ghi chú</label>
-                <textarea class="form-control" id="formGhiChu" rows="3"></textarea>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Lịch sử thay đổi</label>
-                <div class="form-control-static">
-                  <div class="bg-light p-2 rounded" id="formHistory" style="max-height: 120px; overflow-y: auto">
-                    <small class="text-muted">Chưa có lịch sử</small>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                <i class="ri-close-line me-1"></i>Đóng
-              </button>
-              <button type="submit" class="btn btn-primary" id="saveBtn">
-                <i class="ri-save-line me-1"></i>Lưu thay đổi
-              </button>
-            </div>
-          </form>
+          <div class="modal-body">
+            <!-- Form sẽ được render động bởi FormBuilderService -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="ri-close-line me-1"></i>Đóng
+            </button>
+            <button type="submit" form="chiTietMauForm" class="btn btn-primary" id="saveBtn">
+              <i class="ri-save-line me-1"></i>Lưu
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -3813,8 +3617,15 @@
     <!-- API JS -->
     <script src="./assets/api/api-postgreSQL.js"></script>
 
+    <!-- Helper JS -->
+    <script src="./assets/js/configs/sample-details.config.js"></script>
+    <script src="./assets/js/services/form-builder.service.js"></script>
+
+    <!-- Service JS -->
+    <script src="./assets/js/services/sample-details.service.js"></script>
+
     <!-- Page JS -->
-    <script src="./assets/js/app-chi-tiet-mau.js"></script>
+    <script src="./assets/js/app-sample-details.js"></script>
 
     <!-- Bulk Actions Module (loaded after main file) -->
     <script src="./assets/js/app-chi-tiet-mau-bulk-actions.js"></script>   

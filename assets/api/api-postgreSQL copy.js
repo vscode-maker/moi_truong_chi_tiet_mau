@@ -1,5 +1,5 @@
 /**
- * API PostgreSQL Module
+ * API PostgreSQL Module - Phiên bản hoàn chỉnh cho Chi tiết mẫu
  * Module quản lý các hàm API tương tác với cơ sở dữ liệu PostgreSQL
  */
 (function () {
@@ -152,24 +152,6 @@
   };
 
   /**
-   * Search chi tiết mẫu
-   * @param {Object} params - Parameters từ DataTable hoặc options khác
-   * @returns {Promise<Object>} Response với format DataTable hoặc standard API
-   */
-  const searchSampleDetails = async (params = {}) => {
-    try {
-      const url = `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.chiTietMau}/search`;
-      const response = await fetchWithTimeout(url, {
-        method: 'POST',
-        body: JSON.stringify(params)
-      });
-      return await handleApiResponse(response);
-    } catch (error) {
-      throw new Error(`Lỗi tìm kiếm: ${error.message}`);
-    }
-  };
-
-  /**
    * Lấy danh sách chi tiết mẫu
    * @param {Object} params - Parameters từ DataTable hoặc options khác
    * @returns {Promise<Object>} Response với format DataTable hoặc standard API
@@ -180,8 +162,8 @@
       // Build query parameters theo format mới
       const queryParams = {
         // Pagination parameters
-        limit: parseInt(params.limit) || POSTGRESQL_API_CONFIG.defaultLimit,
-        offset: parseInt(params.offset) || 0,
+        limit: parseInt(params.limit) || parseInt(params.length) || POSTGRESQL_API_CONFIG.defaultLimit,
+        offset: parseInt(params.offset) || parseInt(params.start) || 0,
         page: parseInt(params.page) || Math.floor((parseInt(params.start) || 0) / (parseInt(params.length) || 10)) + 1,
 
         // Sorting parameters
@@ -321,8 +303,9 @@
 
       console.log('✅ Chi tiết mẫu created:', data);
       return data;
-    } catch (error) {      
-      throw new Error(`Không thể tạo chi tiết mẫu mới: ${error.message}`);
+    } catch (error) {
+      console.error('❌ Lỗi khi tạo chi tiết mẫu mới:', error);
+      throw error;
     }
   };
 
@@ -332,15 +315,29 @@
    * @returns {Promise<Object>} Response từ API
    */
   const xoaChiTietMau = async id => {
-    try {     
+    try {
+      console.log(`🗑️ Deleting chi tiết mẫu ID ${id}`);
+
       const url = `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.chiTietMau}/${id}`;
-    
-      const response = await fetchWithTimeout(url, {
-        method: 'DELETE'       
-      });                    
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), POSTGRESQL_API_CONFIG.timeout);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: createHeaders(),
+        signal: controller.signal
+      });
+
+      console.error(response);      
+
+      clearTimeout(timeoutId);      
+
+      console.log('✅ Chi tiết mẫu deleted:', { id });
       return response;
-    } catch (error) {     
-      throw new Error(`Không thể xóa chi tiết mẫu ID ${id}: ${error.message}`);
+    } catch (error) {
+      console.error('❌ Lỗi khi xóa chi tiết mẫu:', error);
+      throw error;
     }
   };
 
@@ -578,7 +575,6 @@
   // Alias để tương thích với code cũ
   window.PostgreSQL_ChiTietMau = {
     layDanhSach: layDanhSachChiTietMau,
-    search: searchSampleDetails,
     layTheoId: layChiTietMauTheoId,
     taoMoi: taoChiTietMau,
     capNhat: capNhatChiTietMau,
