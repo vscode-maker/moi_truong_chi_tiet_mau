@@ -153,6 +153,34 @@
     }
 
     /**
+     * Cập nhật chi tiết mẫu
+     * @param {number} id - ID chi tiết mẫu
+     * @param {Object} data - Dữ liệu cần cập nhật
+     * @returns {Promise<Object>}
+     */
+    async updateNotValidated(id, data) {
+      try {
+        if (!id) {
+          throw new Error('ID không hợp lệ');
+        }
+        
+        // Gọi API
+        const response = await this.api.capNhat(id, data);
+
+        if (!response.success) {
+          throw new Error(`Cập nhật chi tiết mẫu ID ${id} thất bại`);
+        }
+
+        console.log(`✅ Service: Chi tiết mẫu ID ${id} updated successfully`);
+        return response.data;
+      } catch (error) {
+        console.error(`❌ Service Error - update(${id}):`, error.message);
+        throw new Error(`Không thể cập nhật chi tiết mẫu: ${error.message}`);
+      }
+    }
+
+
+    /**
      * Xóa chi tiết mẫu
      * @param {number} id - ID chi tiết mẫu cần xóa
      * @returns {Promise<boolean>}
@@ -181,35 +209,45 @@
     }
 
     /**
+     * Tạo hàng loạt (bulk create)
+     */
+    async bulkCreate(dataArray) {
+      try {
+        // Gọi API 
+        const response = await this.api.bulkCreate(dataArray);
+
+        console.warn(response);        
+
+        if (!response.success) {
+          throw new Error('Tạo chi tiết mẫu thất bại');
+        }
+
+        console.log('✅ Service: Chi tiết mẫu created successfully');
+        return response.data;
+      } catch (error) {
+        console.error('❌ Service Error - bulkCreate:', error.message);
+        throw new Error(`Lỗi tạo hàng loạt: ${error.message}`);
+      }
+    }
+
+    /**
      * Cập nhật hàng loạt (bulk update)
      * @param {Array<Object>} updates - Mảng các object {id, data}
      * @returns {Promise<Object>}
      */
     async bulkUpdate(updates) {
       try {
-        if (!Array.isArray(updates) || updates.length === 0) {
-          throw new Error('Dữ liệu cập nhật không hợp lệ');
+        // Gọi API 
+        const response = await this.api.bulkUpdate(updates);
+
+        console.warn(response);        
+
+        if (!response.success) {
+          throw new Error('Cập nhật chi tiết mẫu thất bại');
         }
 
-        console.log(`🔄 Service: Bulk updating ${updates.length} records...`);
-
-        const results = {
-          success: [],
-          failed: []
-        };
-
-        // Xử lý tuần tự (có thể chuyển sang Promise.allSettled nếu muốn parallel)
-        for (const update of updates) {
-          try {
-            const result = await this.update(update.id, update.data);
-            results.success.push({ id: update.id, data: result });
-          } catch (error) {
-            results.failed.push({ id: update.id, error: error.message });
-          }
-        }
-
-        console.log(`✅ Service: Bulk update completed - Success: ${results.success.length}, Failed: ${results.failed.length}`);
-        return results;
+        console.log('✅ Service: Chi tiết mẫu updated successfully');
+        return response.data;
       } catch (error) {
         console.error('❌ Service Error - bulkUpdate:', error.message);
         throw new Error(`Lỗi cập nhật hàng loạt: ${error.message}`);

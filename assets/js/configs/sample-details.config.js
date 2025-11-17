@@ -20,7 +20,7 @@
    * - readonly: Chỉ đọc trong view mode
    * - placeholder: Placeholder text
    * - helpText: Text hướng dẫn
-   */
+   */ 
   const SAMPLE_DETAILS_FORM_CONFIG = {
     // === SECTION 1: THÔNG TIN CƠ BẢN ===
     basicInfo: {

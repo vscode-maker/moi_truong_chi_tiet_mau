@@ -84,6 +84,8 @@
       }
 
       .swal2-popup {
+        max-height: 100%;
+        overflow-y: scroll;
         position: relative !important;
         z-index: 10001 !important;
         margin: 0 !important;
@@ -3004,7 +3006,7 @@
                     href="javascript:void(0);"
                     data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
-                      <img src="./assets/img/avatars/0.png" alt="alt" class="rounded-circle" />
+                      <img src="./assets/img/favicon/logo.png" alt="Logo" class="rounded-circle" />
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end mt-3 py-2">
@@ -3014,8 +3016,8 @@
                           <div class="flex-shrink-0 me-2">
                             <div class="avatar avatar-online">
                               <img
-                                src="./assets/img/avatars/0.png"
-                                alt="alt"
+                                src="./assets/img/favicon/logo.png"
+                                alt="Logo"
                                 class="w-px-40 h-auto rounded-circle" />
                             </div>
                           </div>
@@ -3516,7 +3518,7 @@
           <div class="modal-header">
             <h5 class="modal-title">
               <i class="icon-base ri ri-edit-line me-2"></i>
-              Cập nhật kết quả hàng loạt - <span id="updateResultCount">0</span> bản ghi
+              Cập nhật kết quả phân tích hàng loạt cho <span id="updateResultCount">0</span> bản ghi
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
@@ -3614,6 +3616,12 @@
     <!-- Main JS -->
     <script src="./assets/js/main.js"></script>
 
+    <!-- Demo -->
+    <script src="./assets/js/bulk-create-demo.js"></script>
+
+    <!-- Data JS -->
+    <script type="module" src="./assets/js/data/data.js"></script>
+
     <!-- API JS -->
     <script src="./assets/api/api-postgreSQL.js"></script>
 
@@ -3623,9 +3631,10 @@
 
     <!-- Service JS -->
     <script src="./assets/js/services/sample-details.service.js"></script>
+    <script type="module" src="./assets/js/services/calc-by-formula.service.js"></script>
 
     <!-- Page JS -->
-    <script src="./assets/js/app-sample-details.js"></script>
+    <script type="module" src="./assets/js/app-sample-details.js"></script>
 
     <!-- Bulk Actions Module (loaded after main file) -->
     <script src="./assets/js/app-chi-tiet-mau-bulk-actions.js"></script>   

@@ -102,6 +102,44 @@ window.ChiTietMauBulkActions = (function () {
     const nextStatusLabel = window.getStatusLabel(nextStatus);
     const currentStatusLabel = window.getStatusLabel(transition.requiredStatus);
 
+    // const result = await Swal.fire({
+    //   title: '✅ Duyệt thầu',
+    //   html: `
+    //     <div class="text-start">
+    //       <p>Bạn xác nhận duyệt thầu cho <strong>${validItems.length}</strong> mẫu?</p>
+    //       <div class="alert alert-info">
+    //         <h6 class="mb-2">📋 Chuyển trạng thái:</h6>
+    //         <div><strong>${currentStatusLabel}</strong> → ${window.getStatusBadge(nextStatus)}</div>
+    //       </div>
+    //       <div class="mb-3">
+    //         <label class="form-label">Người duyệt:</label>
+    //         <input type="text" id="approverName" class="form-control" placeholder="Nhập tên người duyệt..." />
+    //       </div>
+    //       <div class="mb-3">
+    //         <label class="form-label">Ghi chú:</label>
+    //         <textarea id="approveNote" class="form-control" rows="2" placeholder="Ghi chú về duyệt thầu..."></textarea>
+    //       </div>
+    //     </div>
+    //   `,
+    //   icon: 'question',
+    //   showCancelButton: true,
+    //   confirmButtonColor: '#ffc107',
+    //   cancelButtonColor: '#6c757d',
+    //   confirmButtonText: '✅ Duyệt thầu',
+    //   cancelButtonText: 'Hủy',
+    //   preConfirm: () => {
+    //     const approverName = document.getElementById('approverName').value.trim();
+    //     const approveNote = document.getElementById('approveNote').value.trim();
+
+    //     if (!approverName) {
+    //       Swal.showValidationMessage('Vui lòng nhập tên người duyệt');
+    //       return false;
+    //     }
+
+    //     return { approverName, approveNote };
+    //   }
+    // });
+
     const result = await Swal.fire({
       title: '✅ Duyệt thầu',
       html: `
@@ -112,8 +150,15 @@ window.ChiTietMauBulkActions = (function () {
             <div><strong>${currentStatusLabel}</strong> → ${window.getStatusBadge(nextStatus)}</div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Người duyệt:</label>
-            <input type="text" id="approverName" class="form-control" placeholder="Nhập tên người duyệt..." />
+            <label class="form-label">Chọn nhà thầu:</label>
+            <select id="contractorSelect" class="form-select">
+              <option selected value="Công ty Thầu A">Công ty Thầu A</option>
+              <option value="Công ty Thầu B">Công ty Thầu B</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Ngày gửi thầu:</label>
+            <input type="date" id="sendDate" class="form-control" value="${new Date().toISOString().split('T')[0]}" />
           </div>
           <div class="mb-3">
             <label class="form-label">Ghi chú:</label>
@@ -127,39 +172,54 @@ window.ChiTietMauBulkActions = (function () {
       cancelButtonColor: '#6c757d',
       confirmButtonText: '✅ Duyệt thầu',
       cancelButtonText: 'Hủy',
-      preConfirm: () => {
-        const approverName = document.getElementById('approverName').value.trim();
+      preConfirm: () => {        
         const approveNote = document.getElementById('approveNote').value.trim();
+        const sendDate = document.getElementById('sendDate').value.trim();
+        const contractorSelect = document.getElementById('contractorSelect').value.trim();        
 
-        if (!approverName) {
-          Swal.showValidationMessage('Vui lòng nhập tên người duyệt');
-          return false;
-        }
-
-        return { approverName, approveNote };
+        return { sendDate, approveNote, contractorSelect };
       }
     });
 
     if (result.isConfirmed) {
       try {
         showLoading(true);
-        const { approverName, approveNote } = result.value;
-        let updatedCount = 0;
+        const { sendDate, approveNote, contractorSelect } = result.value;
 
-        validItems.forEach(item => {
+        const updatePromises = validItems.map(async item => {
           const originalItem = window.chiTietMauData.find(data => data.id === item.id);
-          if (originalItem) {
-            // Sử dụng nextStatus từ config
-            originalItem.trang_thai_tong_hop = nextStatus;
-            originalItem.trang_thai_phan_tich = nextStatus;
+          console.log('Original Item for Approve Thau:', originalItem);
+          if (!originalItem) return null;
+          
+          // Sử dụng nextStatus từ config
+          originalItem.trang_thai_tong_hop = nextStatus;
+          originalItem.trang_thai_phan_tich = nextStatus;
 
-            const now = new Date().toLocaleString('vi-VN');
-            const historyEntry = `${now} ${approverName} đã duyệt thầu${approveNote ? ' - ' + approveNote : ''}`;
-            originalItem.history = historyEntry + (originalItem.history ? '\n' + originalItem.history : '');
+          const now = new Date().toLocaleString('vi-VN');
+          const historyEntry = `${now} ${approverName} đã duyệt thầu${approveNote ? ' - ' + approveNote : ''}`;
+          originalItem.history = historyEntry + (originalItem.history ? '\n' + originalItem.history : '');
 
-            updatedCount++;
-          }
+          // Dữ liệu sẽ cập nhật vào server
+          const updateData = {
+            id: item.id,
+            trang_thai_tong_hop: nextStatus,
+            trang_thai_phan_tich: nextStatus,              
+            history: originalItem.history,
+            ngay_nhan_mau: sendDate,
+            nguoi_phan_tich: contractorSelect,
+            ghi_chu: originalItem.ghi_chu || ''
+          };
+
+          console.warn(`✅ Cập nhật mẫu duyệt thầu: ${updateData.id} - Trạng thái: CHO_GUI_MAU_THAU`);
+          
+          await window.updateStatus(updateData);
+
+          return item.id;
         });
+
+        // Đợi tất cả requests hoàn thành
+        const results = await Promise.allSettled(updatePromises);
+        const updatedCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
 
         refreshAfterBulkAction();
 

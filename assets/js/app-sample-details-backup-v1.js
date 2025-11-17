@@ -7,7 +7,7 @@
 import calcByFormulaService from './services/calc-by-formula.service.js';
 
 // Import partners data
-import { partners, indicators } from './data/data.js';
+import { partners } from './data/data.js';
 
 (function () {
   'use strict';
@@ -625,7 +625,7 @@ import { partners, indicators } from './data/data.js';
       showLoading(true);      
 
       const response = await sampleDetailsService.search({
-        limit: 200,
+        limit: 100,
         offset: 0,
         "search": { "ma_khach_hang": "admin" },
       })
@@ -655,9 +655,17 @@ import { partners, indicators } from './data/data.js';
    */
   async function loadDanhSachChiTieu() {
     try {
-      danhSachChiTieuData = indicators;
-      console.log(`📊 Đã tải ${indicators.length} chỉ tiêu`);
-      return indicators;
+      const response = await fetch('../../assets/json/danh-sach-chi-tieu.json');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      danhSachChiTieuData = data;
+      console.log(`📊 Đã tải ${data.length} chỉ tiêu`);
+      return data;
+      
     } catch (error) {
       console.error('❌ Lỗi tải danh sách chỉ tiêu:', error);
       throw error;
@@ -724,11 +732,12 @@ import { partners, indicators } from './data/data.js';
    * Cập nhật số liệu thống kê - 10 TRẠNG THÁI TỔNG HỢP
    */
   function updateProgressStats() {
-
     if (!chiTietMauData || chiTietMauData.length === 0) {
-      console.warn('⚠️ Không có dữ liệu để thống kê, các bảng dữ liệu đang rỗng');
+      console.warn('⚠️ Không có dữ liệu để thống kê');
       return;
-    }    
+    }
+
+    console.log('📊 Cập nhật thống kê tiến độ (10 trạng thái tổng hợp)...');
 
     // Đếm theo từng trạng thái trang_thai_tong_hop
     const stats = {};
@@ -2332,7 +2341,6 @@ import { partners, indicators } from './data/data.js';
     return columnMap[columnName] || 1;
   }
 
-  // #region [ XỬ LÝ FORM DỰA TRÊN CONFIG ]
   /**
    * Render form modal động từ config
    */
@@ -2342,20 +2350,6 @@ import { partners, indicators } from './data/data.js';
     modalBody.html(`<form id="chiTietMauForm">${formHTML}</form>`);
     
     console.log('✅ Form rendered successfully');
-  }
-
-   /**
-   * Đặt lại form
-   */
-  function resetForm() {
-    formBuilder.resetForm();
-  }
-
-  /**
-   * Điền dữ liệu vào form
-   */
-  function populateForm(data) {        
-    formBuilder.populateForm(data);
   }
 
   /**
@@ -2370,7 +2364,9 @@ import { partners, indicators } from './data/data.js';
     if (mode === 'view') return;
 
     // Collect form data từ config
-    const formData = formBuilder.collectFormData();    
+    const formData = formBuilder.collectFormData();
+
+    console.warn('📝 Form Data:', formData);    
 
     // Validate
     const validationResult = formBuilder.validateForm(formData);
@@ -2386,9 +2382,7 @@ import { partners, indicators } from './data/data.js';
       updateRecord(formData);
     }
   } 
-  // #endregion
 
-  // #region [ CÁC HÀM XỬ LÝ DỮ LIỆU CRUD ]
   /**
    * Thêm bản ghi mới
    */
@@ -2428,10 +2422,12 @@ import { partners, indicators } from './data/data.js';
     try {
       showLoading(true);            
      
-      const id = updateData.id;          
+      const id = updateData.id;  
+      console.warn(JSON.stringify(updateData));   
   
       // Cập nhật dữ liệu vào database
-      const updatedData = await sampleDetailsService.update(id, updateData);       
+      const updatedData = await sampleDetailsService.update(id, updateData);
+      console.warn(updatedData);     
 
       // Cập nhật local data
       const index = chiTietMauData.findIndex(item => item.id == id);      
@@ -2463,14 +2459,17 @@ import { partners, indicators } from './data/data.js';
    * Cập nhật trạng thái bản ghi
    */
   async function updateStatus(updateData) {    
-    try {           
+    try {
+
+      console.warn(JSON.stringify(updateData));
+     
       const id = updateData.id;        
   
       // Cập nhật dữ liệu vào database
       await sampleDetailsService.updateNotValidated(id, updateData);
 
     } catch (error) {
-      console.error('❌ Lỗi ở hàm updateStatus xảy ra khi update cho id', id, ':', error.message);
+      console.error('❌ Lỗi cập nhật cho id', id, ':', error.message);
     }
   }
 
@@ -2516,9 +2515,7 @@ import { partners, indicators } from './data/data.js';
       showNotification('Xóa thất bại: ' + error.message, 'error');
     }
   }
-  // #endregion
 
-  // #region [ XỬ LÝ HÀNG LOẠT - CHƯA DÙNG ĐƯỢC VÌ LỖI CORS]
   /**
    * Thêm hàng loạt
    */
@@ -2527,14 +2524,16 @@ import { partners, indicators } from './data/data.js';
       showLoading(true);
 
       // Gọi Service
-      const createdData = await sampleDetailsService.bulkCreate(dataArray);      
+      const createdData = await sampleDetailsService.bulkCreate(dataArray);
 
-      // Cập nhật local data
-      chiTietMauData.push(...createdData);
+      console.warn("Kết quả phản hồi bulk create record", createdData);
 
-      // Refresh UI
-      chiTietMauTable.clear().rows.add(chiTietMauData).draw();
-      refreshProgressStats();
+      // // Cập nhật local data
+      // chiTietMauData.push(createdData);
+
+      // // Refresh UI
+      // chiTietMauTable.clear().rows.add(chiTietMauData).draw();
+      // refreshProgressStats();
 
       showNotification('Thêm mới hàng loạt thành công', 'success');
       showLoading(false);
@@ -2555,19 +2554,16 @@ import { partners, indicators } from './data/data.js';
       showLoading(true);
 
       // Gọi Service
-      const updatedData = await sampleDetailsService.bulkUpdate(updates);      
+      const updatedData = await sampleDetailsService.bulkUpdate(updates);
 
-      // Cập nhật local data
-      updatedData.forEach(updatedItem => {
-        const index = chiTietMauData.findIndex(item => item.id === updatedItem.id);
-        if (index !== -1) {
-          chiTietMauData[index] = updatedItem;
-        }
-      });
+      console.warn("Kết quả phản hồi bulk update record", updatedData);
 
-      // Refresh UI
-      chiTietMauTable.clear().rows.add(chiTietMauData).draw();
-      refreshProgressStats();
+      // // Cập nhật local data
+      // chiTietMauData.push(createdData);
+
+      // // Refresh UI
+      // chiTietMauTable.clear().rows.add(chiTietMauData).draw();
+      // refreshProgressStats();
 
       showNotification('Cập nhật hàng loạt thành công', 'success');
       showLoading(false);
@@ -2579,7 +2575,20 @@ import { partners, indicators } from './data/data.js';
       showNotification('Cập nhật hàng loạt thất bại: ' + error.message, 'error');
     }
   }
-  // #endregion 
+
+  /**
+   * Đặt lại form
+   */
+  function resetForm() {
+    formBuilder.resetForm();
+  }
+
+  /**
+   * Điền dữ liệu vào form
+   */
+  function populateForm(data) {        
+    formBuilder.populateForm(data);
+  }
 
   /**
    * Hiển thị/ẩn loading spinner
@@ -4256,7 +4265,7 @@ import { partners, indicators } from './data/data.js';
             history: originalItem.history,
             ghi_chu: originalItem.ghi_chu || ''
           };
-          
+          console.warn(`✅ Cập nhật mẫu phân tích: ${updateData.id} - Trạng thái: DANG_PHAN_TICH`);
           await updateStatus(updateData);
 
           return item.id;
@@ -4302,7 +4311,7 @@ import { partners, indicators } from './data/data.js';
     
     let optionHtml = '';
     partners.forEach((partner, index) => {
-      optionHtml += `<option ${index == 0 ? 'selected ' : ''}value="${partner.name}">${partner.name}</option>`;
+      optionHtml += `<option ${index == 0 ? 'selected ' : ''}value="${partner}">${partner}</option>`;
     });
 
     const result = await Swal.fire({
@@ -4377,7 +4386,9 @@ import { partners, indicators } from './data/data.js';
             ngay_nhan_mau: sendDate,
             nguoi_phan_tich: contractor,
             ghi_chu: originalItem.ghi_chu || ''
-          };          
+          };
+
+          console.warn(`✅ Cập nhật mẫu duyệt thầu: ${updateData.id} - Trạng thái: CHO_GUI_MAU_THAU`);
           
           await updateStatus(updateData);
 
@@ -4457,7 +4468,8 @@ import { partners, indicators } from './data/data.js';
             history: originalItem.history,            
             ghi_chu: originalItem.ghi_chu || ''
           };
-          
+
+          console.warn(`✅ Cập nhật mẫu gửi thầu: ${updateData.id} - Trạng thái: DANG_PHAN_TICH`);
           await updateStatus(updateData);
           
           return item.id;
@@ -4587,6 +4599,8 @@ import { partners, indicators } from './data/data.js';
           history: item.history
         };
 
+        console.warn(`✅ Cập nhật kết quả mẫu: ${updateData.id} - KQ TT: ${ketQuaThucTe} - KQ IP: ${ketQuaInPhieu}`);
+        console.warn(updateData);
         await updateStatus(updateData);
 
         return item.id;        
@@ -4944,13 +4958,264 @@ import { partners, indicators } from './data/data.js';
       confirmBtn.innerHTML = confirmBtn.dataset.originalText || '💾 Lưu thay đổi';
       confirmBtn.disabled = false;
     }
-  }  
+  }
+
+  /**
+   * Validate dữ liệu đầu vào
+   */
+  function validateInput(value, type = 'text', required = false) {
+    if (required && (!value || !value.toString().trim())) {
+      return { valid: false, message: 'Trường này không được để trống' };
+    }
+
+    if (type === 'email' && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return { valid: false, message: 'Email không hợp lệ' };
+      }
+    }
+
+    if (type === 'number' && value) {
+      if (isNaN(Number(value))) {
+        return { valid: false, message: 'Phải là số hợp lệ' };
+      }
+    }
+
+    return { valid: true };
+  }
 
   // Initialize when document is ready
   $(window).on("load", function () {
-    initializeApp();       
+
+    initializeApp();   
+
+    // Test SweetAlert2 (for debugging)
+    window.testSweetAlert = function () {
+      Swal.fire({
+        title: 'Test SweetAlert2',
+        text: 'Nếu bạn thấy thông báo này, SweetAlert2 hoạt động bình thường!',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+    };
+
+    // Test Bulk Actions (for debugging)
+    window.testBulkActions = function () {
+      // Giả lập chọn một số dòng
+      $('.row-checkbox').slice(0, 3).prop('checked', true).trigger('change');
+    };
+
+    // Test Workflow Actions (for debugging)
+    window.testWorkflow = function (action = 'receive_sample') {
+      const mockSelectedItems = [
+        { id: 'test_1', ma_mau: 'TEST-001', tien_do_phan_tich: '1.Chờ QT' },
+        { id: 'test_2', ma_mau: 'TEST-002', tien_do_phan_tich: '1.Chờ QT' }
+      ];
+
+      selectedRows.clear();
+      mockSelectedItems.forEach(item => selectedRows.set(item.id, item));
+
+      handleBulkAction(action);
+    };
   });
-   
+
+  // ============================================
+  // BULK UPDATE RESULT FUNCTIONS
+  // ============================================
+
+  /**
+   * Mở modal cập nhật kết quả hàng loạt
+   */
+  /**
+   * Mở modal cập nhật kết quả hàng loạt
+   * Validation: Chỉ cho phép items ở trạng thái DANG_PHAN_TICH hoặc PHAN_TICH_LAI
+   */
+  function openBulkUpdateResultModal(selectedItems) {
+    if (!selectedItems || selectedItems.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn bản ghi',
+        text: 'Vui lòng chọn ít nhất một bản ghi để cập nhật kết quả!',
+        confirmButtonText: 'Đóng'
+      });
+      return;
+    }
+
+    // Validation: Chỉ cho phép trạng thái DANG_PHAN_TICH hoặc PHAN_TICH_LAI
+    const validItems = selectedItems.filter(
+      item => item.trang_thai_tong_hop === 'DANG_PHAN_TICH' || item.trang_thai_tong_hop === 'PHAN_TICH_LAI'
+    );
+    const invalidItems = selectedItems.filter(
+      item => item.trang_thai_tong_hop !== 'DANG_PHAN_TICH' && item.trang_thai_tong_hop !== 'PHAN_TICH_LAI'
+    );
+
+    if (invalidItems.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Trạng thái không hợp lệ',
+        html: `
+          <div class="text-start">
+            <p>⚠️ Có <strong>${invalidItems.length}</strong> mục không ở trạng thái phù hợp để cập nhật kết quả.</p>
+            <div class="alert alert-info">
+              <strong>Yêu cầu:</strong> Chỉ có thể cập nhật kết quả cho mẫu ở trạng thái:
+              <ul>
+                <li>Đang phân tích</li>
+                <li>Phân tích lại</li>
+              </ul>
+            </div>
+            <p>Chỉ có <strong>${validItems.length}</strong> mục hợp lệ sẽ được xử lý.</p>
+          </div>
+        `,
+        confirmButtonText: validItems.length > 0 ? 'Tiếp tục với ' + validItems.length + ' mục' : 'Đóng',
+        showCancelButton: validItems.length > 0,
+        cancelButtonText: 'Hủy'
+      }).then(result => {
+        if (result.isConfirmed && validItems.length > 0) {
+          // Tiếp tục với valid items
+          showUpdateResultModal(validItems);
+        }
+      });
+      return;
+    }
+
+    // Tất cả items đều valid
+    showUpdateResultModal(validItems);
+  }
+
+  /**
+   * Helper function: Hiển thị modal cập nhật kết quả
+   */
+  function showUpdateResultModal(selectedItems) {
+    console.log(`📝 [BULK UPDATE RESULT] Opening modal for ${selectedItems.length} items`);
+
+    // Cập nhật số lượng
+    $('#updateResultCount').text(selectedItems.length);
+
+    // Tạo table rows
+    const tbody = $('#updateResultTableBody');
+    tbody.empty();
+
+    selectedItems.forEach((item, index) => {
+      const rowHtml = `
+        <tr data-id="${item.id}">
+          <td class="text-center">${index + 1}</td>
+          <td>${item.ma_mau || '-'}</td>
+          <td>${item.ten_chi_tieu || '-'}</td>
+          <td>
+            <input 
+              type="text" 
+              class="form-control form-control-sm result-input" 
+              data-id="${item.id}"
+              value="${item.ket_qua_thuc_te || ''}"
+              placeholder="Nhập kết quả..."
+            />
+          </td>
+          <td>
+            <input 
+              type="text" 
+              class="form-control form-control-sm result-display" 
+              data-id="${item.id}"
+              value="${item.ket_qua_in_phieu || ''}"
+              readonly
+              style="background-color: #f8f9fa;"
+            />
+          </td>
+        </tr>
+      `;
+      tbody.append(rowHtml);
+    });
+
+    // Bind event cho input kết quả thực tế
+    $('.result-input').on('input', function () {
+      const itemId = $(this).data('id');
+      const ketQuaThucTe = $(this).val().trim();
+
+      // Tính toán kết quả in phiếu
+      const ketQuaInPhieu = calculateKetQuaInPhieu(itemId, ketQuaThucTe);
+
+      // Cập nhật vào ô kết quả in phiếu
+      $(`.result-display[data-id="${itemId}"]`).val(ketQuaInPhieu);
+    });
+
+    // Hiển thị modal
+    $('#bulkUpdateResultModal').modal('show');
+  }
+
+  /**
+   * Tính toán kết quả in phiếu theo công thức:
+   * IF(ISBLANK([ket_qua_thuc_te]), "",
+   *    IF([ket_qua_thuc_te] < [LOD],
+   *       "KPH\n(LOD = [LOD])",
+   *       [ket_qua_thuc_te]
+   *    )
+   * )
+   */
+  function calculateKetQuaInPhieu(itemId, ketQuaThucTe) {
+    // Nếu kết quả thực tế trống → trả về rỗng
+    if (!ketQuaThucTe || ketQuaThucTe === '') {
+      return '';
+    }
+
+    // Tìm item trong chiTietMauData
+    const item = chiTietMauData.find(x => x.id === itemId);
+    if (!item) {
+      console.warn(`⚠️ [CALC] Item not found: ${itemId}`);
+      return ketQuaThucTe;
+    }
+
+    // Tìm chỉ tiêu từ id_chi_tieu hoặc ten_chi_tieu
+    const chiTieuId = item.id_chi_tieu || item.ten_chi_tieu;
+    const chiTieu = danhSachChiTieuData.find(
+      ct => ct.id_chi_tieu === chiTieuId || ct.chi_tieu === chiTieuId || ct.ten_chi_tieu_khi_in === chiTieuId
+    );
+
+    if (!chiTieu || !chiTieu.gia_tri_LOD) {
+      console.log(`ℹ️ [CALC] No LOD found for item ${itemId}, using raw value`);
+      return ketQuaThucTe;
+    }
+
+    // Parse giá trị
+    const ketQuaNum = parseFloat(ketQuaThucTe);
+    const lodValue = parseFloat(chiTieu.gia_tri_LOD);
+
+    // Kiểm tra nếu không phải số
+    if (isNaN(ketQuaNum)) {
+      console.log(`ℹ️ [CALC] Non-numeric result for item ${itemId}, using raw value`);
+      return ketQuaThucTe;
+    }
+
+    // So sánh với LOD
+    if (ketQuaNum < lodValue) {
+      return `KPH\n(LOD = ${chiTieu.gia_tri_LOD})`;
+    } else {
+      return ketQuaThucTe;
+    }
+  }  
+
+  // ============================================================================
+  // NEW WORKFLOW FUNCTIONS (9 TRẠNG THÁI)
+  // ============================================================================
+  // NOTE: Các bulk action functions đã được chuyển sang file riêng:
+  // → assets/js/app-chi-tiet-mau-bulk-actions.js
+  // Functions đã chuyển:
+  // - executeBulkApproveThau (CHO_DUYET_THAU → CHO_GUI_MAU_THAU)
+  // - executeBulkSendThau (CHO_GUI_MAU_THAU → DANG_PHAN_TICH)
+  // - executeBulkReanalyzed (PHAN_TICH_LAI → CHO_DUYET_KQ)
+  //
+  // TODO: Chuyển tiếp các bulk actions còn lại:
+  // - executeBulkReceiveTarget (CHO_CHUYEN_MAU → DANG_PHAN_TICH)
+  // - saveBulkUpdateResult (DANG_PHAN_TICH → CHO_DUYET_KQ)
+  // - executeBulkApprove (CHO_DUYET_KQ → HOAN_THANH/PHAN_TICH_LAI)
+  // ============================================================================
+
+  // ============================================================================
+  // END OF NEW WORKFLOW FUNCTIONS
+  // ============================================================================
+
+  // ============================================================================
+  // EXPOSE TO WINDOW SCOPE - For external bulk actions module
+  // ============================================================================
+
   // Expose data
   window.chiTietMauData = chiTietMauData;
 

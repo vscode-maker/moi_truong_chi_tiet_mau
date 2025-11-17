@@ -35,8 +35,7 @@
      * Render hidden fields
      * @private
      */
-    renderHiddenFields() {
-      console.log(this.config);
+    renderHiddenFields() {    
       
       if (!this.config.hiddenFields) return '';
 
@@ -271,7 +270,7 @@
             formData[field.name] = $(`#${field.id}`).val();
           }
         });
-      }
+      } 
 
       // Collect từng section
       for (const [sectionKey, sectionConfig] of Object.entries(this.config)) {

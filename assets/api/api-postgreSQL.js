@@ -10,6 +10,8 @@
     baseUrl: 'https://api-cefinea.tamk.win',
     endpoints: {
       chiTietMau: '/cefinea/chi-tiet-mau',
+      bulkSampleDetails: '/cefinea/chi-tiet-mau-bulk',
+
       donHang: '/cefinea/don-hang',
       maMau: '/cefinea/ma-mau',
       nhanVien: '/cefinea/nhan-vien',
@@ -27,7 +29,7 @@
   const createHeaders = () => ({
     'Authorization': `Bearer ${POSTGRESQL_API_CONFIG.token}`,
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',    
   });
 
   /**
@@ -35,18 +37,23 @@
    * @param {Response} response - Fetch response object
    * @returns {Promise<Object>} Parsed JSON data
    */
-  const handleApiResponse = async response => {
-
-    const success = response.ok;
+  const handleApiResponse = async response => {    
+    const success = response.ok || response.success || false;
     try {
       let data = await response.clone().json();
       let pagination = null;     
       if (success && data) {
+
+        // Nếu có dữ liệu phân trang
         if (data.pagination) {
           pagination = data.pagination;
         }
 
-        if (data.data && Array.isArray(data.data)) {
+        // Xử lý đặc biệt cho tạo/cập nhật hàng loạt
+        // Kết quả trả về là results
+        if (data.results && Array.isArray(data.results)) {
+          data = data.results.map(record => supplementDefaultFields(record));
+        } else if (data.data && Array.isArray(data.data)) {
           data = data.data.map(record => supplementDefaultFields(record));
         } else if (typeof data === 'object') {
           data = supplementDefaultFields(data);
@@ -60,26 +67,7 @@
       return res;
     } catch (error) {
       console.error('❌ Error parsing JSON in handleApiResponse:', error.message);
-    }
-
-    // if (!success) {
-    //   const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-
-    //   // console.error('❌ PostgreSQL API Error:', {
-    //   //   status: response.status,
-    //   //   statusText: response.statusText,
-    //   //   error: errorData
-    //   // });
-
-    //   // throw {
-    //   //   status: response.status,
-    //   //   statusText: response.statusText,
-    //   //   message: errorData.message || 'API request failed',
-    //   //   ...errorData
-    //   // };
-    // }
-
-    // return response.json();
+    }    
   };
 
   /**
@@ -140,6 +128,7 @@
       clearTimeout(timeoutId);
       return response;
     } catch (error) {
+      console.error(error)
       clearTimeout(timeoutId);
       
       // Kiểm tra xem có phải lỗi timeout không
@@ -290,6 +279,56 @@
     } catch (error) {
       // Ném lỗi ra ngoài cho hàm gọi xử lý      
       throw new Error(`Không thể cập nhật chi tiết mẫu ID ${id}: ${error.message}`);
+    }
+  };
+
+  /**
+   * Tạo hàng loạt
+   * @returns {Promise<Object>}
+   */
+  const bulkCreateSampleDetails = async (dataArray) => {
+    try {
+      console.log(`🔄 Creating hàng loạt chi tiết mẫu:`, dataArray);
+
+      const url = `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.bulkSampleDetails}/create`;      
+
+      const response = await fetchWithTimeout(url, {
+        method: 'POST',
+        body: JSON.stringify(dataArray),
+      });
+
+      console.warn('✅ Bulk create response:', response);
+
+      return await handleApiResponse(response);
+    } catch (error) {
+      // Ném lỗi ra ngoài cho hàm gọi xử lý
+      console.error(error)
+      throw new Error(`Không thể tạo hàng loạt chi tiết mẫu: ${error}`);
+    }
+  };
+
+  /**
+   * Cập nhật hàng loạt (bulk update)
+   * @param {Array<Object>} updates - Mảng các object {id, data}
+   * @returns {Promise<Object>}
+   */
+  const bulkUpdateSampleDetails = async (updates) => {
+    try {
+      console.log(`🔄 Updating hàng loạt chi tiết mẫu:`, updates);
+
+      const url = `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.bulkSampleDetails}/edit`;
+
+      const response = await fetchWithTimeout(url, {
+        method: 'POST',
+        body: JSON.stringify(updates),
+      });
+
+      console.warn('✅ Bulk update response:', response);
+
+      return await handleApiResponse(response);
+    } catch (error) {
+      // Ném lỗi ra ngoài cho hàm gọi xử lý
+      throw new Error(`Không thể cập nhật hàng loạt chi tiết mẫu: ${error}`);
     }
   };
 
@@ -579,6 +618,8 @@
   window.PostgreSQL_ChiTietMau = {
     layDanhSach: layDanhSachChiTietMau,
     search: searchSampleDetails,
+    bulkCreate: bulkCreateSampleDetails,
+    bulkUpdate: bulkUpdateSampleDetails,
     layTheoId: layChiTietMauTheoId,
     taoMoi: taoChiTietMau,
     capNhat: capNhatChiTietMau,
