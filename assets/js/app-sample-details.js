@@ -1025,13 +1025,13 @@ import { partners, indicators } from './data/data.js';
       // Sắp xếp theo cột nhóm đầu tiên
       const firstGroupColumn = selectedGroupColumns[0];
       const columnIndex = sampleDetailsTableService.getColumnIndexByValue(GROUP_BY_COLUMNS_CONFIG, firstGroupColumn);
-      tableConfig.order = [[columnIndex, 'asc']];
+      tableConfig.order = [[columnIndex, 'desc']];
 
     } else {
       // Sắp xếp theo Hạn hoàn thành khi tắt grouping (ASCENDING - sớm nhất trước)
       // Lấy index của cột mặc định
       const defaultColumnIndex = sampleDetailsTableService.getColumnIndexByValue(GROUP_BY_COLUMNS_CONFIG, 'han_hoan_thanh_pt_gm');
-      tableConfig.order = [[defaultColumnIndex, 'asc']];
+      tableConfig.order = [[defaultColumnIndex, 'desc']];
     }
 
     // Thêm columnDefs - ĐÃ XÓA RESPONSIVE PRIORITY - HIỂN THỊ TẤT CẢ CỘT
