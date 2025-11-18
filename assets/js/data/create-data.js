@@ -105,7 +105,11 @@ function createBulkSampleDetailsData(idCounter) {
             if (trangThai == "PHAN_TICH_LAI") trangThaiPhanTich = "Chờ phân tích lại"                
             
             let ngayNhanMau = ""
-            if (["DANG_PHAN_TICH", "CHO_DUYET_THAU", "CHO_GUI_MAU_THAU", "CHO_DUYET_KQ", "HOAN_THANH", "PHAN_TICH_LAI"].includes(trangThai)) ngayNhanMau = "2025-06-01"
+            let hanHoanThanhPTGM = ""
+            if (["DANG_PHAN_TICH", "CHO_DUYET_THAU", "CHO_GUI_MAU_THAU", "CHO_DUYET_KQ", "HOAN_THANH", "PHAN_TICH_LAI"].includes(trangThai)) {
+              ngayNhanMau = "2025-06-01"
+              hanHoanThanhPTGM = `2025-08-${randomFromArray(['01','05','10','15','20','25','30'])}`
+            }
 
             let ghiChu = ""
             if (trangThai == "CHO_DUYET_KQ") ghiChu = "Chờ phê duyệt kết quả"
@@ -118,6 +122,9 @@ function createBulkSampleDetailsData(idCounter) {
 
             let ngayHoanThanhPTGM = ""
             if (["HOAN_THANH", "CHO_DUYET_KQ", "PHAN_TICH_LAI"].includes(trangThai)) ngayHoanThanhPTGM = "2025-07-01"
+
+            let ngayTraKQ = ""
+            if (["HOAN_THANH"].includes(trangThai)) ngayTraKQ = "2025-07-05"
 
             let thoiGianDuyet = ""
             if (["HOAN_THANH", "PHAN_TICH_LAI"].includes(trangThai)) thoiGianDuyet = "2025-07-10"
@@ -153,15 +160,18 @@ function createBulkSampleDetailsData(idCounter) {
               canh_bao_phan_tich: canhBaoPhanTich,
 
               nguoi_duyet: nguoiDuyet,
-              phe_duyet: "",
+              phe_duyet: pheDuyet,
 
               trang_thai_phan_tich: trangThaiPhanTich,
               ngay_nhan_mau: ngayNhanMau,
 
+              ngay_tra_ket_qua: ngayTraKQ,
+
               ghi_chu: ghiChu,
               ket_qua_thuc_te: ketQuaThucTe,
               ket_qua_in_phieu: ketQuaInPhieu,
-              ngay_hoan_thanh_ptgm: ngayHoanThanhPTGM,
+              ngay_hoan_thanh_pt_gm: ngayHoanThanhPTGM,
+              han_hoan_thanh_pt_gm: hanHoanThanhPTGM,
               thoi_gian_duyet: thoiGianDuyet,
 
               trang_thai_tong_hop: trangThai, // Chia ra các giai đoạn khác nhau

@@ -816,7 +816,7 @@ import { partners, indicators } from './data/data.js';
   }
 
   /**
-   * Áp dụng filter theo tiến độ - CẬP NHẬT CHO 10 TRẠNG THÁI
+   * XỬ LÝ ÁP DỤNG FILTER TIẾN ĐỘ
    */
   function applyProgressFilter(filter) {
     if (!chiTietMauTable) {
@@ -824,7 +824,14 @@ import { partners, indicators } from './data/data.js';
       return;
     }
 
-    console.log('🔍 Áp dụng filter trang_thai_tong_hop =', filter);
+    console.log('🔍 Áp dụng filter: ', filter);
+
+    // 🔥 QUAN TRỌNG: Clear tất cả selection khi chuyển filter
+    // Vì mỗi trạng thái có actions khác nhau, cần bỏ chọn các dòng cũ
+    selectedRows.clear();
+    $('.row-checkbox').prop('checked', false);
+    elements.selectAll.prop('checked', false);
+    elements.bulkActionsToolbar.addClass('d-none'); // Ẩn toolbar ngay lập tức
 
     // Lưu trạng thái filter hiện tại
     currentStatusFilter = filter;
@@ -1177,16 +1184,18 @@ import { partners, indicators } from './data/data.js';
         width: '150px'
       },
       {
-        // Tiền tố
+        // Tiền tố ẨN
         targets: 14,
         width: '80px',
-        className: 'text-center'
+        className: 'text-center',
+        visible: false // Ẩn cột này
       },
       {
-        // Ưu tiên
+        // Ưu tiên ẨN
         targets: 15,
         width: '80px',
-        className: 'text-center'
+        className: 'text-center',
+        visible: false // Ẩn cột này
       },
       {
         // Phê duyệt
@@ -1341,7 +1350,10 @@ import { partners, indicators } from './data/data.js';
         title: 'Người duyệt',
         width: '150px',
         render: function (data, type, row) {
-          const tenND = handleNullValue(data, row.ma_nguoi_duyet || '-');
+          if (data === null || data === undefined || data === '') {
+            return 'Chưa duyệt';
+          }
+          const tenND = handleNullValue(data, row.nguoi_duyet || 'Chưa duyệt');
           return tenND;
         }
       },
@@ -1418,7 +1430,7 @@ import { partners, indicators } from './data/data.js';
         data: 'ket_qua_thuc_te',
         title: 'Kết quả thực tế',
         width: '120px',
-        className: 'text-end',
+        className: 'text-center',
         render: function (data, type, row) {
           return handleNullValue(data);
         }
@@ -1427,6 +1439,7 @@ import { partners, indicators } from './data/data.js';
         data: 'ket_qua_in_phieu',
         title: 'Kết quả in phiếu',
         width: '150px',
+        className: 'text-center',
         render: function (data, type, row) {
           const ketQua = handleNullValue(data);
           // Hiển thị với line break nếu có \n
@@ -3144,327 +3157,6 @@ import { partners, indicators } from './data/data.js';
   // === WORKFLOW BULK ACTIONS IMPLEMENTATION ===
 
   /**
-   * Bulk action: Duyệt kết quả (Đạt hoặc Xét lại)
-   */
-  async function executeBulkApproveResultV1(selectedItems, approvalStatus) {
-    console.log('🚀 [BULK APPROVE] Starting bulk approve process:', {
-      itemsCount: selectedItems.length,
-      approvalStatus: approvalStatus,
-      selectedItems: selectedItems.map(item => ({ id: item.id, ma_mau: item.ma_mau }))
-    });
-
-    if (selectedItems.length === 0) {
-      console.warn('⚠️ [BULK APPROVE] No items selected');
-      showNotification('Vui lòng chọn ít nhất một chỉ tiêu', 'warning');
-      return;
-    }
-
-    const statusText = approvalStatus === '1.Đạt' ? 'Đạt' : 'Xét lại';
-    const statusIcon = approvalStatus === '1.Đạt' ? '✅' : '⚠️';
-    const statusColor = approvalStatus === '1.Đạt' ? 'success' : 'warning';
-
-    const result = await Swal.fire({
-      title: `${statusIcon} Xác nhận duyệt kết quả`,
-      html: `
-        <div class="text-center">
-          <p class="mb-3">Bạn xác nhận duyệt <strong>${selectedItems.length}</strong> chỉ tiêu với kết quả <span class="badge bg-${statusColor}">${statusText}</span>?</p>
-          <div class="mb-3">
-            <label class="form-label">Người duyệt:</label>
-            <input type="text" id="reviewerName" class="form-control" placeholder="Nhập tên người duyệt..." required />
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Ghi chú duyệt:</label>
-            <textarea id="reviewNote" class="form-control" rows="3" placeholder="Nhập ghi chú về kết quả duyệt..."></textarea>
-          </div>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: approvalStatus === '1.Đạt' ? '#198754' : '#ffc107',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: `${statusIcon} Xác nhận ${statusText}`,
-      cancelButtonText: '❌ Hủy',
-      backdrop: true,
-      allowOutsideClick: false,
-      preConfirm: () => {
-        const reviewerName = document.getElementById('reviewerName').value.trim();
-        const reviewNote = document.getElementById('reviewNote').value.trim();
-
-        if (!reviewerName) {
-          Swal.showValidationMessage('Vui lòng nhập tên người duyệt');
-          return false;
-        }
-
-        return { reviewerName, reviewNote };
-      }
-    });
-
-    if (result.isConfirmed) {
-      const { reviewerName, reviewNote } = result.value;
-      console.log('✅ [BULK APPROVE] User confirmed with:', {
-        reviewerName,
-        reviewNote: reviewNote || 'No note',
-        approvalStatus
-      });
-
-      try {
-        showLoading(true);
-        console.log('⏳ [BULK APPROVE] Starting data update process...');
-
-        let updatedCount = 0;
-        const currentTime = new Date().toLocaleString('vi-VN');
-        const updatedItems = [];
-        console.log('📅 [BULK APPROVE] Current time:', currentTime);
-
-        selectedItems.forEach((item, index) => {
-          console.log(`🔄 [BULK APPROVE] Processing item ${index + 1}/${selectedItems.length}:`, item.id, item.ma_mau);
-
-          const originalItem = chiTietMauData.find(data => data.id === item.id);
-          if (!originalItem) {
-            console.error(`❌ [BULK APPROVE] Original item not found for ID: ${item.id}`);
-            return;
-          }
-
-          console.log('📋 [BULK APPROVE] Found original item:', {
-            id: originalItem.id,
-            ma_mau: originalItem.ma_mau,
-            current_phe_duyet: originalItem.phe_duyet,
-            current_tien_do: originalItem.tien_do_phan_tich
-          });
-
-          if (originalItem) {
-            // Tạo object chứa các thay đổi
-            const changes = {
-              id: originalItem.id,
-              phe_duyet: approvalStatus,
-              ma_nguoi_duyet: reviewerName,
-              thoi_gian_duyet: currentTime
-            };
-            console.log('📝 [BULK APPROVE] Created changes object:', changes);
-
-            // Cập nhật trạng thái tiến độ tùy theo kết quả duyệt
-            if (approvalStatus === '1.Đạt') {
-              changes.tien_do_phan_tich = '7.Hoàn thành';
-              console.log('✅ [BULK APPROVE] Set status to: Hoàn thành');
-            } else if (approvalStatus === '2.Xét lại') {
-              changes.tien_do_phan_tich = '8.Cần xét lại';
-              console.log('⚠️ [BULK APPROVE] Set status to: Cần xét lại');
-            }
-
-            // Cập nhật history
-            const historyEntry = `${currentTime} ${reviewerName} đã duyệt: ${statusText}`;
-            changes.history = historyEntry + (originalItem.history ? '\n' + originalItem.history : '');
-
-            // Thêm ghi chú nếu có
-            if (reviewNote) {
-              if (originalItem.ghi_chu) {
-                changes.ghi_chu = `[${statusText}] ${reviewNote}\n` + originalItem.ghi_chu;
-              } else {
-                changes.ghi_chu = `[${statusText}] ${reviewNote}`;
-              }
-            }
-
-            // Apply changes to original item
-            Object.assign(originalItem, changes);
-            updatedItems.push(changes);
-            updatedCount++;
-
-            // Debug: Log updated item
-            console.log('🔍 Updated item:', {
-              id: originalItem.id,
-              ma_mau: originalItem.ma_mau,
-              phe_duyet: originalItem.phe_duyet,
-              ma_nguoi_duyet: originalItem.ma_nguoi_duyet,
-              thoi_gian_duyet: originalItem.thoi_gian_duyet,
-              history: originalItem.history ? originalItem.history.substring(0, 100) + '...' : 'None'
-            });
-          }
-        });
-
-        console.log('📊 [BULK APPROVE] Processing completed:', {
-          totalItems: selectedItems.length,
-          updatedCount: updatedCount,
-          updatedItemsCount: updatedItems.length
-        });
-
-        // Cập nhật DataTable mà không thay đổi sort order
-        console.log('🔄 [BULK APPROVE] Updating DataTable...');
-        const updatedRowsCount = updateTableRowInPlace(updatedItems);
-
-        // Clear selection
-        console.log('🧹 [BULK APPROVE] Clearing selection...');
-        refreshAfterBulkAction();
-
-        // Hiển thị thông báo thành công
-        showNotification(
-          `${statusIcon} Đã duyệt thành công ${updatedCount} chỉ tiêu với kết quả: ${statusText}`,
-          statusColor === 'success' ? 'success' : 'warning'
-        );
-
-        console.log(
-          `${statusIcon} [BULK APPROVE] COMPLETED: ${updatedCount} items approved as ${statusText}, ${updatedRowsCount} rows highlighted`
-        );
-      } catch (error) {
-        console.error('❌ Lỗi khi duyệt kết quả:', error);
-        showNotification('Có lỗi xảy ra khi duyệt kết quả: ' + error.message, 'error');
-      } finally {
-        showLoading(false);
-      }
-    }
-  }
-
-  /**
-   * Xử lý bulk phê duyệt (Đạt/Xét lại)
-   * Show 1 popup duy nhất với dropdown chọn loại + form nhập thông tin
-   */
-  /**
-   * Bulk Action: Phê duyệt kết quả
-   * CHO_DUYET_KQ → HOAN_THANH (Đạt) hoặc PHAN_TICH_LAI (Không đạt)
-   */
-  async function executeBulkApprove(selectedItems) {
-    if (!selectedItems || selectedItems.length === 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Chưa chọn bản ghi',
-        text: 'Vui lòng chọn ít nhất một bản ghi để phê duyệt!',
-        confirmButtonText: 'Đóng'
-      });
-      return;
-    }
-
-    // Kiểm tra trạng thái CHO_DUYET_KQ
-    const validItems = selectedItems.filter(item => item.trang_thai_tong_hop === 'CHO_DUYET_KQ');
-    const invalidItems = selectedItems.filter(item => item.trang_thai_tong_hop !== 'CHO_DUYET_KQ');
-
-    if (invalidItems.length > 0) {
-      showNotification(
-        `⚠️ Có ${invalidItems.length} mục không ở trạng thái "Chờ duyệt KQ". Chỉ xử lý được ${validItems.length} mục hợp lệ.`,
-        'warning'
-      );
-      if (validItems.length === 0) return;
-    }
-
-    console.log(`✅ [BULK APPROVE] Starting approval for ${validItems.length} items`);
-
-    const result = await Swal.fire({
-      title: '✅ Phê duyệt kết quả',
-      html: `
-        <div class="text-start">
-          <p>Phê duyệt kết quả cho <strong>${validItems.length}</strong> mẫu</p>
-          <div class="alert alert-info">
-            <h6 class="mb-2">📋 Chuyển trạng thái:</h6>
-            <div><strong>Chờ duyệt KQ</strong> →</div>
-            <div>• <span class="badge bg-success">Hoàn thành</span> (nếu Đạt)</div>
-            <div>• <span class="badge bg-danger">Phân tích lại</span> (nếu Không đạt)</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Quyết định phê duyệt:</label>
-            <select id="approvalDecision" class="form-select">
-              <option value="DAT">✅ Đạt - Chuyển sang Hoàn thành</option>
-              <option value="KHONG_DAT">🔄 Không đạt - Phân tích lại</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Người phê duyệt:</label>
-            <input type="text" id="approver" class="form-control" placeholder="Tên người phê duyệt..." />
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Ý kiến phê duyệt:</label>
-            <textarea id="approvalComment" class="form-control" rows="3" placeholder="Nhập ý kiến, ghi chú..."></textarea>
-          </div>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#198754',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: '✅ Xác nhận phê duyệt',
-      cancelButtonText: 'Hủy',
-      preConfirm: () => {
-        const approvalDecision = document.getElementById('approvalDecision').value;
-        const approver = document.getElementById('approver').value;
-        const approvalComment = document.getElementById('approvalComment').value;
-
-        if (!approver.trim()) {
-          Swal.showValidationMessage('Vui lòng nhập tên người phê duyệt');
-          return false;
-        }
-
-        return { approvalDecision, approver, approvalComment };
-      }
-    });
-
-    if (result.isConfirmed) {
-      const { approvalDecision, approver, approvalComment } = result.value;
-      console.log(`✅ [BULK APPROVE] User confirmed:`, { approvalDecision, approver, approvalComment });
-
-      try {
-        showLoading(true);
-        console.log('⏳ [BULK APPROVE] Starting data update process...');
-
-        let updatedCount = 0;
-        const currentTime = new Date().toLocaleString('vi-VN');
-        const newStatus = approvalDecision === 'DAT' ? 'HOAN_THANH' : 'PHAN_TICH_LAI';
-
-        validItems.forEach((item, index) => {
-          const originalItem = chiTietMauData.find(data => data.id === item.id);
-          if (!originalItem) {
-            console.error(`❌ [BULK APPROVE] Original item not found for ID: ${item.id}`);
-            return;
-          }
-
-          // Cập nhật trạng thái
-          originalItem.trang_thai_tong_hop = newStatus;
-          originalItem.trang_thai_phan_tich = newStatus;
-          originalItem.nguoi_duyet = approver;
-          originalItem.thoi_gian_duyet = currentTime;
-
-          // Cập nhật history
-          const historyEntry = `${currentTime} ${approver} đã phê duyệt: ${approvalDecision === 'DAT' ? 'Đạt' : 'Không đạt - Phân tích lại'}${approvalComment ? ' - ' + approvalComment : ''}`;
-          originalItem.history = historyEntry + (originalItem.history ? '\n' + originalItem.history : '');
-
-          updatedCount++;
-          console.log(
-            `✅ [BULK APPROVE] Updated item ${index + 1}/${validItems.length}:`,
-            originalItem.ma_mau,
-            '→',
-            newStatus
-          );
-        });
-
-        // Refresh DataTable
-        refreshAfterBulkAction();
-
-        showLoading(false);
-
-        const statusBadge =
-          approvalDecision === 'DAT'
-            ? '<span class="badge bg-success">Hoàn thành</span>'
-            : '<span class="badge bg-danger">Phân tích lại</span>';
-
-        Swal.fire({
-          icon: 'success',
-          title: '✅ Phê duyệt thành công',
-          html: `Đã phê duyệt <strong>${updatedCount}</strong> mẫu. Trạng thái chuyển sang: ${statusBadge}`,
-          confirmButtonText: 'Đóng',
-          timer: 3000
-        });
-
-        console.log('✅ [BULK APPROVE] Process completed successfully');
-      } catch (error) {
-        console.error('❌ [BULK APPROVE] Error:', error);
-        showLoading(false);
-        Swal.fire({
-          icon: 'error',
-          title: 'Lỗi',
-          text: 'Có lỗi xảy ra khi phê duyệt. Vui lòng thử lại!',
-          confirmButtonText: 'Đóng'
-        });
-      }
-    }
-  }
-
-  /**
    * Phân loại chỉ tiêu hàng loạt
    * Cho phép user chọn phân loại: PT-VIM, KPT-VIM, KPT-TK, PT-TK
    */
@@ -4553,6 +4245,7 @@ import { partners, indicators } from './data/data.js';
           item.phe_duyet = '3.Chờ duyệt';
           item.nguoi_duyet = ''; // Reset người duyệt
           item.thoi_gian_duyet = ''; // Reset thời gian duyệt
+          item.ngay_tra_ket_qua = currentDate;
 
           // Cập nhật history
           const historyEntry = `${currentTime} Đã cập nhật kết quả phân tích với kết quả thực tế là ${ketQuaThucTe}`;
@@ -4568,6 +4261,7 @@ import { partners, indicators } from './data/data.js';
           phe_duyet: item.phe_duyet,
           nguoi_duyet: item.nguoi_duyet,
           thoi_gian_duyet: item.thoi_gian_duyet,
+          ngay_tra_ket_qua: item.ngay_tra_ket_qua,
           ngay_hoan_thanh_pt_gm: currentDate,
           trang_thai_tong_hop: item.trang_thai_tong_hop,
           trang_thai_phan_tich: item.trang_thai_phan_tich,
@@ -4677,7 +4371,7 @@ import { partners, indicators } from './data/data.js';
           originalItem.trang_thai_phan_tich = analysisStatus;           
           originalItem.thoi_gian_duyet = approvalTime;
           originalItem.nguoi_duyet = approverName;
-          originalItem.phe_duyet = pheDuyetText;
+          originalItem.phe_duyet = pheDuyetText;          
 
           // Cập nhật history
           const historyEntry = `${crrTime} ${approverName} đã phê duyệt mẫu với kết quả: ${approvalDecision === 'DAT' ? 'Đạt' : 'Không đạt'} (CHO_DUYET_KQ → ${summaryStatus})`;
@@ -4696,7 +4390,7 @@ import { partners, indicators } from './data/data.js';
             phe_duyet: pheDuyetText,
             thoi_gian_duyet: approvalTime,
             history: originalItem.history,
-            ghi_chu: originalItem.ghi_chu
+            ghi_chu: originalItem.ghi_chu         
           };
 
           await updateStatus(updateData);
