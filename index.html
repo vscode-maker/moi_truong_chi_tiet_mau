@@ -627,7 +627,7 @@
           <div class="modal-body">
             <div class="table-responsive" style="max-height: 500px; overflow-y: auto">
               <table class="table table-bordered table-hover" id="updateResultTable">
-                <thead class="table-light sticky-top">
+                <thead id="updateDataTableHead" class="table-light sticky-top">
                   <tr>
                     <th style="width: 100px">STT</th>
                     <th style="width: 150px">Mã mẫu</th>
@@ -648,6 +648,46 @@
             </button>
             <button type="button" class="btn btn-primary" id="saveUpdateResultBtn">
               <i class="icon-base ri ri-save-line me-1"></i>Lưu kết quả
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Cập nhật nhà thầu hàng loạt -->
+    <div class="modal fade" id="bulkUpdateContractorModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="icon-base ri ri-edit-line me-2"></i>
+              Cập nhật duyệt thầu hàng loạt cho <span id="updateContractorCount">0</span> bản ghi
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto">
+              <table class="table table-bordered table-hover" id="updateResultTable">
+                <thead id="updateDataTableHead" class="table-light sticky-top">
+                  <tr>
+                    <th class="text-center" style="width: 100px">STT</th>
+                    <th class="text-center" style="width: 150px">Mã mẫu</th>
+                    <th class="text-center" style="width: 100px">Tên chỉ tiêu</th>
+                    <th class="text-center" style="width: 300px">Nhà thầu</th>                  
+                  </tr>
+                </thead>
+                <tbody id="updateContractorTableBody">
+                  <!-- Data will be inserted here by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="icon-base ri ri-close-line me-1"></i>Hủy
+            </button>
+            <button type="button" class="btn btn-primary" id="saveUpdateContractorBtn">
+              <i class="icon-base ri ri-save-line me-1"></i>Duyệt thầu
             </button>
           </div>
         </div>

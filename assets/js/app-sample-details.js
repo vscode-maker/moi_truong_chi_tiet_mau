@@ -863,7 +863,7 @@ import { partners, indicators } from './data/data.js';
     // Scroll to table
     $('html, body').animate(
       {
-        scrollTop: $('#chiTietMauTable').offset().top - 100
+        scrollTop: $('#chiTietMauTable_wrapper').offset().top
       },
       300
     );
@@ -1337,7 +1337,7 @@ import { partners, indicators } from './data/data.js';
         }
       },
       {
-        data: 'ten_nguoi_phan_tich',
+        data: 'nguoi_phan_tich',
         title: 'Người phân tích',
         width: '150px',
         render: function (data, type, row) {
@@ -1753,6 +1753,11 @@ import { partners, indicators } from './data/data.js';
     // DUYỆT THẦU (CHO_DUYET_THAU → CHO_GUI_MAU_THAU)
     $('#bulkApproveThauBtn').on('click', function () {
       executeBulkUpdateStatus(Array.from(selectedRows.values()), 'CHO_DUYET_THAU', executeBulkApproveThau);
+    });
+
+    // LƯU CẬP NHẬT DUYỆT THẦU (CHO_DUYET_THAU → CHO_GUI_MAU_THAU)
+    $('#saveUpdateContractorBtn').on('click', function () {
+      saveBulkUpdateContractor();
     });
 
     // GỬI MẪU THẦU (CHO_GUI_MAU_THAU → DANG_PHAN_TICH)
@@ -3969,9 +3974,9 @@ import { partners, indicators } from './data/data.js';
   }
 
   /**
-   * [CHỜ DUYỆT THẦU] DUYỆT THẦU -> [CHỜ GỬI MẪU THẦU]  
+   * [CHỜ DUYỆT THẦU] DUYỆT THẦU -> [CHỜ GỬI MẪU THẦU]
    */
-  async function executeBulkApproveThau(validItems) {  
+  async function executeBulkApproveThauV1(validItems) {  
     
     let optionHtml = '';
     partners.forEach((partner, index) => {
@@ -4026,8 +4031,7 @@ import { partners, indicators } from './data/data.js';
         const updatePromises = validItems.map(async item => {
           const originalItem = chiTietMauData.find(data => data.id === item.id);          
           if (!originalItem) return null;
-          
-          // Sử dụng nextStatus từ config
+                    
           originalItem.trang_thai_tong_hop = 'CHO_GUI_MAU_THAU';
           originalItem.trang_thai_phan_tich = 'Chờ gửi mẫu thầu';
           originalItem.ngay_nhan_mau = sendDate;
@@ -4068,6 +4072,113 @@ import { partners, indicators } from './data/data.js';
       } finally {
         showLoading(false);
       }
+    }
+  }
+
+  /**
+   * [CHỜ DUYỆT THẦU] DUYỆT THẦU -> [CHỜ GỬI MẪU THẦU]
+   */
+  async function executeBulkApproveThau(validItems) {
+    // Cập nhật số lượng
+    $('#updateContractorCount').text(validItems.length);
+
+    // Tạo table rows
+    const tbody = $('#updateContractorTableBody');
+    tbody.empty();    
+
+    let optionHtml = '';
+    partners.forEach((partner, index) => {
+      optionHtml += `<option ${index == 0 ? 'selected ' : ''}value="${partner.name}">${partner.name}</option>`;
+    });
+
+    validItems.forEach((item, index) => {
+      const rowHtml = `
+        <tr data-id="${item.id}">
+          <td class="text-center">${index + 1}</td>
+          <td class="text-center">${item.ma_mau || '-'}</td>
+          <td class="text-center">${item.ten_chi_tieu || '-'}</td>
+          <td class="text-center">
+            <select              
+              class="form-control form-control-sm form-select contractor-select"
+              data-id="${item.id}"              
+            >
+              ${optionHtml}
+            </select>            
+          </td>          
+        </tr>
+      `;
+      tbody.append(rowHtml);
+    });    
+
+    // Hiển thị modal
+    $('#bulkUpdateContractorModal').modal('show');
+  }
+
+  /**
+   * LƯU CẬP NHẬT NHÀ THẦU HÀNG LOẠT
+   * [CHỜ DUYỆT THẦU] DUYỆT THẦU -> [CHỜ GỬI MẪU THẦU]
+   */
+  async function saveBulkUpdateContractor() {
+    
+    try {
+      showLoading(true);
+      
+      const currentTime = new Date().toLocaleString('vi-VN');      
+      const currentDate = new Date().toISOString().split('T')[0];
+
+      const validItems = [];     
+
+      // Lấy tất cả các input
+      const updatePromises = $('.contractor-select').map(async function () {
+        const itemId = $(this).data('id');
+        const contractor = $(this).val().trim();               
+
+        // Tìm item trong chiTietMauData
+        const item = chiTietMauData.find(x => x.id === itemId);
+        if (!item) return null;
+
+        console.warn(contractor);
+        
+        validItems.push(item);
+
+        // Cập nhật nhà thầu        
+        item.trang_thai_tong_hop = 'CHO_GUI_MAU_THAU';
+        item.trang_thai_phan_tich = 'Chờ gửi mẫu thầu';
+        item.ngay_nhan_mau = currentDate;
+        item.nguoi_phan_tich = contractor;
+       
+        const historyEntry = `${currentTime} Đã duyệt thầu ${contractor} (CHO_DUYET_THAU → CHO_GUI_MAU_THAU)`;
+        item.history = historyEntry + (item.history ? '\n' + item.history : '');
+
+        // Dữ liệu sẽ cập nhật vào server
+        const updateData = {
+          id: item.id,
+          trang_thai_tong_hop: 'CHO_GUI_MAU_THAU',
+          trang_thai_phan_tich: 'Chờ gửi mẫu thầu',
+          history: item.history,
+          ngay_nhan_mau: currentDate,
+          nguoi_phan_tich: contractor           
+        };                
+        
+        await updateStatus(updateData);
+
+        return item.id;              
+      });
+
+      // Đợi tất cả requests hoàn thành
+      const results = await Promise.allSettled(updatePromises.toArray());
+      const updatedCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
+
+      handleStatusUpdateSuccess(validItems, updatedCount);
+
+      // Đóng modal
+      $('#bulkUpdateContractorModal').modal('hide');
+    } catch (error) {
+      console.error('❌ Lỗi cập nhật duyệt thầu hàng loạt:', error);
+      showLoading(false);
+      showNotification('Có lỗi xảy ra khi duyệt thầu: ' + error.message, 'error');
+    } finally {
+      showLoading(false);
     }
   }
 
@@ -4151,7 +4262,7 @@ import { partners, indicators } from './data/data.js';
   }
 
   /**
-   * [ĐANG PHÂN TÍCH] CẬP NHẬT KẾT QUẢ -> [CHỜ DUYỆT KẾT QUẢ]
+   * [ĐANG PHÂN TÍCH / PHÂN TÍCH LẠI] CẬP NHẬT KẾT QUẢ -> [CHỜ DUYỆT KẾT QUẢ]
    */
   async function executeBulkUpdateResult(validItems) {
     // Cập nhật số lượng
