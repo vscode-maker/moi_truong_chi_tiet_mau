@@ -4351,8 +4351,7 @@ import { partners, indicators } from './data/data.js';
         // Cập nhật kết quả
         item.ket_qua_thuc_te = ketQuaThucTe;
         item.ket_qua_in_phieu = ketQuaInPhieu;
-        item.ngay_tra_ket_qua = currentDate;
-        item.ngay_hoan_thanh_pt_gm = currentDate;
+        item.ngay_tra_ket_qua = currentDate;        
 
         // Chuyển trạng thái: DANG_PHAN_TICH → CHO_DUYET_KQ
         if (item.trang_thai_tong_hop === 'DANG_PHAN_TICH' || item.trang_thai_tong_hop === 'PHAN_TICH_LAI') {
@@ -4377,8 +4376,7 @@ import { partners, indicators } from './data/data.js';
           phe_duyet: item.phe_duyet,
           nguoi_duyet: item.nguoi_duyet,
           thoi_gian_duyet: item.thoi_gian_duyet,
-          ngay_tra_ket_qua: item.ngay_tra_ket_qua,
-          ngay_hoan_thanh_pt_gm: currentDate,
+          ngay_tra_ket_qua: item.ngay_tra_ket_qua,          
           trang_thai_tong_hop: item.trang_thai_tong_hop,
           trang_thai_phan_tich: item.trang_thai_phan_tich,
           history: item.history
@@ -4487,7 +4485,8 @@ import { partners, indicators } from './data/data.js';
           originalItem.trang_thai_phan_tich = analysisStatus;           
           originalItem.thoi_gian_duyet = approvalTime;
           originalItem.nguoi_duyet = approverName;
-          originalItem.phe_duyet = pheDuyetText;          
+          originalItem.phe_duyet = pheDuyetText; 
+          originalItem.ngay_hoan_thanh_pt_gm = approvalDecision === 'DAT' ? approveDate : '';
 
           // Cập nhật history
           const historyEntry = `${crrTime} ${approverName} đã phê duyệt mẫu với kết quả: ${approvalDecision === 'DAT' ? 'Đạt' : 'Không đạt'} (CHO_DUYET_KQ → ${summaryStatus})`;
@@ -4506,7 +4505,8 @@ import { partners, indicators } from './data/data.js';
             phe_duyet: pheDuyetText,
             thoi_gian_duyet: approvalTime,
             history: originalItem.history,
-            ghi_chu: originalItem.ghi_chu         
+            ghi_chu: originalItem.ghi_chu,
+            ngay_hoan_thanh_pt_gm: originalItem.ngay_hoan_thanh_pt_gm || ''
           };
 
           await updateStatus(updateData);
