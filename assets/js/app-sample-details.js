@@ -177,6 +177,8 @@ import { partners, indicators } from './data/data.js';
     return map;
   }, {});
 
+  console.warn('🚀 TRANG_THAI_TONG_HOP:', TRANG_THAI_MAP);
+
   // === WORKFLOW RULES - ĐÃ LOẠI BỎ ===
   // Không cần workflow rules nữa vì đã gộp thành 1 cột trang_thai_tong_hop
 
@@ -600,7 +602,7 @@ import { partners, indicators } from './data/data.js';
     console.log('🚀 Init Sample Details Management');    
 
     // Cấu hình SweetAlert2 mặc định
-    if (typeof Swal !== 'undefined') {
+    if (typeof Swal !== 'undefined') {      
       Swal.mixin({
         customClass: {
           container: 'swal2-container-custom'
@@ -1152,63 +1154,74 @@ import { partners, indicators } from './data/data.js';
         className: 'text-center'
       },
       {
-        // TRẠNG THÁI TỔNG HỢP (column 10 - gộp 3 cột cũ)
+        // TRẠNG THÁI TỔNG HỢP
         targets: 10,
         width: '200px',
         className: 'text-center'
       },
       {
-        // Kết quả thực tế (11)
+        // NƠI PHÂN TÍCH
         targets: 11,
+        width: '120px',
+        className: 'text-center'
+      },
+      {
+        // Kết quả thực tế
+        targets: 12,
         width: '120px',
         className: 'text-end'
       },
       {
-        // Kết quả in phiếu (12)
-        targets: 12,
+        // Kết quả in phiếu
+        targets: 13,
         width: '150px'
       },
       {
-        // Tiền tố (13)
-        targets: 13,
-        width: '80px',
-        className: 'text-center'
-      },
-      {
-        // Ưu tiên (14)
+        // Tiền tố
         targets: 14,
         width: '80px',
         className: 'text-center'
       },
       {
-        // Phê duyệt (15)
+        // Ưu tiên
         targets: 15,
+        width: '80px',
+        className: 'text-center'
+      },
+      {
+        // Phê duyệt
+        targets: 16,
         width: '140px'
       },
       {
-        // Ngày nhận mẫu (16)
-        targets: 16,
-        width: '120px'
-      },
-      {
-        // Ngày trả kết quả (17)
+        // Ngày nhận mẫu
         targets: 17,
         width: '120px'
       },
       {
-        // Hạn hoàn thành (18)
+        // Ngày trả kết quả
         targets: 18,
         width: '120px'
       },
       {
-        // Thành tiền (19)
+        // Hạn hoàn thành
         targets: 19,
+        width: '120px'
+      },
+      {
+        // Thành tiền
+        targets: 20,
         width: '120px',
         className: 'text-end'
       },
       {
-        // Cảnh báo (20)
-        targets: 20,
+        // Cảnh báo
+        targets: 21,
+        width: '150px'
+      },
+      {
+        // Lịch sử
+        targets: 22,
         width: '150px'
       }
     ];
@@ -1324,7 +1337,7 @@ import { partners, indicators } from './data/data.js';
         }
       },
       {
-        data: 'ten_nguoi_duyet',
+        data: 'nguoi_duyet',
         title: 'Người duyệt',
         width: '150px',
         render: function (data, type, row) {
@@ -1370,18 +1383,32 @@ import { partners, indicators } from './data/data.js';
           if (!state) {
             return '<span class="text-muted">-</span>';
           }
+         
+          return `
+            <div class="d-flex flex-column align-items-center gap-1">
+              <span class="badge bg-${state.color}">
+                <i class="${state.icon} me-1"></i>${state.label}
+              </span>             
+            </div>
+          `;
+        }
+      },
+      {
+        // NƠI PHÂN TÍCH
+        data: 'noi_phan_tich',
+        title: 'Nơi phân tích',
+        width: '200px',
+        className: 'text-center',
+        render: function (data, type, row) {          
 
-          const noiPhanTich = handleNullValue(row.noi_phan_tich, '');
+          const noiPhanTich = handleNullValue(data, '');
           const typeLabel =
             noiPhanTich === 'Nội bộ'
               ? '<small class="text-primary"><i class="ri-home-5-line"></i> Nội bộ</small>'
               : '<small class="text-warning"><i class="ri-building-line"></i> Bên ngoài</small>';
 
           return `
-            <div class="d-flex flex-column align-items-center gap-1">
-              <span class="badge bg-${state.color}">
-                <i class="${state.icon} me-1"></i>${state.label}
-              </span>
+            <div class="d-flex flex-column align-items-center gap-1">              
               ${typeLabel}
             </div>
           `;
@@ -1448,7 +1475,7 @@ import { partners, indicators } from './data/data.js';
             '1.Đạt': 'success',
             '2.Xét lại': 'warning',
             '2.Không đạt': 'danger',
-            '3.Chờ duyệt': 'secondary'
+            '3.Chờ duyệt': 'primary'
           };
           const pheDuyet = handleNullValue(data, '-');
           const color = approvalColors[data] || 'secondary';
@@ -1456,19 +1483,15 @@ import { partners, indicators } from './data/data.js';
           let html = `<span class="badge bg-${color}">${pheDuyet}</span>`;
 
           // Hiển thị thông tin người duyệt và thời gian duyệt nếu có
-          const nguoiDuyet = handleNullValue(row.ma_nguoi_duyet);
+          const nguoiDuyet = handleNullValue(row.nguoi_duyet);
           const thoiGianDuyet = handleNullValue(row.thoi_gian_duyet);
-          if (nguoiDuyet && thoiGianDuyet) {
-            html += `<br><small class="text-muted">bởi ${nguoiDuyet}</small>`;
-            html += `<br><small class="text-muted">${thoiGianDuyet}</small>`;
+          let tooltipContent = '';
+          if (nguoiDuyet && thoiGianDuyet) {          
+            tooltipContent = `Phê duyệt bởi: ${nguoiDuyet}\nThời gian: ${thoiGianDuyet}`.replace(/"/g, '&quot;');
+          } else {
+            tooltipContent = 'Chưa có thông tin phê duyệt';
           }
-
-          // Thêm tooltip với lịch sử nếu có
-          if (row.history) {
-            const historyLines = row.history.split('\n').slice(0, 3); // Chỉ hiển thị 3 dòng đầu
-            const tooltipContent = historyLines.join('\n').replace(/"/g, '&quot;');
-            html = `<div data-bs-toggle="tooltip" data-bs-placement="left" title="${tooltipContent}">${html}</div>`;
-          }
+          html = `<div data-bs-toggle="tooltip" data-bs-placement="left" title="${tooltipContent}">${html}</div>`;
 
           return html;
         }
@@ -1551,6 +1574,24 @@ import { partners, indicators } from './data/data.js';
           }
 
           return `<span class="badge bg-${color}" title="${canhBao}">${canhBao}</span>`;
+        }
+      },
+      {
+        // Lịch sử
+        data: 'history',
+        title: 'Lịch sử',        
+        width: '140px',
+        render: function (data, type, row) {                    
+          if (!data) data = 'Chưa có lịch sử';
+          let html = `<span class="text-truncate" style="max-width: 140px;" title="${data}">Xem lịch sử</span>`;         
+          // Thêm tooltip với lịch sử nếu có
+          if (data) {
+            const historyLines = data.split('\n').slice(0, 3); // Chỉ hiển thị 3 dòng đầu
+            const tooltipContent = historyLines.join('\n').replace(/"/g, '&quot;');
+            html = `<div data-bs-toggle="tooltip" data-bs-placement="left" title="${tooltipContent}">${html}</div>`;
+          }
+
+          return html;
         }
       },
       {
@@ -3867,66 +3908,6 @@ import { partners, indicators } from './data/data.js';
   }
 
   /**
-   * 7. Phê duyệt kết quả (6.Chờ duyệt KQ → 7.Hoàn thành/8.Cần xét lại)
-   */
-  async function executeBulkApproveResultV2(selectedItems) {
-    console.log('🔥 [BULK APPROVE V2] Called executeBulkApproveResult WITHOUT approvalStatus parameter!');
-    console.log('🔥 [BULK APPROVE V2] This is the OLD version that uses SweetAlert popup');
-    console.log('🔥 [BULK APPROVE V2] Selected items:', selectedItems.length);
-
-    const result = await Swal.fire({
-      title: '✅ Phê duyệt kết quả hàng loạt',
-      html: `
-        <p>Phê duyệt kết quả cho <strong>${selectedItems.length}</strong> chỉ tiêu</p>
-        <div class="mb-3">
-          <label class="form-label">Quyết định phê duyệt:</label>
-          <select id="approvalDecision" class="form-select">
-            <option value="1.Đạt">✅ 1.Đạt - Kết quả hợp lệ</option>
-            <option value="2.Xét lại">🔄 2.Xét lại - Cần kiểm tra lại</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Người phê duyệt:</label>
-          <input type="text" id="approver" class="form-control" placeholder="Tên người phê duyệt..." />
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Ý kiến phê duyệt:</label>
-          <textarea id="approvalComment" class="form-control" rows="3" placeholder="Nhập ý kiến, ghi chú..."></textarea>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#198754',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: '✅ Xác nhận phê duyệt',
-      cancelButtonText: 'Hủy',
-      preConfirm: () => {
-        const approvalDecision = document.getElementById('approvalDecision').value;
-        const approver = document.getElementById('approver').value;
-        const approvalComment = document.getElementById('approvalComment').value;
-
-        if (!approver.trim()) {
-          Swal.showValidationMessage('Vui lòng nhập tên người phê duyệt');
-          return false;
-        }
-
-        return { approvalDecision, approver, approvalComment };
-      }
-    });
-
-    if (result.isConfirmed) {
-      const { approvalDecision } = result.value;
-      console.log('🔥 [BULK APPROVE V2] User confirmed with decision:', approvalDecision);
-
-      const nextState = approvalDecision === '1.Đạt' ? '7.Hoàn thành' : '8.Cần xét lại';
-      console.log('🔥 [BULK APPROVE V2] Next state will be:', nextState);
-      console.log('🔥 [BULK APPROVE V2] Calling executeBulkStateChange...');
-
-      await executeBulkStateChange(selectedItems, nextState, result.value, 'Đã phê duyệt kết quả');
-    }
-  }
-
-  /**
    * 8. Yêu cầu xét lại (7.Hoàn thành → 8.Cần xét lại)
    */
   async function executeBulkRequestReview(selectedItems) {
@@ -4569,6 +4550,9 @@ import { partners, indicators } from './data/data.js';
         if (item.trang_thai_tong_hop === 'DANG_PHAN_TICH' || item.trang_thai_tong_hop === 'PHAN_TICH_LAI') {
           item.trang_thai_tong_hop = 'CHO_DUYET_KQ';
           item.trang_thai_phan_tich = 'Chờ duyệt kết quả';
+          item.phe_duyet = '3.Chờ duyệt';
+          item.nguoi_duyet = ''; // Reset người duyệt
+          item.thoi_gian_duyet = ''; // Reset thời gian duyệt
 
           // Cập nhật history
           const historyEntry = `${currentTime} Đã cập nhật kết quả phân tích với kết quả thực tế là ${ketQuaThucTe}`;
@@ -4581,6 +4565,9 @@ import { partners, indicators } from './data/data.js';
           ket_qua_thuc_te: ketQuaThucTe,
           ket_qua_in_phieu: ketQuaInPhieu,
           ngay_tra_ket_qua: currentDate,
+          phe_duyet: item.phe_duyet,
+          nguoi_duyet: item.nguoi_duyet,
+          thoi_gian_duyet: item.thoi_gian_duyet,
           ngay_hoan_thanh_pt_gm: currentDate,
           trang_thai_tong_hop: item.trang_thai_tong_hop,
           trang_thai_phan_tich: item.trang_thai_phan_tich,
@@ -4626,6 +4613,10 @@ import { partners, indicators } from './data/data.js';
             <div>• <span class="badge bg-danger">Phân tích lại</span> (nếu Không đạt)</div>
           </div>
           <div class="mb-3">
+            <label class="form-label">Người duyệt:</label>
+            <input type="text" id="approverName" class="form-control" placeholder="Nhập tên người duyệt..." />
+          </div>
+          <div class="mb-3">
             <label class="form-label">Quyết định phê duyệt:</label>
             <select id="approvalDecision" class="form-select">
               <option selected value="DAT">✅ Đạt - Chuyển sang Hoàn thành</option>
@@ -4652,18 +4643,26 @@ import { partners, indicators } from './data/data.js';
         const approvalDecision = document.getElementById('approvalDecision').value;
         const approveDate = document.getElementById('approveDate').value;
         const note = document.getElementById('note').value.trim();
-       
-        return { approvalDecision, approveDate, note };
+        const approverName = document.getElementById('approverName').value.trim();
+
+        if (!approverName) {
+          Swal.showValidationMessage('Vui lòng nhập tên người duyệt');
+          return false;
+        }
+
+        return { approvalDecision, approveDate, note, approverName };
       }
-    });
+    });    
 
     if (result.isConfirmed) {
-      const { approvalDecision, approveDate, note } = result.value;
-      
+      const { approvalDecision, approveDate, note, approverName } = result.value;
+
       try {
         showLoading(true);
         const summaryStatus = approvalDecision === 'DAT' ? 'HOAN_THANH' : 'PHAN_TICH_LAI';
         const analysisStatus = approvalDecision === 'DAT' ? 'Đã hoàn thành' : 'Chờ phân tích lại';
+
+        const pheDuyetText = approvalDecision === 'DAT' ? '1.Đạt' : '2.Không đạt';
 
         // Giữ định dạng này để phù hợp với cấu trúc dữ liệu trong database
         const approvalTime = new Date().toLocaleString();
@@ -4677,9 +4676,11 @@ import { partners, indicators } from './data/data.js';
           originalItem.trang_thai_tong_hop = summaryStatus;
           originalItem.trang_thai_phan_tich = analysisStatus;           
           originalItem.thoi_gian_duyet = approvalTime;
+          originalItem.nguoi_duyet = approverName;
+          originalItem.phe_duyet = pheDuyetText;
 
           // Cập nhật history
-          const historyEntry = `${crrTime} Đã phê duyệt mẫu với kết quả: ${approvalDecision === 'DAT' ? 'Đạt' : 'Không đạt'} (CHO_DUYET_KQ → ${summaryStatus})`;
+          const historyEntry = `${crrTime} ${approverName} đã phê duyệt mẫu với kết quả: ${approvalDecision === 'DAT' ? 'Đạt' : 'Không đạt'} (CHO_DUYET_KQ → ${summaryStatus})`;
           originalItem.history = historyEntry + (originalItem.history ? '\n' + originalItem.history : '');
 
           if (note) {
@@ -4691,6 +4692,8 @@ import { partners, indicators } from './data/data.js';
             id: item.id,
             trang_thai_tong_hop: summaryStatus,
             trang_thai_phan_tich: analysisStatus,
+            nguoi_duyet: approverName,
+            phe_duyet: pheDuyetText,
             thoi_gian_duyet: approvalTime,
             history: originalItem.history,
             ghi_chu: originalItem.ghi_chu

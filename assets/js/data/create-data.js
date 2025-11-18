@@ -86,8 +86,12 @@ function createBulkSampleDetailsData(idCounter) {
             const nguoiPhanTich = randomFromArray(nguoiPhanTichArr);
             
             let nguoiDuyet = ""
+            let pheDuyet = ""
             if (["CHO_DUYET_KQ", "HOAN_THANH", "PHAN_TICH_LAI"].includes(trangThai)) {
               nguoiDuyet = randomFromArray(nguoiDuyetArr);
+              if (trangThai == "HOAN_THANH") pheDuyet = "1.Đạt";
+              if (trangThai == "PHAN_TICH_LAI") pheDuyet = "2.Không đạt";
+              if (trangThai == "CHO_DUYET_KQ") pheDuyet = "3.Chờ duyệt";
             }
 
             let noiPhanTich = "Nội bộ"
@@ -149,6 +153,7 @@ function createBulkSampleDetailsData(idCounter) {
               canh_bao_phan_tich: canhBaoPhanTich,
 
               nguoi_duyet: nguoiDuyet,
+              phe_duyet: "",
 
               trang_thai_phan_tich: trangThaiPhanTich,
               ngay_nhan_mau: ngayNhanMau,
