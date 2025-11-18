@@ -27,8 +27,8 @@ import { partners, indicators } from './data/data.js';
   let selectedRows = new Map(); // Map để lưu các dòng đã chọn với thông tin chi tiết
   let bulkEditSpreadsheet;
   let bulkEditData = [];
-  let isGroupingEnabled = false; // Trạng thái nhóm (mặc định tắt)
-  let selectedGroupColumns = []; // Mảng các cột được chọn để nhóm (có thể nhiều cột)
+  let isGroupingEnabled = true; // ✅ ĐỔI: Bật grouping mặc định
+  let selectedGroupColumns = ['han_hoan_thanh_pt_gm']; // ✅ ĐỔI: Nhóm theo Hạn hoàn thành
   let currentStatusFilter = 'all'; // Track trạng thái filter hiện tại
 
   // DOM elements - Cached để tăng performance
@@ -640,7 +640,15 @@ import { partners, indicators } from './data/data.js';
       // Khởi tạo UI
       initializeDataTable();
       initializeProgressStats();
-      bindEvents();           
+      bindEvents();      
+      
+      // Set checkbox checked cho grouping mặc định
+      if (isGroupingEnabled && selectedGroupColumns.length > 0) {
+        selectedGroupColumns.forEach(col => {
+          $(`#group_${col}`).prop('checked', true);
+        });
+        $('#groupByLabel').text(`Đã nhóm (${selectedGroupColumns.length})`);
+      }
 
       showLoading(false);
       console.log('✅ Khởi tạo thành công');
@@ -1037,20 +1045,15 @@ import { partners, indicators } from './data/data.js';
       const columnLabels = {
         don_hang_id: '📦 Đơn hàng',
         ma_mau: '🏷️ Mã mẫu',
+        han_hoan_thanh_pt_gm: '⏳ Hạn hoàn thành',
         loai_don_hang: '📋 Loại đơn hàng',
         ten_khach_hang: '🏢 Khách hàng',
         ten_don_hang: '📄 Tên đơn hàng',
         noi_phan_tich: '🏢 Nơi phân tích',
-        nguoi_phan_tich: '👤 Người phân tích',
-        ten_nguoi_phan_tich: '👤 Tên người phân tích',
-        ma_nguoi_duyet: '✅ Mã người duyệt',
-        ten_nguoi_duyet: '✅ Tên người duyệt',
-        ma_nguoi_phan_tich: '� Mã người phân tích',
-        ten_chi_tieu: '🧪 Tên chỉ tiêu',
-        loai_phan_tich: '🔬 Loại phân tích',
-        trang_thai_phan_tich: '📊 Trạng thái phân tích',
-        tien_do_phan_tich: '📈 Tiến độ phân tích',
-        tien_do_gui_thau: '🚚 Tiến độ gửi thầu'
+        nguoi_phan_tich: '👤 Người phân tích',       
+        ten_nguoi_duyet: '✅ Tên người duyệt',       
+        ten_chi_tieu: '🧪 Tên chỉ tiêu',       
+        trang_thai_phan_tich: '📊 Trạng thái phân tích',               
       };
 
       // Nếu chọn nhiều cột, dùng array; nếu 1 cột, dùng string
@@ -1091,8 +1094,8 @@ import { partners, indicators } from './data/data.js';
       const columnIndex = getColumnIndexByName(firstGroupColumn);
       tableConfig.order = [[columnIndex, 'asc']];
     } else {
-      // Sắp xếp theo ngày nhận mẫu khi tắt grouping
-      tableConfig.order = [[16, 'desc']]; // Sort by ngay_nhan_mau (index 16 sau khi gộp 3 cột thành 1)
+      // Sắp xếp theo Hạn hoàn thành khi tắt grouping (ASCENDING - sớm nhất trước)
+      tableConfig.order = [[3, 'asc']]; // Sort by han_hoan_thanh_pt_gm (index 3)
     }
 
     // Thêm columnDefs - ĐÃ XÓA RESPONSIVE PRIORITY - HIỂN THỊ TẤT CẢ CỘT
@@ -1124,7 +1127,7 @@ import { partners, indicators } from './data/data.js';
         width: '150px'
       },
       {
-        // Loại đơn hàng
+        // Hạn hoàn thành
         targets: 3,
         width: '150px'
       },
@@ -1213,7 +1216,7 @@ import { partners, indicators } from './data/data.js';
         width: '120px'
       },
       {
-        // Hạn hoàn thành
+        // Loại đơn hàng
         targets: 19,
         width: '120px'
       },
@@ -1293,18 +1296,14 @@ import { partners, indicators } from './data/data.js';
         }
       },
       {
-        data: 'loai_don_hang',
-        title: 'Loại đơn hàng',
-        width: '150px',
+        // Hạn hoàn thành
+        data: 'han_hoan_thanh_pt_gm',
+        title: 'Hạn hoàn thành',
+        width: '120px',
         render: function (data, type, row) {
-          const loai = handleNullValue(data, 'Chưa xác định');
-          const colorMap = {
-            'Mẫu gửi': 'primary',
-            'Quan trắc MT': 'info',
-            'Môi trường lao động': 'warning'
-          };
-          const color = colorMap[loai] || 'secondary';
-          return `<span class="badge bg-${color}">${loai}</span>`;
+          let hanHoanThanh = handleNullValue(data);
+          hanHoanThanh = hanHoanThanh ? formatDate(hanHoanThanh) : '';
+          return `<span class="text-danger fw-semibold"><i class="ri-alarm-warning-line me-1"></i>${hanHoanThanh}</span>`;
         }
       },
       {
@@ -1546,14 +1545,20 @@ import { partners, indicators } from './data/data.js';
         }
       },
       {
-        data: 'han_hoan_thanh_pt_gm',
-        title: 'Hạn hoàn thành',
-        width: '120px',
+        data: 'loai_don_hang',
+        title: 'Loại đơn hàng',
+        width: '150px',
         render: function (data, type, row) {
-          const hanHoanThanh = handleNullValue(data);
-          return hanHoanThanh ? formatDate(hanHoanThanh) : '';
+          const loai = handleNullValue(data, 'Chưa xác định');
+          const colorMap = {
+            'Mẫu gửi': 'primary',
+            'Quan trắc MT': 'info',
+            'Môi trường lao động': 'warning'
+          };
+          const color = colorMap[loai] || 'secondary';
+          return `<span class="badge bg-${color}">${loai}</span>`;
         }
-      },
+      },      
       {
         data: 'thanh_tien',
         title: 'Thành tiền',
@@ -2210,7 +2215,7 @@ import { partners, indicators } from './data/data.js';
         'Trạng thái phân tích': getTrangThaiPhanTich(item),
         'Tiến độ gửi thầu': getTienDoGuiThau(item) || 'N/A',
         'Người phân tích (Mã)': handleNullValue(item.nguoi_phan_tich),
-        'Tên người phân tích': handleNullValue(item.ten_nguoi_phan_tich),
+        'Tên người phân tích': handleNullValue(item.nguoi_phan_tich),
         'Người duyệt (Mã)': handleNullValue(item.ma_nguoi_duyet),
         'Tên người duyệt': handleNullValue(item.ten_nguoi_duyet),
         'Tiến độ phân tích': handleNullValue(item.tien_do_phan_tich),
@@ -2241,12 +2246,11 @@ import { partners, indicators } from './data/data.js';
       XLSX.writeFile(wb, fileName);
 
       showLoading(false);
-
-      console.log('✅ Đã xuất Excel thành công:', fileName);
+      showNotification('✅ Xuất Excel thành công', 'success');
     } catch (error) {
       console.error('❌ Lỗi SweetAlert2:', error);
       showLoading(false);
-      alert('Có lỗi khi xuất Excel. Vui lòng thử lại!');
+      showNotification('Có lỗi khi xuất Excel', 'error');
     }
   }
 
@@ -2373,7 +2377,8 @@ import { partners, indicators } from './data/data.js';
       don_hang_id: 1, // Không có cột này trong table, nhưng có trong data
       ma_mau: 1, // Cột 1: Mã mẫu
       ten_mau: 2, // Cột 2: Tên mẫu (MỚI V2.3)
-      loai_don_hang: 3, // Cột 3: Loại đơn hàng
+      han_hoan_thanh_pt_gm: 3, // ✅ THÊM DÒNG NÀY - Cột 3: Hạn hoàn thành
+      loai_don_hang: 19, // Cột 19: Loại đơn hàng
       ten_khach_hang: 4, // Cột 4: Tên khách hàng
       ten_don_hang: 5, // Cột 5: Tên đơn hàng
       ten_chi_tieu: 6, // Cột 6: Tên chỉ tiêu
@@ -2382,11 +2387,11 @@ import { partners, indicators } from './data/data.js';
       ma_nguoi_phan_tich: 7, // Fallback to ten_nguoi_phan_tich
       ten_nguoi_duyet: 8, // Cột 8: Tên người duyệt
       ma_nguoi_duyet: 8, // Fallback to ten_nguoi_duyet
-      trang_thai_phan_tich: 9, // Cột 9: Tiến độ (Trạng thái)
-      loai_phan_tich: 9, // Fallback to trang_thai
-      tien_do_gui_thau: 9, // Tiến độ gửi thầu (hiển thị trong cột Tiến độ)
-      noi_phan_tich: 10, // Cột 10: Nơi phân tích
-      tien_do_phan_tich: 11 // Cột 11: Tiến độ phân tích
+      trang_thai_phan_tich: 10, // Cột 10: Trạng thái tổng hợp
+      loai_phan_tich: 9, // Cột 9: Loại phân tích
+      tien_do_gui_thau: 10, // Tiến độ gửi thầu
+      noi_phan_tich: 11, // Cột 11: Nơi phân tích
+      tien_do_phan_tich: 10 // Cột 10: Tiến độ phân tích
     };
     return columnMap[columnName] || 1;
   }

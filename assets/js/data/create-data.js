@@ -32,6 +32,43 @@ function createBulkSampleSQLInsertCommands() {
 }
 
 /**
+ * Tạo câu lệnh update chi tiết mẫu
+ */
+function createBulkSampleSQLUpdateCommands() {
+  const maMauArr = ['25-2025.KT01', '25-2025.KT02', '25-2025.KT03', '25-2025.KT04', '25-2025.KT05', '25-2025.KT06', '25-2025.KT07', '25-2025.KT08', '25-2025.KT09', '25-2025.KT010'];  
+
+  let sqlCommands = ""; 
+
+  function randomFromArray(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }    
+
+  for (const maMau of maMauArr) {
+    const hanHoanThanhPTGM = `2025-08-${Math.floor(Math.random() * 31) + 1}`;
+    sqlCommands += `UPDATE chi_tiet_mau SET han_hoan_thanh_pt_gm = '${hanHoanThanhPTGM}' WHERE ma_khach_hang = 'admin' and ma_mau = '${maMau}';\n`;
+  }
+
+  console.warn(sqlCommands);
+}
+
+function createBulkSampleSQLUpdateTenKhachHangCommands() {
+  const maMauArr = ['25-2025.KT01', '25-2025.KT02', '25-2025.KT03', '25-2025.KT04', '25-2025.KT05', '25-2025.KT06', '25-2025.KT07', '25-2025.KT08', '25-2025.KT09', '25-2025.KT010'];  
+
+  let sqlCommands = ""; 
+
+  function randomFromArray(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }    
+
+  for (const maMau of maMauArr) {
+    const tenKH = `Công ty TNHH ${randomFromArray(['ABC', 'DEF', 'GHI', 'JKL', 'MNO'])}`;
+    sqlCommands += `UPDATE chi_tiet_mau SET ten_khach_hang = '${tenKH}' WHERE ma_khach_hang = 'admin' and ma_mau = '${maMau}';\n`;
+  }
+
+  console.warn(sqlCommands);
+}
+
+/**
  * Tạo dữ liệu chi tiết mẫu demo
  * @param {*} idCounter thứ tự id bắt đầu
  */
@@ -41,7 +78,7 @@ function createBulkSampleDetailsData(idCounter) {
   const sampleNames = ['Nước thải', 'Nước sạch', 'Đất', 'Nước mặt', 'Không khí xung quanh'];
 
   const chiTieuNames = ['Tổng Coliforms', 'pH', 'Độ đục', 'Amoni', 'Nitrat', 'Sunphat'];      
-  const loaiPhanTichOptions = ["PT_VIM", "KPT_VIM", "PT_TK", "KPT_TK"];  
+  const loaiPhanTichOptions = ["PT-VIM", "KPT-VIM", "PT-TK", "KPT-TK"];  
 
   // Nhóm mã mẫu 5 nhóm
   // const maMauArr = ['25-2025.KT01', '25-2025.KT02', '25-2025.KT03', '25-2025.KT04', '25-2025.KT05'];
