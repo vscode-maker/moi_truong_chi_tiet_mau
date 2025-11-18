@@ -93,19 +93,19 @@
    */
   const supplementDefaultFields = record => ({
     ...record,
-    "loai_phan_tich": record["loai_phan_tich"] || "LPT-DF",
-    "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "TTPT-DF",
-    "loai_don_hang": record["loai_don_hang"] || "LDH-DF",
-    "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "2025-11-20",
-    "ma_khach_hang": record["ma_khach_hang"] || "MKH-DF",
-    "ten_khach_hang": record["ten_khach_hang"] || "TKH-DF",
-    "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "TNPT-DF",
-    "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "TND-DF",
-    "ten_don_hang": record["ten_don_hang"] || "TDH-DF",
-    "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "MNPT-DF",
-    "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "MND-DF",
-    "ten_mau": record["ten_mau"] || "TM-DF",
-    "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "TTTH-DF"
+    "loai_phan_tich": record["loai_phan_tich"] || "Chưa xác định",
+    "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "Chưa xác định",
+    "loai_don_hang": record["loai_don_hang"] || "Chưa xác định",
+    "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "Chưa xác định",
+    "ma_khach_hang": record["ma_khach_hang"] || "Chưa xác định",
+    "ten_khach_hang": record["ten_khach_hang"] || "Chưa xác định",
+    "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "Chưa xác định",
+    "ten_nguoi_duyet": record["ten_nguoi_duyet"] || "Chưa xác định",
+    "ten_don_hang": record["ten_don_hang"] || "Chưa xác định",
+    "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "Chưa xác định",
+    "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "Chưa xác định",
+    "ten_mau": record["ten_mau"] || "Chưa xác định",
+    "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "Chưa xác định",
   });
 
   /**
@@ -495,124 +495,7 @@
         search: tenChiTieu
       });
     }
-  };
-
-  /**
-   * Helper function để format lỗi thành message dễ hiểu
-   * @param {Object} error - Object lỗi từ API
-   * @returns {string} Thông báo lỗi được format
-   */
-  function formatPostgreSQLError(error) {
-    if (!error) return 'Đã xảy ra lỗi không xác định';
-
-    // Xử lý lỗi validation (422)
-    if (error.status === 422 && error.errors) {
-      const messages = [];
-      for (const [field, errors] of Object.entries(error.errors)) {
-        const fieldName = translateFieldName(field);
-        messages.push(`${fieldName}: ${errors.join(', ')}`);
-      }
-      return messages.join('\n');
-    }
-
-    // Xử lý các lỗi khác
-    const statusMessages = {
-      400: 'Dữ liệu gửi lên không hợp lệ',
-      401: 'Bạn cần đăng nhập để thực hiện thao tác này',
-      403: 'Bạn không có quyền thực hiện thao tác này',
-      404: 'Không tìm thấy dữ liệu yêu cầu',
-      409: 'Dữ liệu bị xung đột, vui lòng kiểm tra lại',
-      422: 'Dữ liệu không hợp lệ',
-      429: 'Bạn đã thực hiện quá nhiều request, vui lòng thử lại sau',
-      500: 'Lỗi máy chủ nội bộ',
-      502: 'Máy chủ không phản hồi',
-      503: 'Dịch vụ tạm thời không khả dụng'
-    };
-
-    return statusMessages[error.status] || error.message || 'Đã xảy ra lỗi không xác định';
-  }
-
-  /**
-   * Helper function để dịch tên field sang tiếng Việt
-   * @param {string} fieldName - Tên field tiếng Anh
-   * @returns {string} Tên field tiếng Việt
-   */
-  function translateFieldName(fieldName) {
-    const translations = {
-      id_don_hang: 'ID Đơn hàng',
-      id_ma_mau: 'ID Mã mẫu',
-      ten_chi_tieu: 'Tên chỉ tiêu',
-      don_vi_tinh: 'Đơn vị tính',
-      ket_qua_phan_tich: 'Kết quả phân tích',
-      tien_do_phan_tich: 'Tiến độ phân tích',
-      canh_bao_phan_tich: 'Cảnh báo phân tích',
-      ghi_chu: 'Ghi chú',
-      created_at: 'Ngày tạo',
-      updated_at: 'Ngày cập nhật'
-    };
-
-    return translations[fieldName] || fieldName;
-  }
-
-  /**
-   * Test function để kiểm tra kết nối API
-   * @returns {Promise<boolean>} True nếu kết nối thành công
-   */
-  async function testPostgreSQLConnection() {
-    try {
-      console.log('🔍 Đang kiểm tra kết nối PostgreSQL API...');
-
-      // Test với endpoint health check hoặc lấy 1 record đầu tiên
-      const url = `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.chiTietMau}`;
-      const testParams = {
-        page: 1,
-        limit: 1
-      };
-
-      const urlWithParams = buildUrlWithParams(url, testParams);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), POSTGRESQL_API_CONFIG.timeout);
-
-      const response = await fetch(urlWithParams, {
-        method: 'GET',
-        headers: createHeaders(),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      const data = await handleApiResponse(response);
-
-      console.log('✅ Kết nối PostgreSQL API thành công!', data);
-      return true;
-    } catch (error) {
-      console.error('❌ Không thể kết nối PostgreSQL API:', error.message);
-      return false;
-    }
-  }
-
-  // Export các hàm để sử dụng
-  window.PostgreSQLAPI = {
-    // Main CRUD functions
-    layDanhSachChiTietMau,
-    layChiTietMauTheoId,
-    taoChiTietMau,
-    capNhatChiTietMau,
-    xoaChiTietMau,
-
-    // Query shortcuts
-    ...chiTietMauQueries,
-
-    // Utility functions
-    formatPostgreSQLError,
-    translateFieldName,
-    testPostgreSQLConnection,
-    buildUrlWithParams,
-
-    // Config
-    config: POSTGRESQL_API_CONFIG
-  };
+  }; 
 
   // Alias để tương thích với code cũ
   window.PostgreSQL_ChiTietMau = {

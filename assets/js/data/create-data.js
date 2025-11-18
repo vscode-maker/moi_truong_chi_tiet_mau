@@ -1,4 +1,41 @@
-function createBulkDemoData(idCounter) {
+/**
+ * Tạo câu lệnh insert sql để tạo mã mẫu demo
+ */
+function createBulkSampleSQLInsertCommands() {
+  // const maMauArr = ['25-2025.KT01', '25-2025.KT02', '25-2025.KT03', '25-2025.KT04', '25-2025.KT05'];
+  const maMauArr = ['25-2025.KT06', '25-2025.KT07', '25-2025.KT08', '25-2025.KT09', '25-2025.KT010'];
+  const sampleNames = ['Nước thải', 'Nước sạch', 'Đất', 'Nước mặt', 'Không khí xung quanh'];
+
+  let sqlCommands = "";
+  let idCounter = 6;
+
+  function randomFromArray(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }  
+
+  for (const maMau of maMauArr) {
+    const loaiMau = randomFromArray(sampleNames);
+    sqlCommands += `INSERT INTO ma_mau (id, mau_id, nguoi_tao, don_hang_id, loai_mau, ten_mau, ma_mau, trang_thai) VALUES 
+    (
+      gen_random_uuid()::text,
+      'admin${idCounter++}',      
+      'admin',
+      'DH-2025-admin${idCounter}',
+      '${loaiMau}',
+      'Mẫu ${loaiMau}',
+      '${maMau}',
+      'Đang xử lý'
+    );\n`;
+  }
+
+  console.warn(sqlCommands);
+}
+
+/**
+ * Tạo dữ liệu chi tiết mẫu demo
+ * @param {*} idCounter thứ tự id bắt đầu
+ */
+function createBulkSampleDetailsData(idCounter) {
   // Tạo dữ liệu test đa dạng trên tất cả các loại và giai đoạn workflow
   const diverseDataArray = { data: [] };
   const sampleNames = ['Nước thải', 'Nước sạch', 'Đất', 'Nước mặt', 'Không khí xung quanh'];
@@ -7,7 +44,8 @@ function createBulkDemoData(idCounter) {
   const loaiPhanTichOptions = ["PT_VIM", "KPT_VIM", "PT_TK", "KPT_TK"];  
 
   // Nhóm mã mẫu 5 nhóm
-  const maMauArr = ['25-2025.KT01', '25-2025.KT02', '25-2025.KT03', '25-2025.KT04', '25-2025.KT05'];
+  // const maMauArr = ['25-2025.KT01', '25-2025.KT02', '25-2025.KT03', '25-2025.KT04', '25-2025.KT05'];
+  const maMauArr = ['25-2025.KT06', '25-2025.KT07', '25-2025.KT08', '25-2025.KT09', '25-2025.KT010'];
 
   // Tên đơn hàng 2 loại
   const tenDonHangArr = ['Đơn hàng Mẫu gửi - Công ty TNHH ABC', 'Đơn hàng Mẫu nội bộ - Phòng QC'];
@@ -19,18 +57,22 @@ function createBulkDemoData(idCounter) {
   const nguoiDuyetArr = ['Phạm Thị D', 'Hoàng Văn E'];
 
   // danh sách trạng thái chuẩn
-  const trangThaiArr = [
-    'CHO_CHUYEN_MAU',
-    'CHO_DUYET_THAU',
-    'CHO_GUI_MAU_THAU',
-    'DANG_PHAN_TICH',
-    'PHAN_TICH_LAI',
-    'CHO_DUYET_KQ',
-    'HOAN_THANH',  
+  // const trangThaiArr = [
+  //   'CHO_CHUYEN_MAU',
+  //   'CHO_DUYET_THAU',
+  //   'CHO_GUI_MAU_THAU',
+  //   'DANG_PHAN_TICH',
+  //   'PHAN_TICH_LAI',
+  //   'CHO_DUYET_KQ',
+  //   'HOAN_THANH',  
+  // ]
+  const trangThaiArr = [    
+    'CHO_DUYET_KQ'    
   ]
 
   // Danh sách đơn hàng id
-  const donHangIdArr = ['25-2025', '25-2026'];
+  // const donHangIdArr = ['25-2025', '25-2026'];
+  const donHangIdArr = ['25-2025'];
 
   function randomFromArray(arr) {
     return arr[Math.floor(Math.random() * arr.length)];

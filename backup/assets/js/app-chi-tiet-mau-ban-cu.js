@@ -638,7 +638,7 @@
     
     // Bước 2: Lấy danh sách chi tiết mẫu và khởi tạo
     try {
-      const result = await window.PostgreSQLAPI.layDanhSachChiTietMau({
+      const result = await sampleDetailsService.getList({
         limit: 10,
         offset: 0
       });
