@@ -77,7 +77,7 @@ if (typeof TemplateCustomizer !== 'undefined') {
     // defaultSkin: 1,
     // defaultTheme: 'system',
     // defaultSemiDark: true,
-    // defaultContentLayout: 'wide',
+    defaultContentLayout: 'wide',
     // defaultHeaderType: 'static',
     // defaultMenuCollapsed: true,
     // defaultNavbarType: 'static',
