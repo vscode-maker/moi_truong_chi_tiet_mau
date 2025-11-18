@@ -1068,107 +1068,107 @@ import { partners, indicators } from './data/data.js';
         width: '150px'
       },
       {
-        // Tên khách hàng - ẨN
+        // Cảnh báo - ĐÃ DI CHUYỂN LÊN VỊ TRÍ 4
         targets: 4,
+        width: '150px'
+      },
+      {
+        // Tên khách hàng - ẨN (từ 4 → 5)
+        targets: 5,
         width: '200px',
         visible: false // Ẩn cột này
       },
       {
-        // Tên đơn hàng
-        targets: 5,
+        // Tên đơn hàng (từ 5 → 6)
+        targets: 6,
         width: '250px'
       },
       {
-        // Tên chỉ tiêu
-        targets: 6,
+        // Tên chỉ tiêu (từ 6 → 7)
+        targets: 7,
         width: '200px'
       },
       {
-        // Tên người phân tích
-        targets: 7,
-        width: '150px'
-      },
-      {
-        // Tên người duyệt
+        // Tên người phân tích (từ 7 → 8)
         targets: 8,
         width: '150px'
       },
       {
-        // Loại phân tích
+        // Tên người duyệt (từ 8 → 9)
         targets: 9,
+        width: '150px'
+      },
+      {
+        // Loại phân tích (từ 9 → 10)
+        targets: 10,
         width: '120px',
         className: 'text-center'
       },
       {
-        // TRẠNG THÁI TỔNG HỢP
-        targets: 10,
+        // TRẠNG THÁI TỔNG HỢP (từ 10 → 11)
+        targets: 11,
         width: '200px',
         className: 'text-center'
       },
       {
-        // NƠI PHÂN TÍCH
-        targets: 11,
+        // NƠI PHÂN TÍCH (từ 11 → 12)
+        targets: 12,
         width: '120px',
         className: 'text-center'
       },
       {
-        // Kết quả thực tế
-        targets: 12,
+        // Kết quả thực tế (từ 12 → 13)
+        targets: 13,
         width: '120px',
         className: 'text-end'
       },
       {
-        // Kết quả in phiếu
-        targets: 13,
+        // Kết quả in phiếu (từ 13 → 14)
+        targets: 14,
         width: '150px'
       },
       {
-        // Tiền tố ẨN
-        targets: 14,
-        width: '80px',
-        className: 'text-center',
-        visible: false // Ẩn cột này
-      },
-      {
-        // Ưu tiên ẨN
+        // Tiền tố ẨN (từ 14 → 15)
         targets: 15,
         width: '80px',
         className: 'text-center',
         visible: false // Ẩn cột này
       },
       {
-        // Phê duyệt
+        // Ưu tiên ẨN (từ 15 → 16)
         targets: 16,
+        width: '80px',
+        className: 'text-center',
+        visible: false // Ẩn cột này
+      },
+      {
+        // Phê duyệt (từ 16 → 17)
+        targets: 17,
         width: '140px'
       },
       {
-        // Ngày nhận mẫu
-        targets: 17,
-        width: '120px'
-      },
-      {
-        // Ngày trả kết quả
+        // Ngày nhận mẫu (từ 17 → 18)
         targets: 18,
         width: '120px'
       },
       {
-        // Loại đơn hàng
+        // Ngày trả kết quả (từ 18 → 19)
         targets: 19,
         width: '120px'
       },
       {
-        // Thành tiền
+        // Loại đơn hàng (từ 19 → 20)
         targets: 20,
+        width: '120px'
+      },
+      {
+        // Thành tiền (từ 20 → 21)
+        targets: 21,
         width: '120px',
         className: 'text-end'
       },
       {
-        // Cảnh báo
-        targets: 21,
-        width: '150px'
-      },
-      {
-        // Lịch sử
+        // Lịch sử (từ 21 → 22, vì đã xóa Cảnh báo ở 21)
         targets: 22,
         width: '150px'
       }
@@ -1240,6 +1240,39 @@ import { partners, indicators } from './data/data.js';
           let hanHoanThanh = handleNullValue(data);
           hanHoanThanh = hanHoanThanh ? formatDate(hanHoanThanh) : '';
           return `<span class="text-danger fw-semibold"><i class="ri-alarm-warning-line me-1"></i>${hanHoanThanh}</span>`;
+        }
+      },
+      {
+        // CẢNH BÁO - ĐÃ DI CHUYỂN LÊN VỊ TRÍ 4
+        data: 'canh_bao_phan_tich',
+        title: 'Cảnh báo',
+        width: '150px',
+        render: function (data, type, row) {
+          // Nếu là sorting, filtering, hoặc grouping → trả về giá trị gốc
+          if (type !== 'display') {
+            return handleNullValue(data, '-');
+          }
+
+          const canhBao = handleNullValue(data);
+          if (!canhBao) return '';
+
+          const warningColors = {
+            'Hoàn thành (đúng hạn)': 'success',
+            'Hoàn thành (quá hạn)': 'danger',
+            'Quá hạn': 'danger',
+            'Tới hạn': 'warning',
+            'Chưa có hạn': 'secondary'        
+          };
+
+          let color = 'info';
+          for (const [key, value] of Object.entries(warningColors)) {
+            if (canhBao.includes(key)) {
+              color = value;
+              break;
+            }
+          }
+
+          return `<span class="badge bg-${color}" title="${canhBao}">${canhBao}</span>`;
         }
       },
       {
@@ -1501,33 +1534,6 @@ import { partners, indicators } from './data/data.js';
         className: 'text-end',
         render: function (data, type, row) {
           return data ? formatCurrency(data) : '0 ₫';
-        }
-      },
-      {
-        data: 'canh_bao_phan_tich',
-        title: 'Cảnh báo',
-        width: '150px',
-        render: function (data, type, row) {
-          const canhBao = handleNullValue(data);
-          if (!canhBao) return '';
-
-          const warningColors = {
-            'Hoàn thành (đúng hạn)': 'success',
-            'Hoàn thành (quá hạn)': 'danger',
-            'Quá hạn': 'danger',
-            'Tới hạn': 'warning',
-            'Chưa có hạn': 'secondary'        
-          };
-
-          let color = 'info';
-          for (const [key, value] of Object.entries(warningColors)) {
-            if (canhBao.includes(key)) {
-              color = value;
-              break;
-            }
-          }
-
-          return `<span class="badge bg-${color}" title="${canhBao}">${canhBao}</span>`;
         }
       },
       {

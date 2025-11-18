@@ -36,8 +36,16 @@ const GROUP_BY_COLUMNS_CONFIG = [
       defaultSelected: true // Cột được chọn mặc định
     },
     {
+      value: 'canh_bao_phan_tich',
+      index: 4,
+      label: 'Cảnh báo',
+      icon: 'ri-alert-line',
+      color: 'warning',
+      enabled: true
+    },
+    {
       value: 'ten_don_hang',
-      index: 5,
+      index: 6,
       label: 'Tên đơn hàng',
       icon: 'ri-file-text-line',
       color: 'primary',
@@ -45,7 +53,7 @@ const GROUP_BY_COLUMNS_CONFIG = [
     },
     {
       value: 'ten_chi_tieu',
-      index: 6,
+      index: 7,
       label: 'Tên chỉ tiêu',
       icon: 'ri-test-tube-line',
       color: 'purple',
@@ -53,7 +61,7 @@ const GROUP_BY_COLUMNS_CONFIG = [
     },
     {
       value: 'nguoi_phan_tich',
-      index: 7,
+      index: 8,
       label: 'Người phân tích',
       icon: 'ri-user-line',
       color: 'success',
@@ -61,7 +69,7 @@ const GROUP_BY_COLUMNS_CONFIG = [
     },
     {
       value: 'loai_phan_tich',
-      index: 9,
+      index: 10,
       label: 'Loại phân tích',
       icon: 'ri-flask-line',
       color: 'warning',
@@ -69,7 +77,7 @@ const GROUP_BY_COLUMNS_CONFIG = [
     },
     {
       value: 'noi_phan_tich',
-      index: 11,
+      index: 12,
       label: 'Nơi phân tích',
       icon: 'ri-building-line',
       color: 'warning',
@@ -77,12 +85,14 @@ const GROUP_BY_COLUMNS_CONFIG = [
     },
     {
       value: 'phe_duyet',
-      index: 16,
+      index: 17,
       label: 'Phê duyệt',
       icon: 'ri-check-line',
       color: 'info',
       enabled: true
     }    
 ];
+
+
 
 export { GROUP_BY_COLUMNS_CONFIG };
