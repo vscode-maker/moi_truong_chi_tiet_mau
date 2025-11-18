@@ -3,7 +3,11 @@
  * Quản lý chi tiết mẫu với đầy đủ tính năng DataTable
  */
 
+// Import configs
+import { GROUP_BY_COLUMNS_CONFIG } from './configs/sample-details-table.config.js';
+
 // Import services
+import sampleDetailsTableService from './services/sample-details-table.service.js';
 import calcByFormulaService from './services/calc-by-formula.service.js';
 
 // Import partners data
@@ -519,81 +523,7 @@ import { partners, indicators } from './data/data.js';
       tien_do_phan_tich: tienDoPhanTich,
       tien_do_gui_thau: tienDoGuiThau
     };
-  }
-
-  /**
-   * Helper function: Validate và auto-correct workflow cho một record
-   * @param {Object} record - Record cần validate
-   * @returns {Object} - Record đã được correct
-   */
-  function validateAndCorrectWorkflow(record) {
-    const trangThai = record.trang_thai_phan_tich;
-    const noiPhanTich = record.noi_phan_tich;
-
-    if (!trangThai) {
-      return record; // Không có trạng thái thì không xử lý
-    }
-
-    // Tính toán trạng thái đúng theo workflow
-    const correctStates = applyWorkflowLogic(trangThai, noiPhanTich);
-
-    // Cập nhật nếu khác với giá trị hiện tại
-    let needsUpdate = false;
-
-    if (record.tien_do_phan_tich !== correctStates.tien_do_phan_tich) {
-      console.log(
-        `📝 Auto-correct tien_do_phan_tich: ${record.tien_do_phan_tich} → ${correctStates.tien_do_phan_tich}`
-      );
-      record.tien_do_phan_tich = correctStates.tien_do_phan_tich;
-      needsUpdate = true;
-    }
-
-    if (record.tien_do_gui_thau !== correctStates.tien_do_gui_thau) {
-      console.log(`📝 Auto-correct tien_do_gui_thau: ${record.tien_do_gui_thau} → ${correctStates.tien_do_gui_thau}`);
-      record.tien_do_gui_thau = correctStates.tien_do_gui_thau;
-      needsUpdate = true;
-    }
-
-    if (needsUpdate) {
-      console.log(`✅ Đã auto-correct workflow cho record ID: ${record.id}`);
-    }
-
-    return record;
-  }
-
-  /**
-   * Helper function: Lấy trạng thái hiển thị (display status) dựa vào logic
-   * @param {Object} record - Record từ JSON
-   * @returns {string} - Trạng thái để hiển thị
-   */
-  function getDisplayStatus(record) {
-    const loaiPT = getLoaiPhanTich(record);
-    const trangThaiPT = getTrangThaiPhanTich(record);
-    const tienDoGuiThau = getTienDoGuiThau(record);
-
-    // Nếu chưa phân loại
-    if (!loaiPT) {
-      return trangThaiPT;
-    }
-
-    // Nếu là quy trình thầu (KPT-VIM hoặc KPT-TK)
-    if (loaiPT === 'KPT-VIM' || loaiPT === 'KPT-TK') {
-      return tienDoGuiThau || 'Chưa xử lý thầu';
-    }
-
-    // Nếu là quy trình nội bộ (PT-VIM hoặc PT-TK)
-    return trangThaiPT;
-  }
-
-  /**
-   * Helper function: Kiểm tra xem có phải quy trình thầu không
-   * @param {Object} record - Record từ JSON
-   * @returns {boolean} - true nếu là quy trình thầu
-   */
-  function isQuanTriThau(record) {
-    const loaiPT = getLoaiPhanTich(record);
-    return loaiPT === 'KPT-VIM' || loaiPT === 'KPT-TK';
-  }
+  }    
 
   /**
    * Khởi tạo ứng dụng
@@ -633,6 +563,7 @@ import { partners, indicators } from './data/data.js';
       })
 
       chiTietMauData = response.data;
+      console.warn(chiTietMauData[0]);
 
       // Load danh sách chỉ tiêu
       await loadDanhSachChiTieu();
@@ -640,6 +571,7 @@ import { partners, indicators } from './data/data.js';
       // Khởi tạo UI
       initializeDataTable();
       initializeProgressStats();
+      sampleDetailsTableService.renderGroupByDropdown(GROUP_BY_COLUMNS_CONFIG);
       bindEvents();      
       
       // Set checkbox checked cho grouping mặc định
@@ -647,7 +579,7 @@ import { partners, indicators } from './data/data.js';
         selectedGroupColumns.forEach(col => {
           $(`#group_${col}`).prop('checked', true);
         });
-        $('#groupByLabel').text(`Đã nhóm (${selectedGroupColumns.length})`);
+        updateGroupByLabel();        
       }
 
       showLoading(false);
@@ -1040,21 +972,22 @@ import { partners, indicators } from './data/data.js';
     };
 
     // Thêm rowGroup config nếu đang bật chế độ nhóm
-    if (isGroupingEnabled && selectedGroupColumns.length > 0) {
-      // Cấu hình columns để map tên cột với tên hiển thị
-      const columnLabels = {
-        don_hang_id: '📦 Đơn hàng',
-        ma_mau: '🏷️ Mã mẫu',
-        han_hoan_thanh_pt_gm: '⏳ Hạn hoàn thành',
-        loai_don_hang: '📋 Loại đơn hàng',
-        ten_khach_hang: '🏢 Khách hàng',
-        ten_don_hang: '📄 Tên đơn hàng',
-        noi_phan_tich: '🏢 Nơi phân tích',
-        nguoi_phan_tich: '👤 Người phân tích',       
-        ten_nguoi_duyet: '✅ Tên người duyệt',       
-        ten_chi_tieu: '🧪 Tên chỉ tiêu',       
-        trang_thai_phan_tich: '📊 Trạng thái phân tích',               
-      };
+    if (isGroupingEnabled && selectedGroupColumns.length > 0) {      
+
+      // Tạo columnLabels từ GROUP_BY_COLUMNS_CONFIG
+      // Hiển thị ở đầu mỗi nhóm
+      const columnLabels = {};
+      GROUP_BY_COLUMNS_CONFIG.forEach(col => {
+        // Lấy emoji từ icon hoặc dùng icon string
+        const emoji = col.icon.includes('alarm') ? '⏰' : 
+                      col.icon.includes('file-list') ? '📦' : 
+                      col.icon.includes('barcode') ? '🏷️' : 
+                      col.icon.includes('building') ? '🏢' : 
+                      col.icon.includes('user') ? '👤' : 
+                      col.icon.includes('test-tube') ? '🧪' : 
+                      col.icon.includes('progress') ? '📊' : '📋';
+        columnLabels[col.value] = `${emoji} ${col.label}`;
+      });
 
       // Nếu chọn nhiều cột, dùng array; nếu 1 cột, dùng string
       const groupDataSrc = selectedGroupColumns.length === 1 ? selectedGroupColumns[0] : selectedGroupColumns;
@@ -1091,11 +1024,14 @@ import { partners, indicators } from './data/data.js';
 
       // Sắp xếp theo cột nhóm đầu tiên
       const firstGroupColumn = selectedGroupColumns[0];
-      const columnIndex = getColumnIndexByName(firstGroupColumn);
+      const columnIndex = sampleDetailsTableService.getColumnIndexByValue(GROUP_BY_COLUMNS_CONFIG, firstGroupColumn);
       tableConfig.order = [[columnIndex, 'asc']];
+
     } else {
       // Sắp xếp theo Hạn hoàn thành khi tắt grouping (ASCENDING - sớm nhất trước)
-      tableConfig.order = [[3, 'asc']]; // Sort by han_hoan_thanh_pt_gm (index 3)
+      // Lấy index của cột mặc định
+      const defaultColumnIndex = sampleDetailsTableService.getColumnIndexByValue(GROUP_BY_COLUMNS_CONFIG, 'han_hoan_thanh_pt_gm');
+      tableConfig.order = [[defaultColumnIndex, 'asc']];
     }
 
     // Thêm columnDefs - ĐÃ XÓA RESPONSIVE PRIORITY - HIỂN THỊ TẤT CẢ CỘT
@@ -1357,7 +1293,7 @@ import { partners, indicators } from './data/data.js';
         }
       },
       {
-        data: 'phan_loai_chi_tieu',
+        data: 'loai_phan_tich',
         title: 'Loại phân tích',
         width: '120px',
         className: 'text-center',
@@ -1484,8 +1420,7 @@ import { partners, indicators } from './data/data.js';
         width: '140px',
         render: function (data, type, row) {
           const approvalColors = {
-            '1.Đạt': 'success',
-            '2.Xét lại': 'warning',
+            '1.Đạt': 'success',           
             '2.Không đạt': 'danger',
             '3.Chờ duyệt': 'primary'
           };
@@ -1577,13 +1512,14 @@ import { partners, indicators } from './data/data.js';
           if (!canhBao) return '';
 
           const warningColors = {
-            'Hoàn thành (Đúng hạn)': 'success',
-            'Hoàn thành (Quá hạn )': 'danger',
-            'Đang thực hiện': 'info',
-            'Sắp đến hạn': 'warning'
+            'Hoàn thành (đúng hạn)': 'success',
+            'Hoàn thành (quá hạn)': 'danger',
+            'Quá hạn': 'danger',
+            'Tới hạn': 'warning',
+            'Chưa có hạn': 'secondary'        
           };
 
-          let color = 'secondary';
+          let color = 'info';
           for (const [key, value] of Object.entries(warningColors)) {
             if (canhBao.includes(key)) {
               color = value;
@@ -2267,25 +2203,13 @@ import { partners, indicators } from './data/data.js';
       btn.removeClass('active');
     } else if (checkedCount === 1) {
       const checkedValue = $('.group-by-checkbox:checked').val();
-      const columnNames = {
-        don_hang_id: 'Đơn hàng',
-        ma_mau: 'Mã mẫu',
-        ten_mau: 'Tên mẫu',
-        loai_don_hang: 'Loại đơn hàng',
-        ten_khach_hang: 'Khách hàng',
-        ten_don_hang: 'Tên đơn hàng',
-        noi_phan_tich: 'Nơi phân tích',
-        nguoi_phan_tich: 'Người phân tích',
-        ten_nguoi_phan_tich: 'Tên người phân tích',
-        ma_nguoi_duyet: 'Mã người duyệt',
-        ten_nguoi_duyet: 'Tên người duyệt',
-        ma_nguoi_phan_tich: 'Mã người phân tích',
-        ten_chi_tieu: 'Tên chỉ tiêu',
-        loai_phan_tich: 'Loại phân tích',
-        trang_thai_phan_tich: 'Trạng thái phân tích',
-        trang_thai_tong_hop: 'Trạng thái',
-        tien_do_gui_thau: 'Tiến độ gửi thầu'
-      };
+
+      //  Tạo column names từ GROUP COLUMNS CONFIG
+      const columnNames = GROUP_BY_COLUMNS_CONFIG.reduce((acc, col) => {
+        acc[col.value] = col.label;
+        return acc;
+      }, {});
+      
       label.text('Nhóm: ' + columnNames[checkedValue]);
       btn.addClass('active');
     } else {
@@ -2367,34 +2291,7 @@ import { partners, indicators } from './data/data.js';
         text: 'Có lỗi khi bỏ nhóm dữ liệu'
       });
     }
-  }
-
-  /**
-   * Helper: Lấy index của column theo tên
-   */
-  function getColumnIndexByName(columnName) {
-    const columnMap = {
-      don_hang_id: 1, // Không có cột này trong table, nhưng có trong data
-      ma_mau: 1, // Cột 1: Mã mẫu
-      ten_mau: 2, // Cột 2: Tên mẫu (MỚI V2.3)
-      han_hoan_thanh_pt_gm: 3, // ✅ THÊM DÒNG NÀY - Cột 3: Hạn hoàn thành
-      loai_don_hang: 19, // Cột 19: Loại đơn hàng
-      ten_khach_hang: 4, // Cột 4: Tên khách hàng
-      ten_don_hang: 5, // Cột 5: Tên đơn hàng
-      ten_chi_tieu: 6, // Cột 6: Tên chỉ tiêu
-      ten_nguoi_phan_tich: 7, // Cột 7: Tên người phân tích
-      nguoi_phan_tich: 7, // Fallback to ten_nguoi_phan_tich
-      ma_nguoi_phan_tich: 7, // Fallback to ten_nguoi_phan_tich
-      ten_nguoi_duyet: 8, // Cột 8: Tên người duyệt
-      ma_nguoi_duyet: 8, // Fallback to ten_nguoi_duyet
-      trang_thai_phan_tich: 10, // Cột 10: Trạng thái tổng hợp
-      loai_phan_tich: 9, // Cột 9: Loại phân tích
-      tien_do_gui_thau: 10, // Tiến độ gửi thầu
-      noi_phan_tich: 11, // Cột 11: Nơi phân tích
-      tien_do_phan_tich: 10 // Cột 10: Tiến độ phân tích
-    };
-    return columnMap[columnName] || 1;
-  }
+  }  
 
   // #region [ XỬ LÝ FORM DỰA TRÊN CONFIG ]
   /**

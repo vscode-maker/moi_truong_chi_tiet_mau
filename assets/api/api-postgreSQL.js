@@ -107,6 +107,8 @@
     "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "Chưa xác định",
     "ten_mau": record["ten_mau"] || "Chưa xác định",
     "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "Chưa xác định",
+
+    "phe_duyet": record["phe_duyet"] || "Chưa phê duyệt",
   });
 
   /**

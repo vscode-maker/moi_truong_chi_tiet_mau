@@ -255,7 +255,9 @@
                       <ul class="dropdown-menu group-by-dropdown" id="groupByDropdown">
                         <li class="dropdown-header">Chọn cột để nhóm (có thể chọn nhiều)</li>
                         <li><hr class="dropdown-divider" /></li>
-                        <li>
+
+                        <!-- Options sẽ được tạo động bằng JavaScript -->
+                        <!-- <li>
                           <div class="dropdown-item group-by-option">
                             <div class="form-check">
                               <input
@@ -366,7 +368,8 @@
                               </label>
                             </div>
                           </div>
-                        </li>
+                        </li> -->
+
                         <li><hr class="dropdown-divider" /></li>
                         <li>
                           <button class="dropdown-item text-center text-primary" id="applyGroupBtn">
@@ -768,12 +771,14 @@
     <!-- API JS -->
     <script src="./assets/api/api-postgreSQL.js"></script>
 
-    <!-- Helper JS -->
+    <!-- Config JS -->
     <script src="./assets/js/configs/sample-details.config.js"></script>
-    <script src="./assets/js/services/form-builder.service.js"></script>
-
+    <script type="module" src="./assets/js/configs/sample-details-table.config.js"></script>
+    
     <!-- Service JS -->
-    <script src="./assets/js/services/sample-details.service.js"></script>
+    <script type="module" src="./assets/js/services/sample-details-table.service.js"></script>
+    <script src="./assets/js/services/form-builder.service.js"></script>
+    <script src="./assets/js/services/sample-details.service.js"></script>    
     <script type="module" src="./assets/js/services/calc-by-formula.service.js"></script>
 
     <!-- Page JS -->
