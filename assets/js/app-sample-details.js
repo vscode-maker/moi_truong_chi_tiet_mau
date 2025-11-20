@@ -1025,13 +1025,13 @@ import { partners, indicators } from './data/data.js';
       // Sắp xếp theo cột nhóm đầu tiên
       const firstGroupColumn = selectedGroupColumns[0];
       const columnIndex = sampleDetailsTableService.getColumnIndexByValue(GROUP_BY_COLUMNS_CONFIG, firstGroupColumn);
-      tableConfig.order = [[columnIndex, 'desc']];
+      tableConfig.order = [[columnIndex, 'asc']];
 
     } else {
       // Sắp xếp theo Hạn hoàn thành khi tắt grouping (ASCENDING - sớm nhất trước)
       // Lấy index của cột mặc định
       const defaultColumnIndex = sampleDetailsTableService.getColumnIndexByValue(GROUP_BY_COLUMNS_CONFIG, 'han_hoan_thanh_pt_gm');
-      tableConfig.order = [[defaultColumnIndex, 'desc']];
+      tableConfig.order = [[defaultColumnIndex, 'asc']];
     }
 
     // Thêm columnDefs - ĐÃ XÓA RESPONSIVE PRIORITY - HIỂN THỊ TẤT CẢ CỘT
@@ -1237,6 +1237,17 @@ import { partners, indicators } from './data/data.js';
         title: 'Hạn hoàn thành',
         width: '120px',
         render: function (data, type, row) {
+          // Nếu là sorting → trả về timestamp để so sánh số
+          if (type === 'sort' || type === 'type') {
+            if (!data) return 0;
+            return new Date(data).getTime(); // Trả về timestamp số
+          }
+
+          // Nếu là filtering/grouping → trả về formatted date
+          if (type === 'filter') {
+            return data ? formatDate(data) : '';
+          }
+
           let hanHoanThanh = handleNullValue(data);
           hanHoanThanh = hanHoanThanh ? formatDate(hanHoanThanh) : '';
           return `<span class="text-danger fw-semibold"><i class="ri-alarm-warning-line me-1"></i>${hanHoanThanh}</span>`;
