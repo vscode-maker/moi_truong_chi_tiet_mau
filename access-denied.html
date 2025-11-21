@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="vi"
+  dir="ltr"
+  data-skin="default"
+  data-assets-path="./assets/"
+  data-bs-theme="light"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>CEFINEA | Không Có Quyền Truy Cập</title>
+    <meta name="description" content="Bạn không có quyền truy cập vào trang này" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="./assets/img/favicon/logo.png" />
+    
+    <script>
+      localStorage.setItem("templateCustomizer-vertical-menu-template--Color", "#2092EC")
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&ampdisplay=swap" rel="stylesheet" />
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="./assets/vendor/fonts/iconify-icons.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" integrity="sha512-XcIsjKMcuVe0Ucj/xgIXQnytNwBttJbNjltBV18IOnru2lDPe9KRRyvCXw6Y5H415vbBLRm8+q6fmLUU7DfO6Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="./assets/vendor/css/core.css" />
+    <link rel="stylesheet" href="./assets/css/demo.css" />
+
+    <!-- Vendors CSS -->
+    <link rel="stylesheet" href="./assets/vendor/libs/node-waves/node-waves.css" />
+    <link rel="stylesheet" href="./assets/vendor/libs/animate-css/animate.css" />
+
+    <!-- Helpers -->
+    <script src="./assets/vendor/js/helpers.js"></script>
+
+    <style>
+      .access-denied-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+      }
+
+      [data-bs-theme="dark"] .access-denied-wrapper {
+        background: linear-gradient(135deg, #1a1d29 0%, #2d1b3d 100%);
+      }
+
+      .access-denied-card {
+        max-width: 600px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 24px;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      [data-bs-theme="dark"] .access-denied-card {
+        background: rgba(30, 33, 48, 0.95);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .icon-container {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto 2rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: pulse 2s ease-in-out infinite;
+        box-shadow: 0 10px 30px rgba(240, 147, 251, 0.3);
+      }
+
+      [data-bs-theme="dark"] .icon-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .icon-container i {
+        font-size: 70px;
+        color: #ffffff;
+      }
+
+      .access-denied-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        animation: fadeIn 0.8s ease-out 0.2s both;
+      }
+
+      [data-bs-theme="dark"] .access-denied-title {
+        color: #e7e9f5;
+      }
+
+      .access-denied-subtitle {
+        font-size: 1.1rem;
+        color: #5a6c7d;
+        margin-bottom: 0.5rem;
+        animation: fadeIn 0.8s ease-out 0.3s both;
+      }
+
+      [data-bs-theme="dark"] .access-denied-subtitle {
+        color: #a4a8c1;
+      }
+
+      .access-denied-description {
+        font-size: 1rem;
+        color: #7f8c97;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+        animation: fadeIn 0.8s ease-out 0.4s both;
+      }
+
+      [data-bs-theme="dark"] .access-denied-description {
+        color: #858ba7;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .btn-group-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        animation: fadeIn 0.8s ease-out 0.5s both;
+      }
+
+      .btn-custom {
+        padding: 12px 28px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        color: white;
+      }
+
+      .btn-secondary-custom {
+        background: transparent;
+        color: #667eea;
+        border: 2px solid #667eea;
+      }
+
+      [data-bs-theme="dark"] .btn-secondary-custom {
+        color: #8b9cff;
+        border-color: #8b9cff;
+      }
+
+      .btn-secondary-custom:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      [data-bs-theme="dark"] .btn-secondary-custom:hover {
+        background: #8b9cff;
+        border-color: #8b9cff;
+      }
+
+      .system-info {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        animation: fadeIn 0.8s ease-out 0.6s both;
+      }
+
+      [data-bs-theme="dark"] .system-info {
+        border-top-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .system-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 20px;
+        background: linear-gradient(135deg, #2092EC 0%, #1769aa 100%);
+        color: white;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 12px rgba(32, 146, 236, 0.3);
+      }
+
+      .system-name {
+        font-size: 0.85rem;
+        color: #7f8c97;
+        margin-top: 1rem;
+      }
+
+      [data-bs-theme="dark"] .system-name {
+        color: #858ba7;
+      }
+
+      /* Theme Toggle Button */
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+
+      .btn-theme-toggle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      [data-bs-theme="dark"] .btn-theme-toggle {
+        background: rgba(30, 33, 48, 0.9);
+      }
+
+      .btn-theme-toggle:hover {
+        transform: rotate(180deg) scale(1.1);
+      }
+
+      .btn-theme-toggle i {
+        font-size: 24px;
+        color: #667eea;
+      }
+
+      [data-bs-theme="dark"] .btn-theme-toggle i {
+        color: #fbbf24;
+      }
+
+      /* Responsive */
+      @media (max-width: 576px) {
+        .access-denied-card {
+          padding: 2rem 1.5rem;
+        }
+
+        .access-denied-title {
+          font-size: 1.8rem;
+        }
+
+        .icon-container {
+          width: 110px;
+          height: 110px;
+        }
+
+        .icon-container i {
+          font-size: 55px;
+        }
+
+        .btn-group-actions {
+          flex-direction: column;
+        }
+
+        .btn-custom {
+          width: 100%;
+        }
+      }
+
+      /* Additional animations */
+      .animate__animated {
+        animation-duration: 1s;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle">
+      <button class="btn-theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <i class="ri-sun-line" id="themeIcon"></i>
+      </button>
+    </div>
+
+    <!-- Access Denied Content -->
+    <div class="access-denied-wrapper">
+      <div class="access-denied-card animate__animated animate__fadeInUp">
+        <!-- Icon -->
+        <div class="icon-container">
+          <i class="ri-lock-line"></i>
+        </div>
+
+        <!-- Title -->
+        <h1 class="access-denied-title">
+          Truy Cập Bị Từ Chối
+        </h1>
+
+        <!-- Subtitle -->
+        <h2 class="access-denied-subtitle">
+          Bạn không có quyền truy cập trang này
+        </h2>
+
+        <!-- Description -->
+        <p class="access-denied-description">
+          Tài khoản của bạn không có đủ quyền hạn để truy cập vào trang quản lý chi tiết mẫu. 
+          Vui lòng liên hệ với quản trị viên hệ thống để được cấp quyền truy cập.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="btn-group-actions">
+          <a href="javascript:history.back()" class="btn-custom btn-secondary-custom">
+            <i class="ri-arrow-left-line"></i>
+            Quay lại
+          </a>
+
+          <!-- #TEST DEBUG -->
+          <a href="/?mau_id=7f18ebcd" class="btn-custom btn-primary-custom">
+            <i class="ri-test-tube-line"></i>
+            Test Mã Mẫu ID
+          </a>
+          <a href="./?phan_quyen=Admin&chuc_vu=Giám%20đốc&phong_ban=Ban%20Giám%20Đốc&ma_nv=NV044&ho_ten=Nguyễn%20Thanh%20Tùng&quyen_action=Xin%20gia%20hạn%20việc%20%2C%20Gửi%20mẫu%20thầu%20%2C%20Nhận%20mẫu%20phân%20tích%20%2C%20Bốc%20mẫu%20đơn%20hàng%20%2C%20Copy%20mẫu%20%2C%20Cập%20nhật%20file%20kết%20quả%20thầu%20%2C%20Thêm%20chỉ%20tiêu&nhom_phan_tich=Đo%20hiện%20trường" class="btn-custom btn-primary-custom">
+            <i class="ri-test-tube-line"></i>
+            Test Admin
+          </a>
+          <!-- <a href="javascript:void(0)" onclick="requestAccess()" class="btn-custom btn-primary-custom">
+            <i class="ri-mail-send-line"></i>
+            Yêu cầu quyền truy cập
+          </a> -->
+        </div>
+
+        <!-- System Info -->
+        <div class="system-info">
+          <div class="system-badge">
+            <i class="ri-shield-check-line"></i>
+            <span>CEFINEA SYSTEM</span>
+          </div>
+          <p class="system-name">
+            Hệ Thống Quản Lý Chi Tiết Mẫu Phòng Thí Nghiệm
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="./assets/vendor/js/bootstrap.js"></script>
+    <script src="./assets/vendor/libs/node-waves/node-waves.js"></script>
+
+    <!-- Custom Script -->
+    <script>
+      // Theme Toggle
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+      const html = document.documentElement;
+
+      // Check saved theme
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      html.setAttribute('data-bs-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        html.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+      });
+
+      function updateThemeIcon(theme) {
+        if (theme === 'dark') {
+          themeIcon.className = 'ri-moon-line';
+        } else {
+          themeIcon.className = 'ri-sun-line';
+        }
+      }
+
+      // Request Access Function
+      function requestAccess() {
+        // Get user email if available
+        const userEmail = localStorage.getItem('userEmail') || 'Không xác định';
+        const userName = localStorage.getItem('userName') || 'Người dùng';
+        
+        // Create mailto link
+        const subject = encodeURIComponent('Yêu cầu quyền truy cập CEFINEA');
+        const body = encodeURIComponent(
+          `Kính gửi Quản trị viên,\n\n` +
+          `Tôi là ${userName} (${userEmail}) muốn yêu cầu quyền truy cập vào hệ thống CEFINEA - Quản lý chi tiết mẫu phòng thí nghiệm.\n\n` +
+          `Lý do yêu cầu: [Vui lòng điền lý do của bạn]\n\n` +
+          `Thời gian: ${new Date().toLocaleString('vi-VN')}\n\n` +
+          `Trân trọng,\n${userName}`
+        );
+        
+        // Open email client
+        window.location.href = `mailto:admin@cefinea.com?subject=${subject}&body=${body}`;
+      }
+
+      // Add animation on scroll (if needed)
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize waves effect
+        if (typeof Waves !== 'undefined') {
+          Waves.init();
+          Waves.attach('.btn-custom', ['waves-light']);
+        }
+
+        // Log access attempt (optional)
+        console.log('%c⚠️ Truy cập bị từ chối', 'color: #f5576c; font-size: 16px; font-weight: bold;');
+        console.log('Thời gian:', new Date().toLocaleString('vi-VN'));
+        console.log('Trang:', 'CEFINEA - Quản lý chi tiết mẫu');
+      });
+
+      // Prevent unauthorized access attempts
+      window.addEventListener('popstate', function(event) {
+        // Optional: Add logic to prevent back navigation to protected pages
+        preventBackNavigation();
+      });
+
+      function preventBackNavigation() {
+        window.history.pushState(null, '', window.location.href);
+      }
+
+      function directionTest(url) {
+        location.href = url;
+      }
+
+      // Auto redirect after certain time (optional, commented out)
+      // setTimeout(() => {
+      //   window.location.href = '/login.html';
+      // }, 10000); // Redirect after 10 seconds
+    </script>
+  </body>
+</html>

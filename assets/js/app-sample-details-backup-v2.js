@@ -1,50 +1,26 @@
 /**
- * App: Sample Details Management
- * Description: Quản lý chi tiết mẫu chỉ tiêu phân tích
+ * Chi Tiet Mau Management - DataTable Implementation
+ * Quản lý chi tiết mẫu với đầy đủ tính năng DataTable
  */
-
-// #region [IMPORTS]
-
-// Import data
-import { partners, indicators } from './data/data.js';
 
 // Import configs
 import { GROUP_BY_COLUMNS_CONFIG } from './configs/sample-details-table.config.js';
 
 // Import services
-import notificationService from './services/notification.service.js';
-
 import sampleDetailsTableService from './services/sample-details-table.service.js';
 import calcByFormulaService from './services/calc-by-formula.service.js';
 
-import urlSearchService from './services/url-search.service.js';
-// Import permission service
-import permissionService from './services/permission.service.js';
-
-// #endregion
+// Import partners data
+import { partners, indicators } from './data/data.js';
 
 (function () {
   'use strict';
-
-  // ============================================
-  // KHỞI TẠO PERMISSION SERVICE
-  // ============================================
-  
-  // Khởi tạo và lấy thông tin user
-  const userInfo = permissionService.init();
-  
-  // Kiểm tra có quyền truy cập không
-  if (!permissionService.initialized) {
-    console.error('❌ Không thể khởi tạo phân quyền');
-    // Hiển thị thông báo lỗi cho user
-    notificationService.show('Không có quyền truy cập. Vui lòng kiểm tra lại URL.', 'error');
-    return;
-  }
 
   // Service instance
   const sampleDetailsService = window.SampleDetailsService;
   const formConfig = window.SAMPLE_DETAILS_FORM_CONFIG;
   let formBuilder;
+
 
   // let chitietmauID = new URLSearchParams(window.location.search).get('id');
 
@@ -59,32 +35,13 @@ import permissionService from './services/permission.service.js';
   let selectedGroupColumns = ['han_hoan_thanh_pt_gm']; // ✅ ĐỔI: Nhóm theo Hạn hoàn thành
   let currentStatusFilter = 'all'; // Track trạng thái filter hiện tại
 
-  // Config load page
-  let paginationState = {
-    currentPage: 1,
-    pageSize: 25,
-    totalRecords: 0,
-    totalPages: 0,
-    isLoading: false
-  };
-  let isInfiniteScrollInitialized = false;
-
-  // ⭐ THÊM: Search state
-  let searchState = {
-    oldKeyword: null,
-    keyword: '',
-    isSearching: false,
-    searchTimeout: null,
-    isReloading: false
-  };
-
   // DOM elements - Cached để tăng performance
   const elements = {
     table: $('#chiTietMauTable'),
     selectAll: $('#selectAll'),
     addNewBtn: $('#addNewBtn'),
     exportExcelBtn: $('#exportExcelBtn'),
-    
+    bulkClassifyBtn: $('#bulkClassifyBtn'),
     bulkApproveBtn: $('#bulkApproveBtn'),
     bulkUpdateResultBtn: $('#bulkUpdateResultBtn'),
     loadingSpinner: $('#loadingSpinner'),
@@ -92,7 +49,7 @@ import permissionService from './services/permission.service.js';
     form: $('#chiTietMauForm'),
     bulkActionsToolbar: $('#bulkActionsToolbar'),
     bulkActionBtn: $('#bulkActionBtn'),
-    
+    bulkActionsDropdown: $('#bulkActionsDropdown'),
     bulkEditModal: $('#bulkEditModal'),
     progressStatsContainer: $('#progressStatsContainer'),
     totalIndicators: $('#totalIndicators'),
@@ -222,7 +179,24 @@ import permissionService from './services/permission.service.js';
   const TRANG_THAI_MAP = TRANG_THAI_TONG_HOP.reduce((map, state) => {
     map[state.key] = state;
     return map;
-  }, {});    
+  }, {});
+
+  console.warn('🚀 TRANG_THAI_TONG_HOP:', TRANG_THAI_MAP);
+
+  // === WORKFLOW RULES - ĐÃ LOẠI BỎ ===
+  // Không cần workflow rules nữa vì đã gộp thành 1 cột trang_thai_tong_hop
+
+  // Màu sắc cho trạng thái - Helper function
+  function getStatusColor(statusKey) {
+    const state = TRANG_THAI_MAP[statusKey];
+    return state ? state.color : 'secondary';
+  }
+
+  // Màu sắc map (backward compatibility nếu cần)
+  const STATUS_COLORS = TRANG_THAI_TONG_HOP.reduce((colors, state) => {
+    colors[state.key] = state.color;
+    return colors;
+  }, {});
 
   // === CẤU HÌNH BULK ACTIONS THEO TRẠNG THÁI ===
   /**
@@ -517,254 +491,105 @@ import permissionService from './services/permission.service.js';
    */
   function getTienDoGuiThau(record) {
     return record.tien_do_gui_thau || null;
-  }   
+  }
 
   /**
-   * Load dữ liệu theo trang (Lazy Loading)
-   * @param {number} page - Số trang cần load
-   * @param {number} pageSize - Số records mỗi trang
-   * @param {Object} additionalFilters - Filters bổ sung
-   * @returns {Promise<Object>}
+   * Helper function: Áp dụng workflow logic để tính toán trạng thái
+   * @param {string} trangThaiPhanTich - Trạng thái phân tích chi tiết
+   * @param {string} noiPhanTich - Nơi phân tích (Nội bộ / Bên ngoài)
+   * @returns {Object} - Object chứa tien_do_phan_tich và tien_do_gui_thau
    */
-  async function loadDanhSachChiTieuPaginated(page = 1, pageSize = 50, additionalFilters = {}) {
-    try {
-      // Prevent multiple concurrent requests
-      if (paginationState.isLoading) {
-        console.warn('⚠️ Đang load dữ liệu, vui lòng đợi...');
-        return null;
-      }
+  function applyWorkflowLogic(trangThaiPhanTich, noiPhanTich) {
+    const rule = WORKFLOW_RULES[trangThaiPhanTich];
 
-      paginationState.isLoading = true;
-      showLoading(true);
-
-      // ⭐ Kết hợp keyword từ searchState vào filters
-      const searchParams = {
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
-        search: { 
-          // ma_khach_hang: "admin",
-          ...additionalFilters
-        }
+    if (!rule) {
+      console.warn('⚠️ Không tìm thấy quy tắc workflow cho trạng thái:', trangThaiPhanTich);
+      return {
+        tien_do_phan_tich: '',
+        tien_do_gui_thau: null
       };
-
-      // Get mã mẫu id từ URL       
-      if (userInfo['mau_id']) {
-        searchParams.search['ma_mau_id'] = userInfo['mau_id'];          
-      } else {
-        // #TEST
-        searchParams.search['ma_khach_hang'] = 'admin';       
-      }
-
-      // ⭐ Nếu đang search, thêm keyword
-      if (searchState.keyword) {        
-        searchParams.search = {
-          ...searchParams.search,
-          ten_chi_tieu: searchState.keyword,          
-        };
-      }
-
-      console.log('📡 API params:', searchParams);
-
-      const response = await sampleDetailsService.search(searchParams);        
-
-      // ⭐ KIỂM TRA: Response có đúng format không?
-      if (!response || !response.data) {
-        throw new Error('Response không hợp lệ hoặc không có data');
-      }
-
-      // Update pagination state
-      paginationState.currentPage = page;
-      paginationState.pageSize = pageSize;
-      paginationState.totalRecords = response.pagination.total;
-      paginationState.totalPages = response.pagination.pages;           
-
-      console.log(`✅ Loaded page ${page}/${paginationState.totalPages} (${response.data.length} records)`);
-      console.log('📊 Pagination State:', paginationState);
-
-      return response;
-
-    } catch (error) {
-      console.error('❌ Lỗi load dữ liệu phân trang:', error);
-      notificationService.show('Lỗi tải dữ liệu: ' + error.message, 'error');
-      throw error;
-    } finally {
-      paginationState.isLoading = false;
-      showLoading(false);
     }
-  }
+
+    // Tiến độ phân tích luôn được tính
+    const tienDoPhanTich = rule.tien_do_phan_tich;
+
+    // Tiến độ gửi thầu chỉ áp dụng cho mẫu Bên ngoài
+    let tienDoGuiThau = null;
+    if (noiPhanTich === 'Bên ngoài') {
+      tienDoGuiThau = rule.tien_do_gui_thau;
+    }
+
+    return {
+      tien_do_phan_tich: tienDoPhanTich,
+      tien_do_gui_thau: tienDoGuiThau
+    };
+  }    
 
   /**
-   * Load thêm dữ liệu (Load more)
+   * Khởi tạo ứng dụng
    */
-  async function loadMoreData() {
-    const nextPage = paginationState.currentPage + 1;
-    
-    if (nextPage > paginationState.totalPages) {
-      console.log('✅ Đã load hết dữ liệu');
-      notificationService.show('Đã tải hết dữ liệu', 'info');
-      return;
-    }
+  async function initializeApp() {
+    console.log('🚀 Init Sample Details Management');    
 
-    // ⭐ Hiển thị loading indicator
-    const $loadingIndicator = $('<div class="text-center my-3"><div class="spinner-border text-primary" role="status"></div><p>Đang tải thêm dữ liệu...</p></div>');
-    $('#chiTietMauTable_wrapper').append($loadingIndicator);
-
+    // Cấu hình SweetAlert2 mặc định
+    if (typeof Swal !== 'undefined') {      
+      Swal.mixin({
+        customClass: {
+          container: 'swal2-container-custom'
+        },
+        target: 'body',
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+        position: 'center',
+        grow: false,
+        backdrop: true
+      });
+    } 
+        
+    // Bước 1: Lấy chi tiết mẫu theo ID
     try {
-      const currentPageBeforeLoad = chiTietMauTable.page();
-      // ⭐ Pass keyword nếu đang search
-      const additionalFilters = {};
-      if (searchState.keyword) {
-        additionalFilters.keyword = searchState.keyword;
+      // Initialize Form Builder
+      formBuilder = new window.FormBuilderService(formConfig);
+
+      // Render form dynamically
+      renderFormModal();
+
+      showLoading(true);      
+
+      const response = await sampleDetailsService.search({
+        limit: 200,
+        offset: 0,
+        "search": { "ma_khach_hang": "admin" },
+      })
+
+      chiTietMauData = response.data;
+      console.warn(chiTietMauData[0]);
+
+      // Load danh sách chỉ tiêu
+      await loadDanhSachChiTieu();
+
+      // Khởi tạo UI
+      initializeDataTable();
+      initializeProgressStats();
+      sampleDetailsTableService.renderGroupByDropdown(GROUP_BY_COLUMNS_CONFIG);
+      bindEvents();      
+      
+      // Set checkbox checked cho grouping mặc định
+      if (isGroupingEnabled && selectedGroupColumns.length > 0) {
+        selectedGroupColumns.forEach(col => {
+          $(`#group_${col}`).prop('checked', true);
+        });
+        updateGroupByLabel();        
       }
-      
-      const response = await loadDanhSachChiTieuPaginated(nextPage, paginationState.pageSize, additionalFilters);
 
-      if (response && response.data) {
-        chiTietMauData = [...chiTietMauData, ...response.data];
-        
-        if (chiTietMauTable) {
-          chiTietMauTable.clear();
-          chiTietMauTable.rows.add(chiTietMauData);
-          chiTietMauTable.draw(false);
-        }
-
-        updateProgressStats();
-        
-        // ⭐ Thông báo thành công
-        notificationService.show(`Đã tải thêm ${response.data.length} records`, 'success');
-      }
-    } finally {
-      // ⭐ Xóa loading indicator
-      $loadingIndicator.remove();
-    }
-  }
-
-  /**
-   * Search dữ liệu từ server
-   * @param {string} keyword - Từ khóa tìm kiếm
-   */
-  async function searchData(keyword) {
-    try {
-      searchState.isSearching = true;
-      searchState.keyword = keyword;
-      
-      showLoading(true);
-      console.log('🔍 Searching for:', keyword);
-
-      // Reset pagination khi search
-      paginationState.currentPage = 0;
-      
-      // Gọi API search với keyword
-      const response = await loadDanhSachChiTieuPaginated(
-        1, 
-        paginationState.pageSize,
-        { keyword: keyword } // Thêm keyword vào filters
-      );
-      
-      if (response && response.data) {
-        chiTietMauData = response.data;
-        
-        // Redraw table
-        if (chiTietMauTable) {
-          chiTietMauTable.clear();
-          chiTietMauTable.rows.add(chiTietMauData);
-          chiTietMauTable.draw(false);
-        }
-
-        // Update stats
-        updateProgressStats();
-        
-        console.log(`✅ Found ${chiTietMauData.length} records for "${keyword}"`);
-        
-        // Hiển thị thông báo
-        if (chiTietMauData.length === 0) {
-          notificationService.show('Không tìm thấy kết quả', 'info');
-        } else {
-          notificationService.show(`Tìm thấy ${paginationState.totalRecords} kết quả`, 'success');
-        }
-      }
-    } catch (error) {
-      console.error('❌ Search error:', error);
-      notificationService.show('Lỗi tìm kiếm: ' + error.message, 'error');
-    } finally {
-      searchState.isSearching = false;
       showLoading(false);
-    }
-  }
-
-  /**
-   * Debounced search - Chờ user ngừng gõ 500ms mới search
-   * @param {string} keyword - Từ khóa tìm kiếm
-   */
-  function debouncedSearch(keyword) {
-    // Clear timeout cũ
-    if (searchState.searchTimeout) {
-      clearTimeout(searchState.searchTimeout);
-    }
-
-    if (keyword === searchState.oldKeyword) {
-      // console.log('⚠️ Từ khóa giống với lần trước, không thực hiện tìm kiếm lại');
-      return;
-    }
-        
-    // Nếu keyword rỗng, load lại data gốc
-    if (!keyword || keyword.trim() === '') {
-
-      // ⭐ KIỂM TRA: Đang reload thì không làm gì
-      if (searchState.isReloading) {
-        console.log('⚠️ Đang reload, bỏ qua yêu cầu clear search');
-        return;
-      }
-
-      searchState.searchTimeout = setTimeout(async () => {
-        console.log('🔄 Clear search, reload original data');
-        searchState.keyword = '';
-        searchState.oldKeyword = ''; // ⭐ SET = '' thay vì null
-        searchState.isReloading = true;
-        
-        await reloadData()
-          .finally(() => {
-            searchState.isReloading = false;
-          });
-      }, 300);
-      return;
-    }      
-    
-    // Set timeout mới
-    searchState.searchTimeout = setTimeout(() => {
-      searchData(keyword);
-      searchState.oldKeyword = keyword;
-    }, 500); // Đợi 500ms sau khi user ngừng gõ
-  }
-
-  /**
-   * Reload dữ liệu gốc (clear search)
-   */
-  async function reloadData() {
-    try {
-      showLoading(true);
-      searchState.keyword = '';
-      paginationState.currentPage = 0;
+      console.log('✅ Khởi tạo thành công');
       
-      const response = await loadDanhSachChiTieuPaginated(1, paginationState.pageSize);
-      
-      if (response && response.data) {
-        chiTietMauData = response.data;
-        
-        if (chiTietMauTable) {
-          chiTietMauTable.clear();
-          chiTietMauTable.rows.add(chiTietMauData);
-          chiTietMauTable.draw(false);
-        }
-
-        updateProgressStats();
-        console.log('✅ Reloaded original data');
-      }
     } catch (error) {
-      console.error('❌ Reload error:', error);
-    } finally {
       showLoading(false);
-    }
+      console.error('❌ Lỗi khởi tạo:', error);
+      showNotification('Lỗi tải dữ liệu: ' + error.message, 'error');
+    }        
   }
 
   /**
@@ -890,138 +715,7 @@ import permissionService from './services/permission.service.js';
     $('#pendingIndicators').text(pendingCount);
 
     console.log(`✅ Đã cập nhật thống kê tiến độ: 13 trạng thái (tất cả)`);
-    console.log(`📊 Tổng: ${totalCount} | Hoàn thành: ${completedCount} | Đang xử lý: ${pendingCount}`);    
-
-    // ⭐ THÊM: Cập nhật Load More button
-    updateLoadMoreButton();
-  }
-
-  /**
-   * Cập nhật trạng thái nút Load More
-   */
-  function updateLoadMoreButton() {
-    const remaining = paginationState.totalRecords - chiTietMauData.length;
-    
-    const $remainingRecords = $('#remainingRecords');
-    const $loadMoreBtn = $('#loadMoreBtn');
-    const $loadMoreContainer = $('#loadMoreContainer');
-    
-    // Hiển thị container nếu có data
-    if (chiTietMauData.length > 0) {
-      $loadMoreContainer.show();
-    }
-    
-    // Cập nhật số lượng còn lại
-    if ($remainingRecords.length) {
-      $remainingRecords.text(remaining);
-    }
-    
-    // Cập nhật trạng thái button
-    if ($loadMoreBtn.length) {
-      if (remaining <= 0 || paginationState.currentPage >= paginationState.totalPages) {
-        $loadMoreBtn.prop('disabled', true).html('<i class="ri-check-line me-2"></i>Đã tải hết dữ liệu');
-      } else {
-        $loadMoreBtn.prop('disabled', false);
-      }
-    }
-  }
-
-  /**
-   * Infinite scroll cho DataTable
-   */
-  function initializeInfiniteScroll() {
-    
-    const scrollContainer = $('.dt-scroll-body');
-    
-    if (scrollContainer.length === 0) {
-      console.warn('⚠️ Không tìm thấy scroll container');
-      return;
-    }
-
-    console.log('✅ Đã khởi tạo infinite scroll');
-    
-    let isLoadingMore = false;
-    let lastScrollTop = 0;
-    let currentPage = 0;
-    
-    // ⭐ Bắt sự kiện chuyển trang
-    chiTietMauTable.on('page.dt', function() {
-      const pageInfo = chiTietMauTable.page.info();
-      
-      // Nếu page thay đổi (user click pagination)
-      if (pageInfo.page !== currentPage) {
-        console.log('📄 Page changed from', currentPage + 1, 'to', pageInfo.page + 1);
-        currentPage = pageInfo.page;
-        
-        // ⭐ RESET scroll về đầu khi đổi trang
-        scrollContainer.scrollTop(0);
-        lastScrollTop = 0;
-        
-        console.log('🔄 Reset scroll position to top');
-      }
-    });
-    
-    scrollContainer.on('scroll', function() {
-      if (isLoadingMore) return;
-      
-      const scrollHeight = this.scrollHeight;
-      const scrollTop = this.scrollTop;
-      const clientHeight = this.clientHeight;
-      
-      // ⭐ Chỉ xử lý khi scroll xuống (không xử lý khi scroll lên)
-      const isScrollingDown = scrollTop > lastScrollTop;
-      lastScrollTop = scrollTop;
-      
-      if (!isScrollingDown) return;
-
-      // Khi scroll gần đến cuối (còn 100px)  - 100
-      if (scrollTop + clientHeight >= scrollHeight - 50) {
-        // // Load more data
-        // if (!paginationState.isLoading && paginationState.currentPage < paginationState.totalPages) {
-        //   isLoadingMore = true;
-        //   loadMoreData()
-        //   .finally(() => {
-        //     isLoadingMore = false;
-        //   });
-        // }
-
-        // ⭐ QUAN TRỌNG: Kiểm tra xem đang ở trang cuối chưa
-        const pageInfo = chiTietMauTable.page.info();
-        const isLastPage = pageInfo.page === pageInfo.pages - 1; // page bắt đầu từ 0
-        
-        console.log('📊 Page Info:', {
-          currentPage: pageInfo.page + 1,
-          totalPages: pageInfo.pages,
-          isLastPage: isLastPage,
-          recordsDisplay: pageInfo.recordsDisplay,
-          recordsTotal: pageInfo.recordsTotal
-        });
-
-        // ⭐ CHỈ LOAD KHI:
-        // 1. Đang ở trang cuối của DataTable
-        // 2. Còn data trên server (currentPage < totalPages)
-        // 3. Không đang loading
-        if (isLastPage && 
-            !paginationState.isLoading && 
-            paginationState.currentPage < paginationState.totalPages) {
-          
-          console.log('🔄 Trigger load more: At last page and scrolled to bottom');
-          
-          isLoadingMore = true;
-          loadMoreData()
-            .finally(() => {
-              isLoadingMore = false;
-            });
-        } else {
-          console.log('⏸️ No load:', {
-            isLastPage,
-            isLoading: paginationState.isLoading,
-            currentServerPage: paginationState.currentPage,
-            totalServerPages: paginationState.totalPages
-          });
-        }
-      }
-    });    
+    console.log(`📊 Tổng: ${totalCount} | Hoàn thành: ${completedCount} | Đang xử lý: ${pendingCount}`);
   }
 
   /**
@@ -1064,7 +758,7 @@ import permissionService from './services/permission.service.js';
   /**
    * XỬ LÝ ÁP DỤNG FILTER TIẾN ĐỘ
    */
-  async function applyProgressFilter(filter) {
+  function applyProgressFilter(filter) {
     if (!chiTietMauTable) {
       console.warn('⚠️ DataTable chưa được khởi tạo');
       return;
@@ -1072,7 +766,7 @@ import permissionService from './services/permission.service.js';
 
     console.log('🔍 Áp dụng filter: ', filter);
 
-    // Clear tất cả selection khi chuyển filter
+    // 🔥 QUAN TRỌNG: Clear tất cả selection khi chuyển filter
     // Vì mỗi trạng thái có actions khác nhau, cần bỏ chọn các dòng cũ
     selectedRows.clear();
     $('.row-checkbox').prop('checked', false);
@@ -1106,8 +800,6 @@ import permissionService from './services/permission.service.js';
       chiTietMauTable.draw();
     }
 
-    showLoading(false);
-
     // Scroll to table
     $('html, body').animate(
       {
@@ -1115,6 +807,141 @@ import permissionService from './services/permission.service.js';
       },
       300
     );
+  }
+
+  /**
+   * Cập nhật lại thống kê sau khi dữ liệu thay đổi - CẬP NHẬT CHO 13 TRẠNG THÁI
+   */
+  function refreshProgressStats() {
+    updateProgressStats(); // Chỉ cần 1 hàm update
+  }
+
+  // === TIẾN ĐỘ PHÂN TÍCH (TÓM TẮT) STATISTICS ===
+
+  /**
+   * Tạo các chip thống kê Tiến độ phân tích
+   */
+  function generateTienDoPhanTichStatsButtons() {
+    const container = $('#tienDoPhanTichStatsContainer');
+    container.empty();
+
+    // Tạo button cho từng trạng thái (không có button "Tất cả")
+    TIEN_DO_PHAN_TICH.forEach((state, index) => {
+      const safeId = state.key.replace(/\./g, '-').replace(/\s/g, '_');
+
+      // Thêm separator nếu không phải button đầu tiên
+      if (index > 0) {
+        container.append('<span class="stat-separator">|</span>');
+      }
+
+      const chipHtml = `
+        <button type="button" class="progress-stat-chip" data-filter-type="tien_do_phan_tich" data-filter="${state.key}">
+          <span class="stat-label">${state.label}</span>
+          <span class="stat-count" id="count-tdpt-${safeId}">0</span>
+        </button>
+      `;
+      container.append(chipHtml);
+    });
+
+    console.log('✅ Đã tạo sẵn tất cả 5 button thống kê Tiến độ phân tích');
+  }
+
+  /**
+   * Cập nhật số liệu thống kê Tiến độ phân tích
+   */
+  function updateTienDoPhanTichStats() {
+    if (!chiTietMauData || chiTietMauData.length === 0) {
+      console.warn('⚠️ Chưa có dữ liệu để thống kê Tiến độ phân tích');
+      return;
+    }
+
+    console.log('📊 Cập nhật thống kê Tiến độ phân tích...');
+
+    const stats = {};
+    let totalCount = 0;
+
+    chiTietMauData.forEach(item => {
+      const tienDoPT = item.tien_do_phan_tich || 'Chưa xác định';
+      stats[tienDoPT] = (stats[tienDoPT] || 0) + 1;
+      totalCount++;
+    });
+
+    console.log('📈 Thống kê Tiến độ phân tích:', stats);
+
+    // Cập nhật count cho từng trạng thái
+    TIEN_DO_PHAN_TICH.forEach(state => {
+      const safeId = state.key.replace(/\./g, '-').replace(/\s/g, '_');
+      const count = stats[state.key] || 0;
+      $(`#count-tdpt-${safeId}`).text(count);
+    });
+
+    console.log(`✅ Đã cập nhật thống kê Tiến độ phân tích: ${totalCount} mẫu`);
+  }
+
+  // === TIẾN ĐỘ GỬI THẦU STATISTICS ===
+
+  /**
+   * Tạo các chip thống kê Tiến độ gửi thầu
+   */
+  function generateTienDoGuiThauStatsButtons() {
+    const container = $('#tienDoGuiThauStatsContainer');
+    container.empty();
+
+    // Tạo button cho từng trạng thái (không có button "Tất cả")
+    TIEN_DO_GUI_THAU.forEach((state, index) => {
+      const safeId = state.key.replace(/\./g, '-').replace(/\s/g, '_');
+
+      // Thêm separator nếu không phải button đầu tiên
+      if (index > 0) {
+        container.append('<span class="stat-separator">|</span>');
+      }
+
+      const chipHtml = `
+        <button type="button" class="progress-stat-chip" data-filter-type="tien_do_gui_thau" data-filter="${state.key}">
+          <span class="stat-label">${state.label}</span>
+          <span class="stat-count" id="count-tdgt-${safeId}">0</span>
+        </button>
+      `;
+      container.append(chipHtml);
+    });
+
+    // Không thêm button "Nội bộ" vì tiến độ gửi thầu chỉ dành cho mẫu gửi bên ngoài
+
+    console.log('✅ Đã tạo sẵn 5 button thống kê Tiến độ gửi thầu');
+  }
+
+  /**
+   * Cập nhật số liệu thống kê Tiến độ gửi thầu
+   */
+  function updateTienDoGuiThauStats() {
+    if (!chiTietMauData || chiTietMauData.length === 0) {
+      console.warn('⚠️ Chưa có dữ liệu để thống kê Tiến độ gửi thầu');
+      return;
+    }
+
+    console.log('📊 Cập nhật thống kê Tiến độ gửi thầu...');
+
+    const stats = {};
+    let totalCount = 0;
+
+    chiTietMauData.forEach(item => {
+      const tienDoGT = item.tien_do_gui_thau || 'null';
+      stats[tienDoGT] = (stats[tienDoGT] || 0) + 1;
+      totalCount++;
+    });
+
+    console.log('🚚 Thống kê Tiến độ gửi thầu:', stats);
+
+    // Cập nhật count cho từng trạng thái
+    TIEN_DO_GUI_THAU.forEach(state => {
+      const safeId = state.key.replace(/\./g, '-').replace(/\s/g, '_');
+      const count = stats[state.key] || 0;
+      $(`#count-tdgt-${safeId}`).text(count);
+    });
+
+    // Không cập nhật count cho "Nội bộ" vì đã bỏ button đó
+
+    console.log(`✅ Đã cập nhật thống kê Tiến độ gửi thầu: ${totalCount} mẫu`);
   }
 
   /**
@@ -1130,26 +957,14 @@ import permissionService from './services/permission.service.js';
       scrollCollapse: true, // Thu gọn khi ít dữ liệu
       autoWidth: false, // Tắt auto width để kiểm soát width từng cột
       responsive: false, // TẮT RESPONSIVE - Hiển thị tất cả cột
-      pageLength: paginationState.pageSize,      
-      // lengthMenu: [
-      //   [10, 25, 50, 100, -1],
-      //   [10, 25, 50, 100, 'Tất cả']
-      // ],
+      pageLength: 10,      
       lengthMenu: [
-        [25, 50, 100, 200],
-        [25, 50, 100, 200]
+        [10, 25, 50, 100, -1],
+        [10, 25, 50, 100, 'Tất cả']
       ],
       // language: {
       //   url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
       // },
-      // ⭐ Disable client-side search
-      searching: true, // Giữ search box
-      // ⭐ Hoặc custom search để không filter client-side
-      search: {
-        search: '',
-        regex: false,
-        smart: false
-      },
       dom:
         '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
         '<"row"<"col-sm-12"tr>>' +
@@ -1791,15 +1606,7 @@ import permissionService from './services/permission.service.js';
       updateSelectAllCheckbox();
 
       // Reinitialize tooltips và dropdowns nếu cần
-      $('[data-bs-toggle="tooltip"]').tooltip();     
-
-      // ⭐ THÊM: Khởi tạo infinite scroll sau lần draw đầu tiên
-      if (!isInfiniteScrollInitialized) {
-        setTimeout(() => {
-          initializeInfiniteScroll();
-        }, 500);
-        isInfiniteScrollInitialized = true;
-      }
+      $('[data-bs-toggle="tooltip"]').tooltip();
     };
 
     // Khởi tạo DataTable với config đã chuẩn bị
@@ -1859,8 +1666,22 @@ import permissionService from './services/permission.service.js';
     // Form events
     $(document).on('submit', '#chiTietMauForm', handleFormSubmit);
     
-    // Tính toán thành tiền tự động
-    $(document).on('input', '#formDonGia, #formChietKhau', calcByFormulaService.calcThanhTien);           
+    // Tính toán tự động
+    $(document).on('input', '#formDonGia, #formChietKhau', calculateThanhTien);    
+    
+    // #DOING
+
+    // Bulk actions events
+    elements.bulkActionsDropdown.on('click', 'a[data-action]', handleBulkAction);
+    $('#saveBulkChangesBtn').on('click', saveBulkChanges);
+
+    // Bulk cancel buttons
+    $('#bulkCancelBtn').on('click', function () {
+      executeBulkCancel(Array.from(selectedRows.values()));
+    });
+    $('#bulkCancelBtn2').on('click', function () {
+      executeBulkCancel(Array.from(selectedRows.values()));
+    });
 
     // Bulk receive buttons
     $('#bulkReceiveBtn').on('click', function () {
@@ -1878,9 +1699,14 @@ import permissionService from './services/permission.service.js';
     // Bulk review buttons
     $('#bulkReviewBtn').on('click', function () {
       executeBulkApproveResult(Array.from(selectedRows.values()), '2.Xét lại');
-    });              
+    });          
 
-    //#region [SỰ KIỆN CẬP NHẬT TRẠNG THÁI]
+    // Bulk classify button
+    elements.bulkClassifyBtn.on('click', function () {
+      executeBulkClassify(Array.from(selectedRows.values()));
+    });
+
+    // === NEW WORKFLOW BUTTONS ===
    
     // DUYỆT THẦU (CHO_DUYET_THAU → CHO_GUI_MAU_THAU)
     $('#bulkApproveThauBtn').on('click', function () {
@@ -1919,8 +1745,7 @@ import permissionService from './services/permission.service.js';
     // Bulk approve button - show popup with 2 options (Đạt, Xét lại)
     // elements.bulkApproveBtn.on('click', function () {
     //   executeBulkApprove(Array.from(selectedRows.values()));
-    // });  
-    //#endregion 
+    // });   
 
     // Bulk edit button riêng
     $('#bulkEditBtn').on('click', function () {
@@ -1973,46 +1798,19 @@ import permissionService from './services/permission.service.js';
       $cell.css('z-index', ''); // Restore original z-index
     });
 
-    //#region [SỰ KIỆN DATATABLE]
-    chiTietMauTable.on('search.dt', function() {
-      const searchValue = chiTietMauTable.search();
-      console.log('🔍 DataTables search:', searchValue);
-      
-      // Gọi server-side search
-      // #TEST
-      // debouncedSearch(searchValue);
-    });
-
-    // Bind trực tiếp vào input search box
-    $(document).on('keyup', '.dataTables_filter input', function() {
-      const keyword = $(this).val();
-      console.log('⌨️ Search input:', keyword);
-      
-      // Disable DataTables default search
-      // #TEST
-      // chiTietMauTable.search('').draw(false);
-      
-      // Trigger server-side search
-      // debouncedSearch(keyword);
-    });
-
-    // Bắt sự kiện datatable thay đổi length
-    chiTietMauTable.on('length.dt', function(e, settings, len) {
-      console.log(`📏 DataTables length changed to: ${len}`);
-      // Cập nhật biến toàn cục nếu cần
-      paginationState.pageSize = len;
-    });
-
-    // Sự kiện nhấn nút load thêm dữ liệu
-    $(document).on('click', '#loadMoreBtn', function(e) {
-      e.preventDefault();
-      loadMoreData();
-    });
-    //#endregion
-
     console.log('✅ Events đã được gắn kết');
   }
-  
+
+  /**
+   * Tính toán thành tiền
+   */
+  function calculateThanhTien() {
+    const donGia = parseFloat($('#formDonGia').val()) || 0;
+    const chietKhau = parseFloat($('#formChietKhau').val()) || 0;
+    const thanhTien = donGia - (donGia * chietKhau) / 100;
+    $('#formThanhTien').val(thanhTien.toFixed(0));
+  }
+
   /**
    * Xử lý checkbox "Chọn tất cả"
    */
@@ -2111,13 +1909,184 @@ import permissionService from './services/permission.service.js';
     // Luôn hiển thị nút "Bỏ chọn tất cả" (deselectAll)
     $('#deselectAllBtn').show().prop('disabled', false);
   }
-  
+
+  /**
+   * Tạo dropdown actions động dựa trên trạng thái đã chọn
+   */
+  function populateBulkActions(uniqueStates, allStates) {
+    const dropdown = elements.bulkActionsDropdown;
+    dropdown.empty();
+
+    // Actions dựa trên trạng thái
+    const availableActions = getAvailableBulkActions(uniqueStates);
+
+    // Header và actions cho workflow actions
+    if (availableActions.length > 0) {
+      dropdown.append(`
+        <li><h6 class="dropdown-header">Thao tác workflow</h6></li>
+      `);
+
+      availableActions.forEach(action => {
+        const config = getBulkActionConfig(action);
+        if (config) {
+          dropdown.append(`
+            <li><a class="dropdown-item" href="javascript:void(0);" data-action="${action}">
+              <i class="icon-base ri ${config.icon} me-2 ${config.color}"></i>${config.title}
+            </a></li>
+          `);
+        }
+      });
+    } else {
+      // Khi không có workflow actions available
+      dropdown.append(`
+        <li><h6 class="dropdown-header text-muted">Không có thao tác khả dụng</h6></li>
+        <li><span class="dropdown-item-text text-muted small">Các mục đã chọn không thể thực hiện thao tác workflow nào.</span></li>
+      `);
+    }
+
+    // Luôn có action hủy
+    if (allStates.some(state => state !== '9.Hủy')) {
+      dropdown.append(`
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-danger" href="javascript:void(0);" data-action="bulkCancel">
+          <i class="icon-base ri ri-close-line me-2"></i>Hủy chỉ tiêu
+        </a></li>
+      `);
+    }
+  }
+
+  /**
+   * Lấy các actions có thể thực hiện dựa trên trạng thái
+   */
+  function getAvailableBulkActions(states) {
+    console.log('🔍 Debug getAvailableBulkActions - states:', states);
+    const actions = [];
+
+    // === ACTIONS THEO WORKFLOW THỰC TẾ ===
+
+    // 1. Nhận mẫu QT (từ "1.Chờ QT" → "2.Chờ mã hóa")
+    if (states.some(state => state === '1.Chờ QT')) {
+      actions.push('bulkReceiveSample');
+    }
+
+    // 2. Mã hóa mẫu (từ "2.Chờ mã hóa" → "3.Chờ duyệt thầu" hoặc "3.Chờ chuyển mẫu")
+    if (states.some(state => state === '2.Chờ mã hóa')) {
+      actions.push('bulkCodeSample');
+    }
+
+    // 3. Chuyển mẫu (thủ công từ "3.Chờ chuyển mẫu" → "4.Chờ nhận mẫu PT")
+    if (states.some(state => ['3.Chờ chuyển mẫu', '4.Chờ gửi mẫu'].includes(state))) {
+      actions.push('bulkTransferSample');
+    }
+
+    // 4. Nhận mẫu PT (từ "4.Chờ nhận mẫu PT" → "5.Chờ kết quả PT")
+    if (states.some(state => state === '4.Chờ nhận mẫu PT')) {
+      actions.push('bulkReceivePTSample');
+    }
+
+    // 5. Gửi mẫu thầu (từ "4.Chờ gửi mẫu" → "5.Chờ nhận KQ thầu")
+    if (states.some(state => state === '4.Chờ gửi mẫu')) {
+      actions.push('bulkSendContractorSample');
+    }
+
+    // 6. Nhập kết quả PT (từ "5.Chờ kết quả PT" → "6.Chờ duyệt KQ")
+    if (states.some(state => ['5.Chờ kết quả PT', '8.Cần xét lại'].includes(state))) {
+      actions.push('bulkInputResult');
+    }
+
+    // 7. Phê duyệt kết quả (từ "6.Chờ duyệt KQ" → "7.Hoàn thành" hoặc "8.Cần xét lại")
+    if (states.some(state => state === '6.Chờ duyệt KQ')) {
+      actions.push('bulkApproveResult');
+    }
+
+    // 8. Yêu cầu xét lại (từ "7.Hoàn thành" → "8.Cần xét lại")
+    if (states.some(state => state === '7.Hoàn thành')) {
+      actions.push('bulkRequestReview');
+    }
+
+    console.log('🔍 Debug getAvailableBulkActions - actions:', actions);
+    return actions;
+  }
+
+  /**
+   * Lấy cấu hình cho từng bulk action
+   */
+  function getBulkActionConfig(action) {
+    const configs = {
+      // === WORKFLOW ACTIONS THEO THỨ TỰ ===
+
+      // 1. Nhận mẫu QT (1.Chờ QT → 2.Chờ mã hóa)
+      bulkReceiveSample: {
+        title: '✅ Nhận mẫu QT',
+        icon: 'ri-inbox-archive-line',
+        color: 'text-success',
+        description: 'Xác nhận đã nhận mẫu từ khách hàng'
+      },
+
+      // 2. Mã hóa mẫu (2.Chờ mã hóa → 3.Chờ duyệt thầu/chuyển mẫu)
+      bulkCodeSample: {
+        title: '🏷️ Mã hóa mẫu',
+        icon: 'ri-barcode-line',
+        color: 'text-primary',
+        description: 'Gán mã mẫu và phân loại'
+      },
+
+      // 3. Chuyển mẫu (3.Chờ chuyển mẫu → 4.Chờ nhận mẫu PT)
+      bulkTransferSample: {
+        title: '🚛 Đã chuyển mẫu',
+        icon: 'ri-truck-line',
+        color: 'text-info',
+        description: 'Xác nhận đã chuyển mẫu đến phòng PT'
+      },
+
+      // 4. Nhận mẫu PT (4.Chờ nhận mẫu PT → 5.Chờ kết quả PT)
+      bulkReceivePTSample: {
+        title: '📥 Nhận mẫu PT',
+        icon: 'ri-flask-line',
+        color: 'text-success',
+        description: 'Phòng PT xác nhận đã nhận mẫu'
+      },
+
+      // 5. Gửi mẫu thầu (4.Chờ gửi mẫu → 5.Chờ nhận KQ thầu)
+      bulkSendContractorSample: {
+        title: '📤 Gửi mẫu thầu',
+        icon: 'ri-send-plane-line',
+        color: 'text-warning',
+        description: 'Gửi mẫu cho đơn vị thầu phụ'
+      },
+
+      // 6. Nhập kết quả PT (5.Chờ kết quả PT → 6.Chờ duyệt KQ)
+      bulkInputResult: {
+        title: '📝 Nhập kết quả PT',
+        icon: 'ri-edit-box-line',
+        color: 'text-info',
+        description: 'Nhập kết quả phân tích'
+      },
+
+      // 7. Phê duyệt kết quả (6.Chờ duyệt KQ → 7.Hoàn thành/8.Cần xét lại)
+      bulkApproveResult: {
+        title: '✅ Phê duyệt kết quả',
+        icon: 'ri-check-double-line',
+        color: 'text-success',
+        description: 'Duyệt hoặc yêu cầu xét lại'
+      },
+
+      // 8. Yêu cầu xét lại (7.Hoàn thành → 8.Cần xét lại)
+      bulkRequestReview: {
+        title: '🔄 Yêu cầu xét lại',
+        icon: 'ri-error-warning-line',
+        color: 'text-warning',
+        description: 'Yêu cầu kiểm tra lại kết quả'
+      }
+    };
+    return configs[action];
+  }
 
   /**
    * Xử lý thêm mới
    */
   function handleAddNew() {
-    formBuilder.resetForm();
+    resetForm();
     setFormMode('add');
     $('#chiTietMauModalTitle').html('<i class="icon-base ri ri-add-line me-2"></i>Thêm chi tiết mẫu mới');
     elements.modal.modal('show');
@@ -2131,7 +2100,7 @@ import permissionService from './services/permission.service.js';
     const rowData = chiTietMauData.find(item => item.id === id);
 
     if (rowData) {
-      formBuilder.populateForm(rowData);
+      populateForm(rowData);
       setFormMode('edit');
       $('#chiTietMauModalTitle').html('<i class="icon-base ri ri-edit-box-line me-2"></i>Chỉnh sửa chi tiết mẫu');
       elements.modal.modal('show');
@@ -2146,7 +2115,7 @@ import permissionService from './services/permission.service.js';
     const rowData = chiTietMauData.find(item => item.id === id);
 
     if (rowData) {
-      formBuilder.populateForm(rowData);
+      populateForm(rowData);
       setFormMode('view');
       $('#chiTietMauModalTitle').html('<i class="icon-base ri ri-eye-line me-2"></i>Chi tiết mẫu');
       elements.modal.modal('show');
@@ -2171,7 +2140,7 @@ import permissionService from './services/permission.service.js';
     const rowData = chiTietMauData.find(item => item.id === id);
 
     if (!rowData) {
-      notificationService.show('Không tìm thấy dữ liệu để xóa', 'error');
+      showNotification('Không tìm thấy dữ liệu để xóa', 'error');
       return;
     }
 
@@ -2230,11 +2199,11 @@ import permissionService from './services/permission.service.js';
       XLSX.writeFile(wb, fileName);
 
       showLoading(false);
-      notificationService.show('✅ Xuất Excel thành công', 'success');
+      showNotification('✅ Xuất Excel thành công', 'success');
     } catch (error) {
       console.error('❌ Lỗi SweetAlert2:', error);
       showLoading(false);
-      notificationService.show('Có lỗi khi xuất Excel', 'error');
+      showNotification('Có lỗi khi xuất Excel', 'error');
     }
   }
 
@@ -2351,7 +2320,21 @@ import permissionService from './services/permission.service.js';
     modalBody.html(`<form id="chiTietMauForm">${formHTML}</form>`);
     
     console.log('✅ Form rendered successfully');
-  }    
+  }
+
+   /**
+   * Đặt lại form
+   */
+  function resetForm() {
+    formBuilder.resetForm();
+  }
+
+  /**
+   * Điền dữ liệu vào form
+   */
+  function populateForm(data) {        
+    formBuilder.populateForm(data);
+  }
 
   /**
    * Xử lý submit form
@@ -2370,7 +2353,7 @@ import permissionService from './services/permission.service.js';
     // Validate
     const validationResult = formBuilder.validateForm(formData);
     if (!validationResult.isValid) {
-      notificationService.show(validationResult.errors.join('\n'), 'error');
+      showNotification(validationResult.errors.join('\n'), 'error');
       return;
     }
 
@@ -2403,16 +2386,16 @@ import permissionService from './services/permission.service.js';
 
       // Refresh UI
       chiTietMauTable.clear().rows.add(chiTietMauData).draw();
-      updateProgressStats();
+      refreshProgressStats();
 
-      notificationService.show('Thêm mới thành công', 'success');
+      showNotification('Thêm mới thành công', 'success');
       showLoading(false);
       elements.modal.modal('hide');
     } catch (error) {
       showLoading(false);
       elements.modal.modal('hide');
       console.error('❌ Lỗi thêm mới:', error.message);
-      notificationService.show('Thêm mới thất bại: ' + error.message, 'error');
+      showNotification('Thêm mới thất bại: ' + error.message, 'error');
     }
   }
 
@@ -2437,9 +2420,9 @@ import permissionService from './services/permission.service.js';
 
         // Refresh UI
         chiTietMauTable.clear().rows.add(chiTietMauData).draw();              
-        updateProgressStats();
+        refreshProgressStats();
 
-        notificationService.show('Cập nhật thành công', 'success');
+        showNotification('Cập nhật thành công', 'success');
       } else {
         throw new Error('Không tìm thấy bản ghi trong local data để cập nhật');
       }
@@ -2450,7 +2433,7 @@ import permissionService from './services/permission.service.js';
       showLoading(false);
       elements.modal.modal('hide');
       console.error('❌ Lỗi cập nhật:', error.message);
-      notificationService.show('Cập nhật thất bại: ' + error.message, 'error');
+      showNotification('Cập nhật thất bại: ' + error.message, 'error');
     }           
   }
 
@@ -2501,14 +2484,14 @@ import permissionService from './services/permission.service.js';
 
       // Refresh UI
       chiTietMauTable.clear().rows.add(chiTietMauData).draw();
-      updateProgressStats();
+      refreshProgressStats();
 
-      notificationService.show('Xóa thành công', 'success');
+      showNotification('Xóa thành công', 'success');
       showLoading(false);
     } catch (error) {
       showLoading(false);
       console.error('❌ Lỗi xóa:', error.message);
-      notificationService.show('Xóa thất bại: ' + error.message, 'error');
+      showNotification('Xóa thất bại: ' + error.message, 'error');
     }
   }
   // #endregion
@@ -2529,16 +2512,16 @@ import permissionService from './services/permission.service.js';
 
       // Refresh UI
       chiTietMauTable.clear().rows.add(chiTietMauData).draw();
-      updateProgressStats();
+      refreshProgressStats();
 
-      notificationService.show('Thêm mới hàng loạt thành công', 'success');
+      showNotification('Thêm mới hàng loạt thành công', 'success');
       showLoading(false);
       elements.modal.modal('hide');
     } catch (error) {
       showLoading(false);
       elements.modal.modal('hide');
       console.error('❌ Lỗi thêm mới hàng loạt:', error.message);
-      notificationService.show('Thêm mới hàng loạt thất bại: ' + error.message, 'error');
+      showNotification('Thêm mới hàng loạt thất bại: ' + error.message, 'error');
     }
   }
 
@@ -2562,16 +2545,16 @@ import permissionService from './services/permission.service.js';
 
       // Refresh UI
       chiTietMauTable.clear().rows.add(chiTietMauData).draw();
-      updateProgressStats();
+      refreshProgressStats();
 
-      notificationService.show('Cập nhật hàng loạt thành công', 'success');
+      showNotification('Cập nhật hàng loạt thành công', 'success');
       showLoading(false);
       elements.modal.modal('hide');
     } catch (error) {
       showLoading(false);
       elements.modal.modal('hide');
       console.error('❌ Lỗi cập nhật hàng loạt:', error.message);
-      notificationService.show('Cập nhật hàng loạt thất bại: ' + error.message, 'error');
+      showNotification('Cập nhật hàng loạt thất bại: ' + error.message, 'error');
     }
   }
   // #endregion 
@@ -2585,7 +2568,32 @@ import permissionService from './services/permission.service.js';
     } else {
       elements.loadingSpinner.addClass('d-none');
     }
-  }  
+  }
+
+  /**
+   * Hiển thị thông báo
+   */
+  function showNotification(message, type = 'info') {
+    const notyf = new Notyf({
+      duration: 3000,
+      position: { x: 'right', y: 'top' }
+    });
+
+    switch (type) {
+      case 'success':
+        notyf.success(message);
+        break;
+      case 'error':
+        notyf.error(message);
+        break;
+      case 'warning':
+        // Fallback to info for warning since Notyf doesn't have warning by default
+        notyf.open({ type: 'info', message: message, background: '#ffc107' });
+        break;
+      default:
+        notyf.open({ type: 'info', message: message });
+    }
+  }
 
   // Utility functions
 
@@ -2693,7 +2701,7 @@ import permissionService from './services/permission.service.js';
     console.log('🏁 [UPDATE TABLE] COMPLETED: Updated', rowsToHighlight.length, 'rows');
 
     // Refresh progress statistics after updating rows
-    updateProgressStats();
+    refreshProgressStats();
 
     return rowsToHighlight.length;
   }
@@ -2733,7 +2741,956 @@ import permissionService from './services/permission.service.js';
       style: 'currency',
       currency: 'VND'
     }).format(amount);
-  }  
+  }
+
+  /**
+   * Xử lý bulk actions
+   */
+  function handleBulkAction(e) {
+    e.preventDefault();
+    const action = $(this).data('action');
+    const selectedItems = Array.from(selectedRows.values());
+
+    console.log(`🔄 Thực hiện bulk action: ${action} cho ${selectedItems.length} items`);
+
+    switch (action) {
+      // === WORKFLOW ACTIONS ===
+      case 'bulkReceiveSample':
+        executeBulkReceiveSample(selectedItems);
+        break;
+      case 'bulkCodeSample':
+        executeBulkCodeSample(selectedItems);
+        break;
+      case 'bulkTransferSample':
+        executeBulkTransferSample(selectedItems);
+        break;
+      case 'bulkReceivePTSample':
+        executeBulkReceivePTSample(selectedItems);
+        break;
+      case 'bulkSendContractorSample':
+        executeBulkSendContractorSample(selectedItems);
+        break;
+      case 'bulkInputResult':
+        executeBulkInputResult(selectedItems);
+        break;
+      case 'bulkApproveResult':
+        executeBulkApproveResult(selectedItems);
+        break;
+      case 'bulkRequestReview':
+        executeBulkRequestReview(selectedItems);
+        break;
+      case 'bulkCancel':
+        executeBulkCancel(selectedItems);
+        break;
+
+      // === LEGACY ACTIONS (giữ lại cho compatibility) ===
+      case 'bulkReceive':
+        executeBulkReceiveSample(selectedItems);
+        break;
+      case 'bulkUpdateResult':
+        executeBulkInputResult(selectedItems);
+        break;
+      case 'bulkApprove':
+        executeBulkApproveResult(selectedItems);
+        break;
+
+      default:
+        showNotification('Chức năng đang được phát triển', 'info');
+    }
+  }
+
+  /**
+   * Mở modal chỉnh sửa hàng loạt với bảng dễ chỉnh sửa
+   */
+  function openBulkEditSpreadsheet() {
+    const selectedItems = Array.from(selectedRows.values());
+
+    if (selectedItems.length === 0) {
+      showNotification('Vui lòng chọn ít nhất một dòng để chỉnh sửa', 'warning');
+      return;
+    }
+
+    console.log('📊 Mở bulk edit cho', selectedItems.length, 'items');
+    console.log(
+      '📋 Selected items:',
+      selectedItems.map(item => item.ma_mau)
+    );
+
+    // Hiển thị popup với bảng chỉnh sửa
+    showBulkEditPopup(selectedItems);
+  }
+
+  /**
+   * Hiển thị popup chỉnh sửa hàng loạt với SweetAlert2
+   */
+  function showBulkEditPopup(selectedItems) {
+    // Tạo bảng HTML cho việc chỉnh sửa
+    const editTableHTML = createBulkEditTable(selectedItems);
+
+    Swal.fire({
+      html: `
+        <div class="bulk-edit-container">
+          <div class="alert alert-info mb-3">
+            <i class="ri-information-line me-2"></i>
+            Chỉnh sửa thông tin cho <strong>${selectedItems.length}</strong> mục đã chọn. 
+            Các thay đổi sẽ được áp dụng khi bạn nhấn "Lưu thay đổi".
+          </div>
+          ${editTableHTML}
+        </div>
+      `,
+      width: '90%',
+      position: 'center',
+      showCancelButton: true,
+      confirmButtonText: '💾 Lưu thay đổi',
+      cancelButtonText: '❌ Hủy',
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#6c757d',
+      backdrop: true,
+      allowOutsideClick: false,
+      grow: false,
+      customClass: {
+        container: 'bulk-edit-swal-container',
+        popup: 'bulk-edit-swal-popup'
+      },
+      preConfirm: () => {
+        return extractBulkEditData(selectedItems);
+      }
+    })
+      .then(result => {
+        if (result.isConfirmed && result.value) {
+          processBulkEditChanges(result.value);
+        }
+      })
+      .catch(error => {
+        console.error('❌ Lỗi bulk edit:', error);
+        showNotification('Có lỗi xảy ra khi chỉnh sửa hàng loạt', 'error');
+      });
+
+    // Lưu dữ liệu gốc để so sánh
+    bulkEditData = [...selectedItems];
+  }
+
+  /**
+   * Tạo bảng HTML cho bulk edit
+   */
+  function createBulkEditTable(items) {
+    const tableHTML = `
+      <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-sm table-bordered bulk-edit-table">
+          <thead class="table-dark sticky-top">
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th style="width: 120px;">Mã mẫu</th>
+              <th style="width: 200px;">Tên chỉ tiêu</th>
+              <th style="width: 150px;">Kết quả thực tế</th>
+              <th style="width: 150px;">Kết quả in phiếu</th>
+              <th style="width: 100px;">Tiền tố</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items
+              .map(
+                (item, index) => `
+              <tr data-item-id="${item.id}">
+                <td class="text-center">
+                  <span class="badge bg-primary">${index + 1}</span>
+                </td>
+                <td>
+                  <input type="text" 
+                         class="form-control form-control-sm bulk-edit-field" 
+                         data-field="ma_mau"
+                         value="${item.ma_mau || ''}" 
+                         placeholder="Nhập mã mẫu..." />
+                </td>
+                <td>
+                  <input type="text" 
+                         class="form-control form-control-sm bulk-edit-field" 
+                         data-field="ten_chi_tieu"
+                         value="${item.ten_chi_tieu || ''}" 
+                         placeholder="Nhập tên chỉ tiêu..." />
+                </td>
+                <td>
+                  <input type="text" 
+                         class="form-control form-control-sm bulk-edit-field" 
+                         data-field="ket_qua_thuc_te"
+                         value="${item.ket_qua_thuc_te || ''}" 
+                         placeholder="Nhập kết quả..." />
+                </td>
+                <td>
+                  <input type="text" 
+                         class="form-control form-control-sm bulk-edit-field" 
+                         data-field="ket_qua_in_phieu"
+                         value="${item.ket_qua_in_phieu || ''}" 
+                         placeholder="Kết quả in phiếu..." />
+                </td>
+                <td>
+                  <input type="text" 
+                         class="form-control form-control-sm bulk-edit-field" 
+                         data-field="tien_to"
+                         value="${item.tien_to || ''}" 
+                         placeholder="Tiền tố..." />
+                </td>
+              </tr>
+            `
+              )
+              .join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    return tableHTML;
+  } /**
+   * Trích xuất dữ liệu từ bảng bulk edit
+   */
+  function extractBulkEditData(originalItems) {
+    const updatedItems = [];
+    const rows = document.querySelectorAll('.bulk-edit-table tbody tr');
+
+    rows.forEach((row, index) => {
+      const itemId = row.dataset.itemId;
+      const originalItem = originalItems[index];
+
+      const updatedItem = {
+        ...originalItem, // Giữ lại dữ liệu gốc
+        id: itemId,
+        ma_mau: row.querySelector('[data-field="ma_mau"]').value.trim(),
+        ten_chi_tieu: row.querySelector('[data-field="ten_chi_tieu"]').value.trim(),
+        ket_qua_thuc_te: row.querySelector('[data-field="ket_qua_thuc_te"]').value.trim(),
+        ket_qua_in_phieu: row.querySelector('[data-field="ket_qua_in_phieu"]').value.trim(),
+        tien_to: row.querySelector('[data-field="tien_to"]').value.trim()
+      };
+
+      updatedItems.push(updatedItem);
+    });
+
+    console.log('📊 Extracted bulk edit data:', updatedItems);
+    return updatedItems;
+  }
+
+  /**
+   * Xử lý thay đổi từ bulk edit
+   */
+  function processBulkEditChanges(updatedItems) {
+    // Hiển thị loading state cho button
+    showSaveButtonLoading(true);
+
+    try {
+      showLoading(true);
+
+      let changesCount = 0;
+      const changes = [];
+
+      // So sánh và cập nhật dữ liệu
+      updatedItems.forEach((updatedItem, index) => {
+        const originalItem = bulkEditData[index];
+        const itemChanges = {};
+        let hasChanges = false;
+
+        // Kiểm tra từng field có thay đổi không
+        const fieldsToCheck = ['ma_mau', 'ten_chi_tieu', 'ket_qua_thuc_te', 'ket_qua_in_phieu', 'tien_to'];
+
+        fieldsToCheck.forEach(field => {
+          const oldValue = originalItem[field] || '';
+          const newValue = updatedItem[field] || '';
+
+          if (oldValue !== newValue) {
+            itemChanges[field] = {
+              old: oldValue,
+              new: newValue
+            };
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) {
+          changesCount++;
+          changes.push({
+            id: updatedItem.id,
+            ma_mau: updatedItem.ma_mau,
+            changes: itemChanges
+          });
+
+          // Cập nhật dữ liệu trong chiTietMauData
+          const dataIndex = chiTietMauData.findIndex(item => item.id === updatedItem.id);
+          if (dataIndex !== -1) {
+            // Thu thập thông tin thay đổi để highlight
+            const changes = {
+              id: chiTietMauData[dataIndex].id,
+              ma_mau: updatedItem.ma_mau,
+              ten_chi_tieu: updatedItem.ten_chi_tieu,
+              ket_qua_thuc_te: updatedItem.ket_qua_thuc_te,
+              ket_qua_in_phieu: updatedItem.ket_qua_in_phieu,
+              tien_to: updatedItem.tien_to,
+              updated_at: new Date().toISOString()
+            };
+
+            // Cập nhật các field đã thay đổi
+            Object.assign(chiTietMauData[dataIndex], changes);
+            changedItems.push({ id: chiTietMauData[dataIndex].id, changes });
+          }
+        }
+      });
+
+      // Cập nhật DataTable mà không thay đổi sort order
+      const updatedRowsCount = updateTableRowInPlace(changedItems.map(item => ({ id: item.id, ...item.changes })));
+
+      // Clear selection
+      clearAllSelections();
+
+      // Hiển thị kết quả
+      if (changedItems.length > 0) {
+        console.log('✅ Bulk edit changes:', changedItems, `${updatedRowsCount} rows highlighted`);
+        showNotification(`✅ Đã cập nhật thành công ${changedItems.length}/${updatedItems.length} mục!`, 'success');
+
+        // Hiển thị chi tiết thay đổi (tùy chọn)
+        if (changedItems.length <= 5) {
+          const changesSummary = changedItems
+            .map(change => `• ID ${change.id}: ${Object.keys(change.changes).length} thay đổi`)
+            .join('\n');
+
+          setTimeout(() => {
+            Swal.fire({
+              title: '📋 Tóm tắt thay đổi',
+              text: changesSummary,
+              icon: 'info',
+              confirmButtonText: 'OK'
+            });
+          }, 1000);
+        }
+      } else {
+        showNotification('ℹ️ Không có thay đổi nào được thực hiện', 'info');
+      }
+    } catch (error) {
+      console.error('❌ Lỗi xử lý bulk edit:', error);
+      showNotification('Có lỗi xảy ra khi lưu thay đổi', 'error');
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  /**
+   * Lưu thay đổi từ bulk edit
+   */
+  async function saveBulkChanges() {
+    // Hàm này sẽ được gọi từ processBulkEditChanges
+    // Giữ lại để tương thích với code cũ nếu cần
+    showNotification('Tính năng này đã được tích hợp vào popup chỉnh sửa hàng loạt mới', 'info');
+  }
+
+  // === WORKFLOW BULK ACTIONS IMPLEMENTATION ===
+
+  /**
+   * Phân loại chỉ tiêu hàng loạt
+   * Cho phép user chọn phân loại: PT-VIM, KPT-VIM, KPT-TK, PT-TK
+   */
+  async function executeBulkClassify(selectedItems) {
+    if (!selectedItems || selectedItems.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Chưa chọn bản ghi',
+        text: 'Vui lòng chọn ít nhất một bản ghi để phân loại!',
+        confirmButtonText: 'Đóng'
+      });
+      return;
+    }
+
+    console.log(`🏷️ [BULK CLASSIFY] Starting classification for ${selectedItems.length} items`);
+
+    // Định nghĩa các loại phân loại với icon và mô tả
+    const classifyTypes = [
+      {
+        value: 'PT-VIM',
+        icon: 'ri-test-tube-line',
+        label: 'PT-VIM',
+        description: 'Phân tích tại VIM',
+        color: '#0dcaf0'
+      },
+      {
+        value: 'KPT-VIM',
+        icon: 'ri-flask-line',
+        label: 'KPT-VIM',
+        description: 'Không phân tích tại VIM',
+        color: '#6f42c1'
+      },
+      {
+        value: 'KPT-TK',
+        icon: 'ri-file-forbid-line',
+        label: 'KPT-TK',
+        description: 'Không phân tích - Thỏa khuyến',
+        color: '#fd7e14'
+      },
+      {
+        value: 'PT-TK',
+        icon: 'ri-microscope-line',
+        label: 'PT-TK',
+        description: 'Phân tích - Thỏa khuyến',
+        color: '#20c997'
+      }
+    ];
+
+    // Tạo HTML cho các option cards
+    const optionsHtml = classifyTypes
+      .map(
+        type => `
+      <div class="classify-option-card" data-value="${type.value}">
+        <div class="classify-icon">
+          <i class="${type.icon}"></i>
+        </div>
+        <div class="classify-label">${type.label}</div>
+        <div class="classify-description">${type.description}</div>
+      </div>
+    `
+      )
+      .join('');
+
+    const result = await Swal.fire({
+      title: '🏷️ Phân loại chỉ tiêu',
+      html: `
+        <div class="mb-3">
+          <p class="text-muted">Chọn phân loại cho <strong>${selectedItems.length}</strong> chỉ tiêu đã chọn</p>
+        </div>
+        <div class="classify-options-grid">
+          ${optionsHtml}
+        </div>
+        <input type="hidden" id="selectedClassifyType" value="" />
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0dcaf0',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: '✓ Xác nhận phân loại',
+      cancelButtonText: '✕ Hủy',
+      backdrop: true,
+      allowOutsideClick: false,
+      didOpen: () => {
+        // Add click handlers for option cards
+        const cards = document.querySelectorAll('.classify-option-card');
+        const hiddenInput = document.getElementById('selectedClassifyType');
+
+        cards.forEach(card => {
+          card.addEventListener('click', function () {
+            // Remove selected class from all cards
+            cards.forEach(c => c.classList.remove('selected'));
+            // Add selected class to clicked card
+            this.classList.add('selected');
+            // Set hidden input value
+            hiddenInput.value = this.getAttribute('data-value');
+          });
+        });
+      },
+      preConfirm: () => {
+        const selectedType = document.getElementById('selectedClassifyType').value;
+
+        if (!selectedType) {
+          Swal.showValidationMessage('Vui lòng chọn một loại phân loại');
+          return false;
+        }
+
+        return { classifyType: selectedType };
+      }
+    });
+
+    if (result.isConfirmed) {
+      const { classifyType } = result.value;
+      console.log(`✅ [BULK CLASSIFY] User selected: ${classifyType}`);
+
+      try {
+        showLoading(true);
+        console.log('⏳ [BULK CLASSIFY] Starting classification update...');
+
+        let updatedCount = 0;
+        const currentTime = new Date().toLocaleString('vi-VN');
+        const updatedItems = [];
+
+        selectedItems.forEach((item, index) => {
+          console.log(`🔄 [BULK CLASSIFY] Processing item ${index + 1}/${selectedItems.length}:`, item.id, item.ma_mau);
+
+          const originalItem = chiTietMauData.find(data => data.id === item.id);
+          if (!originalItem) {
+            console.error(`❌ [BULK CLASSIFY] Original item not found for ID: ${item.id}`);
+            return;
+          }
+
+          // Lưu giá trị cũ để log history
+          const oldClassify = originalItem.phan_loai_chi_tieu || 'Chưa phân loại';
+
+          // Cập nhật phân loại
+          const changes = {
+            id: originalItem.id,
+            phan_loai_chi_tieu: classifyType
+          };
+
+          // Thêm history log
+          const historyEntry = `[${currentTime}] Phân loại: ${oldClassify} → ${classifyType}`;
+          if (originalItem.history) {
+            changes.history = historyEntry + '\n' + originalItem.history;
+          } else {
+            changes.history = historyEntry;
+          }
+
+          // Apply changes
+          Object.assign(originalItem, changes);
+          updatedItems.push(changes);
+          updatedCount++;
+
+          console.log('🔍 Updated item classification:', {
+            id: originalItem.id,
+            ma_mau: originalItem.ma_mau,
+            old_classify: oldClassify,
+            new_classify: classifyType
+          });
+        });
+
+        console.log('📊 [BULK CLASSIFY] Processing completed:', {
+          totalItems: selectedItems.length,
+          updatedCount: updatedCount,
+          classifyType: classifyType
+        });
+
+        // Cập nhật DataTable
+        console.log('🔄 [BULK CLASSIFY] Updating DataTable...');
+        const updatedRowsCount = updateTableRowInPlace(updatedItems);
+
+        // Clear selection
+        console.log('🧹 [BULK CLASSIFY] Clearing selection...');
+        selectedRows.clear();
+        $('.row-checkbox').prop('checked', false);
+        elements.selectAll.prop('checked', false);
+        elements.bulkActionsToolbar.addClass('d-none');
+
+        showLoading(false);
+
+        // Hiển thị thông báo thành công
+        Swal.fire({
+          icon: 'success',
+          title: 'Phân loại thành công!',
+          html: `
+            <p>Đã phân loại <strong>${updatedCount}</strong> chỉ tiêu thành <strong>${classifyType}</strong></p>
+            <p class="text-muted small">Cập nhật ${updatedRowsCount} dòng trên bảng</p>
+          `,
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false
+        });
+
+        console.log(
+          `🏷️ [BULK CLASSIFY] COMPLETED: ${updatedCount} items classified as ${classifyType}, ${updatedRowsCount} rows updated`
+        );
+      } catch (error) {
+        console.error('❌ Lỗi khi phân loại chỉ tiêu:', error);
+        showLoading(false);
+        Swal.fire({
+          icon: 'error',
+          title: 'Lỗi phân loại',
+          text: 'Có lỗi xảy ra khi phân loại chỉ tiêu: ' + error.message,
+          confirmButtonText: 'Đóng'
+        });
+      }
+    }
+  }
+
+  /**
+   * 1. Nhận mẫu QT (1.Chờ QT → 2.Chờ mã hóa)
+   */
+  async function executeBulkReceiveSample(selectedItems) {
+    const result = await Swal.fire({
+      title: '📥 Xác nhận nhận mẫu QT',
+      html: `
+        <p>Bạn xác nhận đã nhận <strong>${selectedItems.length}</strong> mẫu từ khách hàng?</p>
+        <div class="mb-3">
+          <label class="form-label">Người nhận mẫu:</label>
+          <input type="text" id="receiverName" class="form-control" placeholder="Nhập tên người nhận..." />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ngày nhận mẫu:</label>
+          <input type="date" id="receiveDate" class="form-control" value="${new Date().toISOString().split('T')[0]}" />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ghi chú:</label>
+          <textarea id="receiveNote" class="form-control" rows="2" placeholder="Tình trạng mẫu, điều kiện bảo quản..."></textarea>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: '✅ Xác nhận nhận mẫu',
+      cancelButtonText: 'Hủy',
+      preConfirm: () => {
+        const receiverName = document.getElementById('receiverName').value;
+        const receiveDate = document.getElementById('receiveDate').value;
+        const receiveNote = document.getElementById('receiveNote').value;
+
+        if (!receiverName.trim()) {
+          Swal.showValidationMessage('Vui lòng nhập tên người nhận');
+          return false;
+        }
+
+        return { receiverName, receiveDate, receiveNote };
+      }
+    });
+
+    if (result.isConfirmed) {
+      await executeBulkStateChange(selectedItems, '2.Chờ mã hóa', result.value, 'Đã nhận mẫu QT thành công');
+    }
+  }
+
+  /**
+   * 2. Mã hóa mẫu (2.Chờ mã hóa → 3.Chờ duyệt thầu/chuyển mẫu)
+   */
+  async function executeBulkCodeSample(selectedItems) {
+    const result = await Swal.fire({
+      title: '🏷️ Mã hóa mẫu hàng loạt',
+      html: `
+        <p>Tiến hành mã hóa <strong>${selectedItems.length}</strong> mẫu</p>
+        <div class="mb-3">
+          <label class="form-label">Loại mẫu:</label>
+          <select id="sampleType" class="form-select">
+            <option value="internal">Phân tích nội bộ</option>
+            <option value="contractor">Gửi thầu phụ</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Prefix mã mẫu:</label>
+          <input type="text" id="codePrefix" class="form-control" value="LAB${new Date().getFullYear()}" placeholder="LAB2025" />
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0d6efd',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: '🏷️ Tiến hành mã hóa',
+      cancelButtonText: 'Hủy',
+      preConfirm: () => {
+        const sampleType = document.getElementById('sampleType').value;
+        const codePrefix = document.getElementById('codePrefix').value;
+
+        return { sampleType, codePrefix };
+      }
+    });
+
+    if (result.isConfirmed) {
+      const { sampleType } = result.value;
+      const nextState = sampleType === 'contractor' ? '3.Chờ duyệt thầu' : '3.Chờ chuyển mẫu';
+      await executeBulkStateChange(selectedItems, nextState, result.value, 'Đã mã hóa mẫu thành công');
+    }
+  }
+
+  /**
+   * 3. Chuyển mẫu (3.Chờ chuyển mẫu → 4.Chờ nhận mẫu PT)
+   */
+  async function executeBulkTransferSample(selectedItems) {
+    const result = await Swal.fire({
+      title: '🚛 Xác nhận chuyển mẫu',
+      html: `
+        <p>Xác nhận đã chuyển <strong>${selectedItems.length}</strong> mẫu đến phòng PT?</p>
+        <div class="mb-3">
+          <label class="form-label">Người vận chuyển:</label>
+          <input type="text" id="transporter" class="form-control" placeholder="Tên người vận chuyển..." />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Thời gian chuyển:</label>
+          <input type="datetime-local" id="transferTime" class="form-control" value="${new Date().toISOString().slice(0, 16)}" />
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0dcaf0',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: '🚛 Xác nhận đã chuyển',
+      cancelButtonText: 'Chưa chuyển',
+      preConfirm: () => {
+        const transporter = document.getElementById('transporter').value;
+        const transferTime = document.getElementById('transferTime').value;
+
+        return { transporter, transferTime };
+      }
+    });
+
+    if (result.isConfirmed) {
+      await executeBulkStateChange(selectedItems, '4.Chờ nhận mẫu PT', result.value, 'Đã xác nhận chuyển mẫu');
+    }
+  }
+
+  /**
+   * 4. Nhận mẫu PT (4.Chờ nhận mẫu PT → 5.Chờ kết quả PT)
+   */
+  async function executeBulkReceivePTSample(selectedItems) {
+    const result = await Swal.fire({
+      title: '📥 Phòng PT nhận mẫu',
+      html: `
+        <p>Phòng PT xác nhận đã nhận <strong>${selectedItems.length}</strong> mẫu?</p>
+        <div class="mb-3">
+          <label class="form-label">Người nhận (Phòng PT):</label>
+          <input type="text" id="ptReceiver" class="form-control" placeholder="Tên nhân viên PT..." />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Tình trạng mẫu:</label>
+          <select id="sampleCondition" class="form-select">
+            <option value="good">Tốt - Bảo quản đúng quy định</option>
+            <option value="acceptable">Chấp nhận được</option>
+            <option value="damaged">Có vấn đề - Cần ghi chú</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Ghi chú tình trạng:</label>
+          <textarea id="conditionNote" class="form-control" rows="2"></textarea>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: '📥 Xác nhận đã nhận',
+      cancelButtonText: 'Chưa nhận',
+      preConfirm: () => {
+        const ptReceiver = document.getElementById('ptReceiver').value;
+        const sampleCondition = document.getElementById('sampleCondition').value;
+        const conditionNote = document.getElementById('conditionNote').value;
+
+        if (!ptReceiver.trim()) {
+          Swal.showValidationMessage('Vui lòng nhập tên người nhận');
+          return false;
+        }
+
+        return { ptReceiver, sampleCondition, conditionNote };
+      }
+    });
+
+    if (result.isConfirmed) {
+      await executeBulkStateChange(selectedItems, '5.Chờ kết quả PT', result.value, 'Phòng PT đã nhận mẫu');
+    }
+  }
+
+  /**
+   * 5. Gửi mẫu thầu (4.Chờ gửi mẫu → 5.Chờ nhận KQ thầu)
+   */
+  async function executeBulkSendContractorSample(selectedItems) {
+    const result = await Swal.fire({
+      title: '📤 Gửi mẫu cho thầu phụ',
+      html: `
+        <p>Xác nhận gửi <strong>${selectedItems.length}</strong> mẫu cho đơn vị thầu phụ?</p>
+        <div class="mb-3">
+          <label class="form-label">Đơn vị thầu phụ:</label>
+          <select id="contractorUnit" class="form-select">
+            <option value="contractor_a">Công ty TNHH Thí nghiệm A</option>
+            <option value="contractor_b">Viện Kiểm định B</option>
+            <option value="contractor_c">Phòng thí nghiệm C</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phương thức gửi:</label>
+          <select id="sendMethod" class="form-select">
+            <option value="direct">Chuyển trực tiếp</option>
+            <option value="post">Bưu điện</option>
+            <option value="courier">Chuyển phát nhanh</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mã vận đơn/Ghi chú:</label>
+          <input type="text" id="trackingCode" class="form-control" placeholder="Mã vận đơn hoặc ghi chú..." />
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#fd7e14',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: '📤 Xác nhận đã gửi',
+      cancelButtonText: 'Chưa gửi',
+      preConfirm: () => {
+        const contractorUnit = document.getElementById('contractorUnit').value;
+        const sendMethod = document.getElementById('sendMethod').value;
+        const trackingCode = document.getElementById('trackingCode').value;
+
+        return { contractorUnit, sendMethod, trackingCode };
+      }
+    });
+
+    if (result.isConfirmed) {
+      await executeBulkStateChange(selectedItems, '5.Chờ nhận KQ thầu', result.value, 'Đã gửi mẫu cho thầu phụ');
+    }
+  }
+
+  /**
+   * 6. Nhập kết quả PT (5.Chờ kết quả PT → 6.Chờ duyệt KQ)
+   */
+  async function executeBulkInputResult(selectedItems) {
+    // Chuyển hướng đến bulk edit để nhập kết quả chi tiết
+    showNotification('🔄 Chuyển đến chế độ nhập kết quả hàng loạt...', 'info');
+    setTimeout(() => {
+      openBulkEditSpreadsheet();
+    }, 1000);
+  }
+
+  /**
+   * 8. Yêu cầu xét lại (7.Hoàn thành → 8.Cần xét lại)
+   */
+  async function executeBulkRequestReview(selectedItems) {
+    const result = await Swal.fire({
+      title: '🔄 Yêu cầu xét lại kết quả',
+      html: `
+        <p class="text-warning">Yêu cầu xem xét lại <strong>${selectedItems.length}</strong> kết quả đã hoàn thành</p>
+        <div class="mb-3">
+          <label class="form-label">Lý do yêu cầu xét lại <span class="text-danger">*</span>:</label>
+          <select id="reviewReason" class="form-select">
+            <option value="">-- Chọn lý do --</option>
+            <option value="customer_complaint">Khách hàng khiếu nại</option>
+            <option value="technical_error">Nghi ngờ sai sót kỹ thuật</option>
+            <option value="quality_check">Kiểm tra chất lượng định kỳ</option>
+            <option value="new_regulation">Quy định mới</option>
+            <option value="other">Lý do khác</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Chi tiết lý do <span class="text-danger">*</span>:</label>
+          <textarea id="reviewDetail" class="form-control" rows="4" placeholder="Mô tả chi tiết lý do cần xem xét lại..." required></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Người yêu cầu:</label>
+          <input type="text" id="requester" class="form-control" placeholder="Tên người yêu cầu..." />
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#fd7e14',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: '🔄 Xác nhận yêu cầu',
+      cancelButtonText: 'Hủy',
+      preConfirm: () => {
+        const reviewReason = document.getElementById('reviewReason').value;
+        const reviewDetail = document.getElementById('reviewDetail').value;
+        const requester = document.getElementById('requester').value;
+
+        if (!reviewReason) {
+          Swal.showValidationMessage('Vui lòng chọn lý do xét lại');
+          return false;
+        }
+
+        if (!reviewDetail.trim()) {
+          Swal.showValidationMessage('Vui lòng mô tả chi tiết lý do');
+          return false;
+        }
+
+        return { reviewReason, reviewDetail, requester };
+      }
+    });
+
+    if (result.isConfirmed) {
+      await executeBulkStateChange(selectedItems, '8.Cần xét lại', result.value, 'Đã gửi yêu cầu xét lại');
+    }
+  }
+
+  /**
+   * Hàm helper: Thực hiện thay đổi trạng thái hàng loạt
+   */
+  async function executeBulkStateChange(selectedItems, newState, additionalData, successMessage) {
+    console.log('⚡ [BULK STATE CHANGE] Starting executeBulkStateChange:', {
+      itemsCount: selectedItems.length,
+      newState: newState,
+      additionalData: additionalData,
+      successMessage: successMessage
+    });
+
+    try {
+      showLoading(true);
+
+      // Mock API calls với Promise.allSettled để handle các lỗi riêng lẻ
+      const updatePromises = selectedItems.map((item, index) => {
+        console.log(`🔄 [BULK STATE CHANGE] Creating promise for item ${index + 1}:`, item.id);
+
+        return new Promise((resolve, reject) => {
+          setTimeout(
+            () => {
+              try {
+                console.log(`🔧 [BULK STATE CHANGE] Processing item ${item.id}...`);
+
+                // 🔥 QUAN TRỌNG: Tìm item trong chiTietMauData để cập nhật
+                const originalItem = chiTietMauData.find(data => data.id === item.id);
+                if (!originalItem) {
+                  console.error(`❌ [BULK STATE CHANGE] Original item not found in chiTietMauData: ${item.id}`);
+                  reject(new Error(`Item ${item.id} not found in chiTietMauData`));
+                  return;
+                }
+
+                console.log(`📋 [BULK STATE CHANGE] Before update (originalItem):`, {
+                  id: originalItem.id,
+                  current_state: originalItem.tien_do_phan_tich,
+                  current_phe_duyet: originalItem.phe_duyet,
+                  current_ma_nguoi_duyet: originalItem.ma_nguoi_duyet
+                });
+
+                // Cập nhật trạng thái chính trong chiTietMauData
+                originalItem.tien_do_phan_tich = newState;
+                originalItem.ngay_cap_nhat = new Date().toISOString();
+
+                // Cập nhật dữ liệu bổ sung vào chiTietMauData
+                Object.assign(originalItem, additionalData);
+
+                // Cập nhật các trường phê duyệt nếu có
+                if (additionalData.approvalDecision) {
+                  originalItem.phe_duyet = additionalData.approvalDecision;
+                }
+                if (additionalData.approver) {
+                  originalItem.ma_nguoi_duyet = additionalData.approver;
+                  originalItem.thoi_gian_duyet = new Date().toLocaleString('vi-VN');
+                }
+                if (additionalData.approvalComment) {
+                  const historyEntry = `${originalItem.thoi_gian_duyet || new Date().toLocaleString('vi-VN')} ${additionalData.approver} đã duyệt: ${additionalData.approvalDecision} - ${additionalData.approvalComment}`;
+                  originalItem.history = historyEntry + (originalItem.history ? '\n' + originalItem.history : '');
+                }
+
+                console.log(`📋 [BULK STATE CHANGE] After update (originalItem):`, {
+                  id: originalItem.id,
+                  new_state: originalItem.tien_do_phan_tich,
+                  new_phe_duyet: originalItem.phe_duyet,
+                  new_ma_nguoi_duyet: originalItem.ma_nguoi_duyet,
+                  new_thoi_gian_duyet: originalItem.thoi_gian_duyet
+                });
+
+                console.log(`✅ Updated ${originalItem.id}: ${newState}`, additionalData);
+                resolve(originalItem);
+              } catch (error) {
+                console.error(`❌ [BULK STATE CHANGE] Error processing ${item.id}:`, error);
+                reject(error);
+              }
+            },
+            Math.random() * 200 + 50
+          ); // Random delay 50-250ms
+        });
+      });
+
+      const results = await Promise.allSettled(updatePromises);
+      console.log('📊 [BULK STATE CHANGE] All promises resolved:', {
+        total: results.length,
+        successful: results.filter(r => r.status === 'fulfilled').length,
+        failed: results.filter(r => r.status === 'rejected').length
+      });
+
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (failed > 0) {
+        showNotification(
+          `⚠️ ${successMessage}: ${successful}/${selectedItems.length}. ${failed} bản ghi lỗi.`,
+          'warning'
+        );
+      } else {
+        showNotification(`✅ ${successMessage}: ${selectedItems.length} bản ghi!`, 'success');
+      }
+
+      console.log('🔄 [BULK STATE CHANGE] Calling refreshAfterBulkAction...');
+      console.log('⚠️ [BULK STATE CHANGE] NOTE: This will reload entire DataTable, not update in place!');
+
+      // Refresh DataTable và clear selection
+      refreshAfterBulkAction();
+    } catch (error) {
+      console.error('❌ Lỗi bulk state change:', error);
+      showNotification('Lỗi khi cập nhật trạng thái', 'error');
+    } finally {
+      showLoading(false);
+    }
+  }
 
   // #region [XỬ LÝ CHUYỂN TRẠNG THÁI CHI TIẾT MẪU]
   /**
@@ -2741,7 +3698,7 @@ import permissionService from './services/permission.service.js';
    */
   async function executeBulkUpdateStatus(selectedItems, crrStatus, showModalAndHandleUpdate) {
     if (!Array.isArray(selectedItems) || selectedItems.length === 0) {
-      notificationService.show('Vui lòng chọn ít nhất một mục để cập nhật trạng thái', 'warning');
+      showNotification('Vui lòng chọn ít nhất một mục để cập nhật trạng thái', 'warning');
       return;
     }
 
@@ -2751,7 +3708,7 @@ import permissionService from './services/permission.service.js';
 
     // Nếu có mục không hợp lệ, thông báo và chỉ xử lý mục hợp lệ
     if (invalidItems.length > 0) {
-      notificationService.show(
+      showNotification(
         `⚠️ Có ${invalidItems.length} mục không ở trạng thái "${crrStatus}". Chỉ nhận được ${validItems.length} mục hợp lệ.`,
         'warning'
       );
@@ -2781,7 +3738,7 @@ import permissionService from './services/permission.service.js';
       refreshAfterBulkAction();
 
       // Hiển thị thông báo thành công
-      notificationService.show(
+      showNotification(
         `✅ Đã cập nhật trạng thái thành công cho ${updatedCount} chi tiết mẫu.`,
         'success'
       );
@@ -2798,7 +3755,7 @@ import permissionService from './services/permission.service.js';
    */
   async function executeBulkReceiveTarget(selectedItems) {
     if (selectedItems.length === 0) {
-      notificationService.show('Vui lòng chọn ít nhất một mục', 'warning');
+      showNotification('Vui lòng chọn ít nhất một mục', 'warning');
       return;
     }
 
@@ -2807,7 +3764,7 @@ import permissionService from './services/permission.service.js';
     const invalidItems = selectedItems.filter(item => item.trang_thai_tong_hop !== 'CHO_CHUYEN_MAU');
 
     if (invalidItems.length > 0) {
-      notificationService.show(
+      showNotification(
         `⚠️ Có ${invalidItems.length} mục không ở trạng thái "Chờ chuyển mẫu". Chỉ nhận được ${validItems.length} mục hợp lệ.`,
         'warning'
       );
@@ -2920,7 +3877,7 @@ import permissionService from './services/permission.service.js';
         refreshAfterBulkAction();
 
         // Hiển thị thông báo thành công
-        notificationService.show(
+        showNotification(
           `✅ Đã nhận thành công ${updatedCount} mẫu phân tích. Trạng thái chuyển sang "Đang phân tích".`,
           'success'
         );
@@ -2928,7 +3885,7 @@ import permissionService from './services/permission.service.js';
         console.log(`✅ Bulk receive completed: ${updatedCount} items updated, ${updatedRowsCount} rows highlighted`);
       } catch (error) {
         console.error('❌ Lỗi khi nhận chỉ tiêu:', error);
-        notificationService.show('Có lỗi xảy ra khi nhận chỉ tiêu: ' + error.message, 'error');
+        showNotification('Có lỗi xảy ra khi nhận chỉ tiêu: ' + error.message, 'error');
       } finally {
         showLoading(false);
       }
@@ -3030,7 +3987,7 @@ import permissionService from './services/permission.service.js';
         handleStatusUpdateSuccess(validItems, updatedCount);
       } catch (error) {
         console.error('❌ Lỗi khi duyệt thầu:', error);
-        notificationService.show('Có lỗi xảy ra: ' + error.message, 'error');
+        showNotification('Có lỗi xảy ra: ' + error.message, 'error');
       } finally {
         showLoading(false);
       }
@@ -3138,7 +4095,7 @@ import permissionService from './services/permission.service.js';
     } catch (error) {
       console.error('❌ Lỗi cập nhật duyệt thầu hàng loạt:', error);
       showLoading(false);
-      notificationService.show('Có lỗi xảy ra khi duyệt thầu: ' + error.message, 'error');
+      showNotification('Có lỗi xảy ra khi duyệt thầu: ' + error.message, 'error');
     } finally {
       showLoading(false);
     }
@@ -3216,7 +4173,7 @@ import permissionService from './services/permission.service.js';
         handleStatusUpdateSuccess(validItems, updatedCount);
       } catch (error) {
         console.error('❌ Lỗi khi gửi mẫu thầu:', error);
-        notificationService.show('Có lỗi xảy ra: ' + error.message, 'error');
+        showNotification('Có lỗi xảy ra: ' + error.message, 'error');
       } finally {
         showLoading(false);
       }
@@ -3355,7 +4312,7 @@ import permissionService from './services/permission.service.js';
     } catch (error) {
       console.error('❌ [BULK UPDATE] Error:', error);
       showLoading(false);
-      notificationService.show('Có lỗi xảy ra khi lưu kết quả: ' + error.message, 'error');
+      showNotification('Có lỗi xảy ra khi lưu kết quả: ' + error.message, 'error');
     } finally {
       showLoading(false);
     }
@@ -3475,7 +4432,7 @@ import permissionService from './services/permission.service.js';
         const updatedCount = results.filter(r => r.status === 'fulfilled' && r.value).length;        handleStatusUpdateSuccess(validItems, updatedCount);
       } catch (error) {
         console.error('❌ Lỗi khi duyệt kết quả:', error);
-        notificationService.show('Có lỗi xảy ra khi duyệt kết quả: ' + error.message, 'error');
+        showNotification('Có lỗi xảy ra khi duyệt kết quả: ' + error.message, 'error');
       } finally {
         showLoading(false);
       }
@@ -3483,7 +4440,67 @@ import permissionService from './services/permission.service.js';
   }
 
   // #endregion
-  
+
+  /**
+   * Bulk action: Hủy chỉ tiêu
+   */
+  async function executeBulkCancel(selectedItems) {
+    const result = await Swal.fire({
+      title: 'Xác nhận hủy chỉ tiêu',
+      html: `
+        <p class="text-danger"><strong>Cảnh báo:</strong> Bạn sắp hủy ${selectedItems.length} chỉ tiêu!</p>
+        <div class="mb-3">
+          <label class="form-label">Lý do hủy <span class="text-danger">*</span>:</label>
+          <textarea id="bulkCancelReason" class="form-control" rows="3" placeholder="Nhập lý do hủy..." required></textarea>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận hủy',
+      cancelButtonText: 'Không hủy',
+      preConfirm: () => {
+        const reason = document.getElementById('bulkCancelReason').value;
+        if (!reason.trim()) {
+          Swal.showValidationMessage('Vui lòng nhập lý do hủy');
+          return false;
+        }
+        return { reason };
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        showLoading(true);
+        const { reason } = result.value;
+
+        // Mock API calls
+        const updatePromises = selectedItems.map(item => {
+          return new Promise(resolve => {
+            setTimeout(() => {
+              item.tien_do_phan_tich = '9.Hủy';
+              item.ly_do_huy = reason;
+              item.ngay_cap_nhat = new Date().toISOString();
+              console.log(`Hủy chỉ tiêu: ${item.id} - ${reason}`);
+              resolve(item);
+            }, 100);
+          });
+        });
+
+        await Promise.all(updatePromises);
+
+        showNotification(`✅ Đã hủy ${selectedItems.length} chỉ tiêu!`, 'success');
+        refreshAfterBulkAction();
+      } catch (error) {
+        console.error('❌ Lỗi bulk cancel:', error);
+        showNotification('Lỗi khi hủy chỉ tiêu', 'error');
+      } finally {
+        showLoading(false);
+      }
+    }
+  }
+
   /**
    * Refresh DataTable và clear selection sau bulk action
    */
@@ -3492,7 +4509,7 @@ import permissionService from './services/permission.service.js';
     chiTietMauTable.clear().rows.add(chiTietMauData).draw();
 
     // Refresh progress statistics
-    updateProgressStats();
+    refreshProgressStats();
 
     // Clear selection
     $('.row-checkbox').prop('checked', false);
@@ -3516,7 +4533,7 @@ import permissionService from './services/permission.service.js';
     updateBulkActionsToolbar();
 
     // Hiển thị thông báo
-    notificationService.show('🗺️ Đã bỏ chọn tất cả', 'info');
+    showNotification('🗺️ Đã bỏ chọn tất cả', 'info');
 
     console.log('✅ Cleared all selections');
   }
@@ -3536,7 +4553,7 @@ import permissionService from './services/permission.service.js';
       }
     });
 
-    notificationService.show('💫 Đã khôi phục giá trị ban đầu', 'info');
+    showNotification('💫 Đã khôi phục giá trị ban đầu', 'info');
   }
 
   /**
@@ -3575,89 +4592,119 @@ import permissionService from './services/permission.service.js';
       });
       return false;
     } else {
-      notificationService.show('✅ Tất cả dữ liệu hợp lệ', 'success');
+      showNotification('✅ Tất cả dữ liệu hợp lệ', 'success');
       return true;
     }
-  }  
+  }
 
   /**
-   * Khởi tạo ứng dụng
-  */
-  async function initializeApp() {
-
-    // Kiểm tra quyền truy cập
-    if (!permissionService.permissionLevel) {
-      console.error('❌ Không có quyền truy cập trang này');
-      window.location.href = './access-denied.html';
-      return;
-    }
-
-    console.log('🚀 Init Sample Details Management');    
-
-    // Cấu hình SweetAlert2 mặc định
-    if (typeof Swal !== 'undefined') {      
-      Swal.mixin({
-        customClass: {
-          container: 'swal2-container-custom'
-        },
-        target: 'body',
-        allowOutsideClick: false,
-        allowEscapeKey: true,
-        position: 'center',
-        grow: false,
-        backdrop: true
-      });
-    } 
-          
-    try {
-      // Initialize Form Builder
-      formBuilder = new window.FormBuilderService(formConfig);
-
-      // Render form dynamically
-      renderFormModal();
-
-      showLoading(true);      
-
-      // Load trang đầu tiên với lazy loading
-      const response = await loadDanhSachChiTieuPaginated(1, paginationState.pageSize);
-      
-      if (response && response.data) {
-        chiTietMauData = response.data;        
-      } else {
-        throw new Error('Không có dữ liệu');
-      }    
-
-      // Load danh sách chỉ tiêu
-      await loadDanhSachChiTieu();
-
-      // Khởi tạo UI
-      initializeDataTable();
-      initializeProgressStats();
-
-      // Render Group By dropdown
-      sampleDetailsTableService.renderGroupByDropdown(GROUP_BY_COLUMNS_CONFIG);
-      bindEvents();      
-      
-      // Set checkbox checked cho grouping mặc định
-      if (isGroupingEnabled && selectedGroupColumns.length > 0) {
-        selectedGroupColumns.forEach(col => {
-          $(`#group_${col}`).prop('checked', true);
-        });
-        updateGroupByLabel();        
-      }   
-
-      showLoading(false);
-      console.log('✅ Khởi tạo thành công');
-      
-    } catch (error) {
-      showLoading(false);
-      console.error('❌ Lỗi khởi tạo:', error);
-      notificationService.show('Lỗi tải dữ liệu: ' + error.message, 'error');
-    }        
+   * Format ngày giờ hiển thị
+   */
+  function formatDateTime(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
+
+  /**
+   * Format trạng thái hiển thị với badge màu
+   */
+  function formatStatusBadge(status) {
+    const statusConfig = {
+      '1.Chờ QT': { class: 'bg-secondary', icon: '⏳' },
+      '2.Chờ mã hóa': { class: 'bg-info', icon: '🏷️' },
+      '3.Chờ duyệt thầu': { class: 'bg-warning text-dark', icon: '📋' },
+      '3.Chờ chuyển mẫu': { class: 'bg-primary', icon: '📦' },
+      '4.Chờ nhận mẫu PT': { class: 'bg-info', icon: '📥' },
+      '4.Chờ gửi mẫu': { class: 'bg-orange', icon: '📤' },
+      '5.Chờ kết quả PT': { class: 'bg-primary', icon: '🔬' },
+      '5.Chờ nhận KQ thầu': { class: 'bg-warning text-dark', icon: '📊' },
+      '6.Chờ duyệt KQ': { class: 'bg-info', icon: '✅' },
+      '7.Hoàn thành': { class: 'bg-success', icon: '✅' },
+      '8.Cần xét lại': { class: 'bg-danger', icon: '🔄' },
+      '9.Hủy': { class: 'bg-dark', icon: '❌' }
+    };
+
+    const config = statusConfig[status] || { class: 'bg-secondary', icon: '❓' };
+    return `<span class="badge ${config.class}">${config.icon} ${status}</span>`;
+  }
+
+  /**
+   * Tạo mã mẫu tự động
+   */
+  function generateSampleCode(prefix, index) {
+    const year = new Date().getFullYear();
+    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+    const sequence = String(index).padStart(4, '0');
+    return `${prefix}_${year}${month}_${sequence}`;
+  }
+
+  /**
+   * Hiển thị/ẩn loading state cho nút Lưu trong SweetAlert2
+   */
+  function showSaveButtonLoading(show) {
+    const confirmBtn = document.querySelector('.swal2-confirm');
+    if (!confirmBtn) return;
+
+    if (show) {
+      // Lưu text gốc nếu chưa lưu
+      if (!confirmBtn.dataset.originalText) {
+        confirmBtn.dataset.originalText = confirmBtn.innerHTML;
+      }
+
+      // Thêm class loading và spinner
+      confirmBtn.classList.add('loading');
+      confirmBtn.innerHTML = `
+        <span class="btn-loading-spinner"></span>
+        <span class="loading-dots">Đang lưu</span>
+      `;
+      confirmBtn.disabled = true;
+    } else {
+      // Khôi phục trạng thái ban đầu
+      confirmBtn.classList.remove('loading');
+      confirmBtn.innerHTML = confirmBtn.dataset.originalText || '💾 Lưu thay đổi';
+      confirmBtn.disabled = false;
+    }
+  }  
 
   // Initialize when document is ready
   $(window).on("load", function () {
     initializeApp();       
   });
+   
+  // Expose data
+  window.chiTietMauData = chiTietMauData;
+
+  // Expose configs
+  window.BULK_ACTION_STATUS_TRANSITIONS = BULK_ACTION_STATUS_TRANSITIONS;
+  window.TRANG_THAI_TONG_HOP = TRANG_THAI_TONG_HOP;
+
+  // Expose helper functions
+  window.isValidStatusForAction = isValidStatusForAction;
+  window.getNextStatusForAction = getNextStatusForAction;
+  window.getStatusLabel = getStatusLabel;
+  window.getStatusBadge = getStatusBadge;
+
+  // Expose utility functions
+  window.refreshChiTietMauTable = function () {
+    if (chiTietMauTable) {
+      chiTietMauTable.clear().rows.add(chiTietMauData).draw();
+    }
+  };
+
+  window.clearAllSelections = function () {
+    selectedRows.clear();
+    updateBulkActionsToolbar();
+    if (elements.selectAll && elements.selectAll.length > 0) {
+      elements.selectAll.prop('checked', false);
+    }
+  };
+
+  window.updateStatus = updateStatus;
 })();

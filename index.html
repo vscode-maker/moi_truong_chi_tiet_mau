@@ -254,122 +254,8 @@
                       </button>
                       <ul class="dropdown-menu group-by-dropdown" id="groupByDropdown">
                         <li class="dropdown-header">Chọn cột để nhóm (có thể chọn nhiều)</li>
-                        <li><hr class="dropdown-divider" /></li>
-
-                        <!-- Options sẽ được tạo động bằng JavaScript -->
-                        <!-- <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="don_hang_id"
-                                id="group_don_hang_id" />
-                              <label class="form-check-label" for="group_don_hang_id">
-                                <i class="ri-file-list-3-line me-1 text-primary"></i>Đơn hàng
-                              </label>
-                            </div>
-                          </div>
-                        </li>
-                        <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="ma_mau"
-                                id="group_ma_mau" />
-                              <label class="form-check-label" for="group_ma_mau">
-                                <i class="ri-barcode-line me-1 text-info"></i>Mã mẫu
-                              </label>
-                            </div>
-                          </div>
-                        </li>
-                        <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="ten_don_hang"
-                                id="group_ten_don_hang" />
-                              <label class="form-check-label" for="group_ten_don_hang">
-                                <i class="ri-file-text-line me-1 text-primary"></i>Tên đơn hàng
-                              </label>
-                            </div>
-                          </div>
-                        </li>
-                        <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="noi_phan_tich"
-                                id="group_noi_phan_tich" />
-                              <label class="form-check-label" for="group_noi_phan_tich">
-                                <i class="ri-building-line me-1 text-warning"></i>Nơi phân tích
-                              </label>
-                            </div>
-                          </div>
-                        </li>
-                        <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="nguoi_phan_tich"
-                                id="group_nguoi_phan_tich" />
-                              <label class="form-check-label" for="group_nguoi_phan_tich">
-                                <i class="ri-user-line me-1 text-success"></i>Người phân tích
-                              </label>
-                            </div>
-                          </div>
-                        </li>
-                        <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="nguoi_nhan"
-                                id="group_nguoi_nhan" />
-                              <label class="form-check-label" for="group_nguoi_nhan">
-                                <i class="ri-user-received-line me-1 text-danger"></i>Người nhận
-                              </label>
-                            </div>
-                          </div>
-                        </li>
-                        <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="ten_chi_tieu"
-                                id="group_ten_chi_tieu" />
-                              <label class="form-check-label" for="group_ten_chi_tieu">
-                                <i class="ri-test-tube-line me-1 text-purple"></i>Tên chỉ tiêu
-                              </label>
-                            </div>
-                          </div>
-                        </li>
-                        <li>
-                          <div class="dropdown-item group-by-option">
-                            <div class="form-check">
-                              <input
-                                class="form-check-input group-by-checkbox"
-                                type="checkbox"
-                                value="trang_thai_phan_tich"
-                                id="group_trang_thai_phan_tich" />
-                              <label class="form-check-label" for="group_trang_thai_phan_tich">
-                                <i class="ri-progress-3-line me-1 text-info"></i>Trạng thái phân tích
-                              </label>
-                            </div>
-                          </div>
-                        </li> -->
-
+                        <li><hr class="dropdown-divider" /></li>                      
+                        <!-- Options được tạo tự động bằng JS -->
                         <li><hr class="dropdown-divider" /></li>
                         <li>
                           <button class="dropdown-item text-center text-primary" id="applyGroupBtn">
@@ -383,6 +269,15 @@
                         </li>
                       </ul>
                     </div>
+                    
+                    <!-- Load More Button -->
+                    <button type="button" class="btn btn-primary btn-sm" id="loadMoreBtn">
+                      <i class="ri-refresh-line me-2"></i>
+                      Tải thêm dữ liệu
+                      <span class="badge bg-white text-primary ms-2" id="loadMoreBadge">
+                        Còn <span id="remainingRecords">0</span> records
+                      </span>
+                    </button>
 
                     <button type="button" style="display: none;" class="btn btn-primary btn-sm" id="addNewBtn">
                       <i class="ri-add-line me-1"></i>Thêm mới
@@ -494,9 +389,10 @@
                       <tbody>
                         <!-- Data will be loaded here -->
                       </tbody>
-                    </table>
+                    </table>                    
+
                   </div>
-                </div>
+                </div>                
 
               </div>
             </div>
@@ -773,13 +669,19 @@
 
     <!-- Config JS -->
     <script src="./assets/js/configs/sample-details.config.js"></script>
-    <script type="module" src="./assets/js/configs/sample-details-table.config.js"></script>
+    <script type="module" src="./assets/js/configs/sample-details-table.config.js"></script>    
     
     <!-- Service JS -->
+
+    <!-- Dịch vụ xử lý tham số tìm kiếm URL -->
+    <script type="module" src="./assets/js/services/url-search.service.js"></script>
+
+    <!-- Dịch vụ xử lý bảng chi tiết mẫu -->
     <script type="module" src="./assets/js/services/sample-details-table.service.js"></script>
+
     <script src="./assets/js/services/form-builder.service.js"></script>
-    <script src="./assets/js/services/sample-details.service.js"></script>    
-    <script type="module" src="./assets/js/services/calc-by-formula.service.js"></script>
+    <script src="./assets/js/services/sample-details.service.js"></script>  
+    <script type="module" src="./assets/js/services/calc-by-formula.service.js"></script>    
 
     <!-- Page JS -->
     <script type="module" src="./assets/js/app-sample-details.js"></script>

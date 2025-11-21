@@ -1,5 +1,6 @@
 /**
  * Dịch vụ tính toán kết quả theo công thức
+ * Áp dụng ở các vị trí cần tính toán
  */
 const calcByFormulaService = {
 
@@ -56,6 +57,16 @@ const calcByFormulaService = {
         } else {
             return actualResult;
         }
+    },
+
+    /**
+     * Tính toán thành tiền
+     */
+    calcThanhTien: () => {
+        const donGia = parseFloat($('#formDonGia').val()) || 0;
+        const chietKhau = parseFloat($('#formChietKhau').val()) || 0;
+        const thanhTien = donGia - (donGia * chietKhau) / 100;
+        $('#formThanhTien').val(thanhTien.toFixed(0));
     }
 }
 
