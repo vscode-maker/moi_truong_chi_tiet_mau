@@ -1,302 +1,288 @@
-import { PERMISSION_CONFIG, PERMISSION_PRIORITY, PERMISSION_MESSAGES } from '../configs/permission.config.js';
-import urlSearchService from './url-search.service.js';
+// d:\GoogleDrive_le.tung_personal\workspace\workspace_ems\cefinea\CEFINEA\assets\js\services\permission.service.js
 
 /**
  * ============================================
- * PERMISSION SERVICE
+ * PERMISSION SERVICE - HYBRID FILTERING
  * ============================================
- * Xử lý logic phân quyền dựa trên URL parameters
- * vd: ?phan_quyen=Admin&chuc_vu=Giám%20đốc&phong_ban=Ban%20Giám%20Đốc&ma_nv=NV044&ho_ten=Nguyễn%20Thanh%20Tùng&quyen_action=Xin%20gia%20hạn%20việc%20%2C%20Gửi%20mẫu%20thầu%20%2C%20Nhận%20mẫu%20phân%20tích%20%2C%20Bốc%20mẫu%20đơn%20hàng%20%2C%20Copy%20mẫu%20%2C%20Cập%20nhật%20file%20kết%20quả%20thầu%20%2C%20Thêm%20chỉ%20tiêu&nhom_phan_tich=Đo%20hiện%20trường
+ * Kết hợp server-side và client-side filtering
+ * để đảm bảo hiệu suất và tính chính xác
  */
+
+import { PERMISSION_CONFIG, PERMISSION_MESSAGES } from '../configs/permission.config.js';
+import urlSearchService from './url-search.service.js';
+
 class PermissionService {
   constructor() {
-    this.userInfo = null;
-    this.permissionLevel = null;
+    this.userParams = null;          // URL parameters của user
+    this.matchedGroups = [];         // Các nhóm quyền phù hợp
     this.initialized = false;
   }
 
   /**
-   * Khởi tạo service và lấy thông tin user từ URL
+   * ============================================
+   * KHỞI TẠO SERVICE
+   * ============================================
    */
   init() {
-    this.userInfo = this.getUserInfoFromURL();
-    // this.userInfo = {
-    //   ...this.userInfo,
+    // Lấy tất cả URL parameters liên quan phân quyền
+    this.userParams = this.extractURLParams();
+    // this.userParams = {
+    //   ...this.userParams,
     //   "phan_quyen": "admi",
-    //   "chuc_vu": "trưởng nhó",
-    //   "phong_ban": "phòng quan trắ",
+    //   "chuc_vu": "trưởng",
+    //   "phong_ban": "phòng quan trắc",
     //   "ho_ten": "",
     //   "ma_nv": "NV044",
     //   "nhom_phan_tich": "Đo hiện trường",
     //   "quyen_action": "Xin gia hạn việc , Gửi mẫu thầu , Nhận mẫu phân tích , Bốc mẫu đơn hàng , Copy mẫu , Cập nhật file kết quả thầu , Thêm chỉ tiêu",
-    //   "tu_ngay": ""
+    //   "tu_ngay": "",
+    //   // "mau_id": "7f18ebcd"
     // };
-    this.permissionLevel = this.determinePermissionLevel();
+    
+    // Xác định các nhóm quyền phù hợp
+    this.matchedGroups = this.determinePermissionGroups();
+    
     this.initialized = true;
-
     
     console.log('🔐 Permission Service Initialized');
-    console.warn('👤 User Info:', JSON.stringify(this.userInfo, null, 2));
-    console.warn('🎯 Permission Level:', this.permissionLevel);
+    console.log('📋 User Params:', this.userParams);
+    console.log('✅ Matched Groups:', this.matchedGroups);
     
-    return this.userInfo;
+    return {
+      userParams: this.userParams,
+      matchedGroups: this.matchedGroups
+    };
   }
 
   /**
-   * Lấy thông tin user từ URL parameters
+   * Lấy tất cả URL parameters liên quan phân quyền
    */
-  getUserInfoFromURL() {
-    // Lấy danh sách tham số từ cấu hình
-    const params = PERMISSION_CONFIG.URL_PARAMS;    
-
-    // Lấy giá trị từng tham số
-    const userInfo = {};
-    params.map(paramKey => {
-      userInfo[paramKey] = urlSearchService.getParam(paramKey)?.trim() || '';
+  extractURLParams() {
+    const params = {};
+    PERMISSION_CONFIG.URL_PARAMS.forEach(key => {
+      const value = urlSearchService.getParam(key);
+      if (value !== null && value !== '') {
+        params[key] = value;
+      }
     });
-
-    return userInfo;
-  }
-
-  /**
-   * Xác định cấp độ phân quyền
-   * Trả về một trong các giá trị trong nhóm phân quyền GROUP_PERMISSION của cấu hình
-   */
-  determinePermissionLevel() {
-
-    if (!this.userInfo) return null;
-
-    // Lấy nhóm phân quyền   
-    const groupObject = PERMISSION_CONFIG.PERMISSION_GROUP;
-    let result = null;
-
-    Object.keys(groupObject).forEach(level => {
-
-      if (result) return;
-
-      console.warn("CHECK LEVEL:", level);
-
-      const permissionItem = groupObject[level];
-
-      let isMatched = false;
-
-      permissionItem.rules.forEach(rule => {
-        const userValue = this.userInfo[rule.key].toLowerCase() || '';
-        const ruleValues = rule.value;
-
-        if(result) return;
-
-        console.warn("CHECK RULE:", rule);
-
-        switch (rule.type) {
-          case 'exact':
-            isMatched = ruleValues.includes(userValue);
-            break;
-
-          case 'contains':
-            isMatched = ruleValues.some(val => userValue.includes(val.toLowerCase()));
-            break;          
-
-          case 'different':           
-            isMatched = !ruleValues.includes(userValue);
-            break;
-        }
-     
-        if (isMatched) {       
-          if (permissionItem.condition == "OR" || permissionItem.rules.length === 1) {  
-            result = {
-              level,
-              dataFilter: permissionItem.dataFilter
-            };
-          }
-        }
-      });
-
-    });
-
-    return result;
-  }
-
-  /**
-   * Kiểm tra có phải Admin không
-   */
-  isAdmin() {
-    const { quyenNguoiDung } = this.userInfo;
-    return quyenNguoiDung === PERMISSION_CONFIG.ROLES.ADMIN;
-  }
-
-  /**
-   * Kiểm tra có chức vụ Full Access không
-   * (Nhân viên trả kết quả, Trưởng nhóm)
-   */
-  hasFullAccessRole() {
-    const { chucVu } = this.userInfo;
-    if (!chucVu) return false;
-
-    const fullAccessRoles = PERMISSION_CONFIG.CHUC_VU.FULL_ACCESS;
-    const truongNhomKeywords = PERMISSION_CONFIG.CHUC_VU.TRUONG_NHOM_KEYWORDS;
-
-    // Kiểm tra chức vụ trong danh sách full access
-    if (fullAccessRoles.some(role => chucVu.includes(role))) {
-      return true;
-    }
-
-    // Kiểm tra có chứa từ khóa "Trưởng nhóm"
-    if (truongNhomKeywords.some(keyword => chucVu.includes(keyword))) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Kiểm tra có phải Phòng Quan Trắc không
-   */
-  isPhongQuanTrac() {
-    const { phongBan } = this.userInfo;
-    if (!phongBan) return false;
-
-    const quanTracConfig = PERMISSION_CONFIG.PHONG_BAN.QUAN_TRAC;
-    return quanTracConfig.aliases.some(alias => 
-      phongBan.toLowerCase().includes(alias.toLowerCase())
-    );
+    return params;
   }
 
   /**
    * ============================================
-   * KIỂM TRA QUYỀN XEM MẪU
+   * XÁC ĐỊNH NHÓM QUYỀN
    * ============================================
-   * Kiểm tra user có quyền xem một mẫu cụ thể không
-   * 
-   * @param {Object} sample - Thông tin mẫu cần kiểm tra
-   * @returns {Boolean} - true nếu có quyền, false nếu không
+   * Duyệt qua tất cả PERMISSION_GROUP và kiểm tra rules
+   * Trả về danh sách các nhóm quyền phù hợp (có thể có nhiều nhóm)
    */
-  canViewSample(sample) {
-    if (!this.initialized) {
-      console.warn('⚠️ Permission Service chưa được khởi tạo');
+  determinePermissionGroups() {
+    const matchedGroups = [];
+    const groups = PERMISSION_CONFIG.PERMISSION_GROUP;    
+
+    // Duyệt qua tất cả nhóm quyền
+    for (const [groupName, groupConfig] of Object.entries(groups)) {      
+      if (this.checkGroupRules(groupConfig.rules, groupConfig.condition)) {
+        matchedGroups.push({
+          name: groupName,
+          config: groupConfig,          
+        });
+      }
+    }   
+    return matchedGroups;
+  }
+
+  /**
+   * Kiểm tra rules của một nhóm quyền
+   * @param {Array} rules - Danh sách rules cần kiểm tra
+   * @param {String} condition - 'AND' hoặc 'OR'
+   */
+  checkGroupRules(rules, condition = 'OR') {
+    if (!rules || rules.length === 0) return false;
+
+    const results = rules.map(rule => this.checkSingleRule(rule));
+
+    if (condition === 'AND') {
+      return results.every(r => r === true);
+    } else {
+      return results.some(r => r === true);
+    }
+  }
+
+  /**
+   * Kiểm tra một rule đơn
+   * @param {Object} rule - { key, value, type }
+   */
+  checkSingleRule(rule) {
+    const userValue = this.userParams[rule.key];
+    
+    // Nếu không có giá trị từ URL
+    if (userValue === undefined || userValue === null) {      
       return false;
     }
 
-    switch (this.permissionLevel) {
-      case 'ADMIN':
-        return this.checkAdminPermission(sample);
-      
-      case 'FULL_ACCESS_ROLE':
-        return this.checkFullAccessPermission(sample);
-      
-      case 'PHONG_BAN':
-        return this.checkPhongBanPermission(sample);
-      
-      case 'PERSONAL':
-        return this.checkPersonalPermission(sample);
-      
+    const normalizedUserValue = this.normalizeString(userValue);
+
+    switch (rule.type) {
+      case 'exact':
+        // Kiểm tra exact match (case-insensitive)
+        return rule.value.some(v => 
+          this.normalizeString(v) === normalizedUserValue
+        );
+
+      case 'contains':
+        // Kiểm tra có chứa bất kỳ giá trị nào trong mảng
+        return rule.value.some(v => 
+          normalizedUserValue.includes(this.normalizeString(v))
+        );
+
+      case 'different':
+        // Kiểm tra khác với tất cả giá trị trong mảng
+        return rule.value.every(v => 
+          this.normalizeString(v) !== normalizedUserValue
+        );        
+
       default:
         return false;
     }
   }
 
   /**
-   * Kiểm tra quyền Admin - Xem tất cả
+   * ============================================
+   * XÂY DỰNG API SEARCH QUERY
+   * ============================================
+   * Chuyển đổi dataFilter thành query cho API
+   * Chỉ áp dụng các điều kiện mà API hỗ trợ
    */
-  checkAdminPermission(sample) {
-    return true; // Admin xem tất cả
-  }
-
-  /**
-   * Kiểm tra quyền Full Access
-   * Điều kiện: han_hoan_thanh_pt_gm >= tu_ngay
-   */
-  checkFullAccessPermission(sample) {
-    const { tuNgay } = this.userInfo;
-    
-    // Nếu không có tuNgay, cho phép xem tất cả
-    if (!tuNgay) return true;
-
-    // Kiểm tra hạn hoàn thành
-    return this.checkDeadline(sample.han_hoan_thanh_pt_gm, tuNgay);
-  }
-
-  /**
-   * Kiểm tra quyền Phòng Quan Trắc
-   * Điều kiện: 
-   * - Nhóm mẫu = "Đo hiện trường" HOẶC
-   * - Loại mẫu thuộc ["Không khí, khí thải"]
-   */
-  checkPhongBanPermission(sample) {
-    const quanTracConfig = PERMISSION_CONFIG.PHONG_BAN.QUAN_TRAC;
-    const { nhom_mau, loai_mau } = sample;
-
-    // Kiểm tra nhóm mẫu
-    const isAllowedNhomMau = quanTracConfig.allowedNhomMau.some(nhom => 
-      nhom_mau && nhom_mau.toLowerCase().includes(nhom.toLowerCase())
-    );
-
-    if (isAllowedNhomMau) return true;
-
-    // Kiểm tra loại mẫu
-    const isAllowedLoaiMau = quanTracConfig.allowedLoaiMau.some(loai => 
-      loai_mau && loai_mau.toLowerCase().includes(loai.toLowerCase())
-    );
-
-    return isAllowedLoaiMau;
-  }
-
-  /**
-   * Kiểm tra quyền cá nhân
-   * Điều kiện:
-   * - nguoi_phan_tich = ho_ten
-   * - noi_phan_tich = "Nội bộ"
-   * - han_hoan_thanh_pt_gm >= tu_ngay
-   */
-  checkPersonalPermission(sample) {
-    const { hoTen, tuNgay } = this.userInfo;
-    const { nguoi_phan_tich, noi_phan_tich, han_hoan_thanh_pt_gm } = sample;
-
-    // Kiểm tra người phân tích
-    if (nguoi_phan_tich !== hoTen) {
-      return false;
+  buildAPISearchQuery(additionalSearch = {}) {
+    if (!this.initialized || this.matchedGroups.length === 0) {
+      return { search: additionalSearch };
     }
 
-    // Kiểm tra nơi phân tích
-    if (PERMISSION_CONFIG.FILTER_CONDITIONS.requireNoiBo) {
-      if (noi_phan_tich !== PERMISSION_CONFIG.NOI_PHAN_TICH.NOI_BO) {
-        return false;
+    // Lấy nhóm quyền có priority cao nhất
+    const primaryGroup = this.matchedGroups[0];
+    const dataFilter = primaryGroup.config.dataFilter;
+
+    // Nếu là FULL_ACCESS → không cần filter
+    if (dataFilter === 'ALL') {
+      return { search: additionalSearch };
+    }
+
+    // Xây dựng search query từ dataFilter
+    const searchQuery = { ...additionalSearch };
+
+    if (dataFilter && dataFilter.columns) {
+      // Chỉ áp dụng các filter type = 'exact' và condition = 'AND'
+      if (dataFilter.condition === 'AND') {
+        dataFilter.columns.forEach(column => {
+          if (column.type === 'exact') {
+            const value = this.resolveFilterValue(column.value);
+            if (value) {
+              searchQuery[column.key] = value;
+            }
+          }
+        });
       }
+      // Nếu là OR hoặc contains → không thể dùng API, phải filter client-side
     }
 
-    // Kiểm tra hạn hoàn thành
-    if (tuNgay && PERMISSION_CONFIG.FILTER_CONDITIONS.checkDeadline) {
-      return this.checkDeadline(han_hoan_thanh_pt_gm, tuNgay);
-    }
-
-    return true;
+    return { search: searchQuery };
   }
 
   /**
    * ============================================
-   * FILTER DANH SÁCH MẪU
+   * CLIENT-SIDE FILTERING
    * ============================================
-   * Lọc danh sách mẫu theo quyền
-   * 
-   * @param {Array} samples - Danh sách mẫu cần lọc
-   * @returns {Array} - Danh sách mẫu sau khi lọc
+   * Lọc dữ liệu phía client với các điều kiện phức tạp
    */
-  filterSamples(samples) {
+  filterData(data) {
     if (!this.initialized) {
       console.warn('⚠️ Permission Service chưa được khởi tạo');
       return [];
     }
 
-    if (!Array.isArray(samples)) {
-      console.error('❌ filterSamples: samples phải là array');
+    if (!Array.isArray(data)) {
+      console.error('❌ filterData: data phải là array');
       return [];
     }
 
-    const filteredSamples = samples.filter(sample => this.canViewSample(sample));
+    // Nếu không có nhóm quyền nào → không có quyền xem
+    if (this.matchedGroups.length === 0) {
+      console.warn('⚠️ Không có nhóm quyền phù hợp');
+      return [];
+    }
+
+    // Áp dụng filter từ TẤT CẢ các nhóm quyền (OR logic)
+    const filteredData = data.filter(item => {
+      return this.matchedGroups.some(group => 
+        this.checkItemPermission(item, group.config.dataFilter)
+      );
+    });
+
+    console.log(`📊 Filtered: ${filteredData.length}/${data.length} items`);
     
-    console.log(`📊 Filtered: ${filteredSamples.length}/${samples.length} samples`);
-    
-    return filteredSamples;
+    return filteredData;
+  }
+
+  /**
+   * Kiểm tra một item có pass dataFilter không
+   */
+  checkItemPermission(item, dataFilter) {
+    // FULL_ACCESS → pass tất cả
+    if (dataFilter === 'ALL') {
+      return true;
+    }
+
+    // Không có filter → không pass
+    if (!dataFilter || !dataFilter.columns) {
+      return false;
+    }
+
+    const results = dataFilter.columns.map(column => {
+      const pass = this.checkColumnFilter(item, column);      
+      return pass;
+    });
+
+    // Áp dụng condition (AND hoặc OR)
+    if (dataFilter.condition === 'AND') {
+      return results.every(r => r === true);
+    } else {
+      return results.some(r => r === true);
+    }
+  }
+
+  /**
+   * Kiểm tra một column filter
+   */
+  checkColumnFilter(item, column) {
+    const itemValue = item[column.key];    
+    const filterValue = this.resolveFilterValue(column.value);        
+
+    if (itemValue === undefined || itemValue === null) {
+      return false;
+    }
+
+    const normalizedItemValue = this.normalizeString(itemValue);    
+
+    switch (column.type) {
+      case 'exact':
+        if (Array.isArray(filterValue)) {
+          return filterValue.some(v => 
+            this.normalizeString(v) === normalizedItemValue
+          );
+        }
+        return this.normalizeString(filterValue) === normalizedItemValue;
+
+      case 'contains':
+        if (Array.isArray(filterValue)) {          
+          return filterValue.some(v => 
+            normalizedItemValue.includes(this.normalizeString(v))
+          );
+        }
+        return normalizedItemValue.includes(this.normalizeString(filterValue));
+
+      default:
+        return false;
+    }
   }
 
   /**
@@ -306,50 +292,45 @@ class PermissionService {
    */
 
   /**
-   * Kiểm tra hạn hoàn thành >= ngày so sánh
+   * Resolve giá trị filter (hỗ trợ $$param từ URL)
    */
-  checkDeadline(deadline, compareDate) {
-    if (!deadline || !compareDate) return true;
-
-    try {
-      const deadlineDate = new Date(deadline);
-      const compareDateTime = new Date(compareDate);
-      
-      return deadlineDate >= compareDateTime;
-    } catch (error) {
-      console.error('❌ Error checking deadline:', error);
-      return true; // Nếu lỗi, cho phép xem
+  resolveFilterValue(value) {
+    if (typeof value === 'string' && value.startsWith('$$')) {
+      const paramKey = value.substring(2);
+      return this.userParams[paramKey] || null;
     }
+    return value;
   }
 
   /**
-   * Lấy thông tin quyền hiện tại (cho debug)
+   * Normalize string (lowercase, trim, remove diacritics)
    */
-  getPermissionInfo() {
-    return {
-      userInfo: this.userInfo,
-      permissionLevel: this.permissionLevel,
-      permissionMessage: PERMISSION_MESSAGES[this.permissionLevel] || PERMISSION_MESSAGES.NO_PERMISSION,
-      initialized: this.initialized
-    };
-  }
+  normalizeString(str) {
+    if (str === null || str === undefined) return '';
+    
+    return String(str)
+      .toLowerCase()
+      .trim()
+      // .normalize('NFD')
+      // .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics
+  } 
 
   /**
    * Kiểm tra có quyền thực hiện action không
-   * @param {String} action - Tên action (view, edit, delete, approve, etc.)
    */
-  canPerformAction(action, sample = null) {
-    // Mặc định chỉ check quyền view
-    // Có thể mở rộng thêm các action khác
+  canPerformAction(action) {
+    const fullAccessGroups = ['FULL_ACCESS'];
+    
     switch (action) {
       case 'view':
-        return sample ? this.canViewSample(sample) : false;
+        return this.matchedGroups.length > 0;
       
       case 'edit':
       case 'delete':
       case 'approve':
-        // Chỉ Admin và Full Access mới được phép
-        return ['ADMIN', 'FULL_ACCESS_ROLE'].includes(this.permissionLevel);
+        return this.matchedGroups.some(g => 
+          fullAccessGroups.includes(g.name)
+        );
       
       default:
         return false;
@@ -357,11 +338,27 @@ class PermissionService {
   }
 
   /**
-   * Reset service (dùng khi cần reload permissions)
+   * Lấy thông tin debug
+   */
+  getDebugInfo() {
+    return {
+      initialized: this.initialized,
+      userParams: this.userParams,
+      matchedGroups: this.matchedGroups.map(g => ({
+        name: g.name,
+        priority: g.priority
+      })),
+      canView: this.canPerformAction('view'),
+      canEdit: this.canPerformAction('edit')
+    };
+  }
+
+  /**
+   * Reset service
    */
   reset() {
-    this.userInfo = null;
-    this.permissionLevel = null;
+    this.userParams = null;
+    this.matchedGroups = [];
     this.initialized = false;
   }
 }
@@ -369,6 +366,5 @@ class PermissionService {
 // Export singleton instance
 const permissionService = new PermissionService();
 
-// Export cả class và instance
 export { PermissionService };
 export default permissionService;

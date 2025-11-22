@@ -5,13 +5,6 @@
  * Cấu hình các quy tắc phân quyền dựa trên URL parameters
  */
 export const PERMISSION_CONFIG = {
-  // ========================================
-  // 1. CẤU HÌNH ROLES (VAI TRÒ)
-  // ========================================
-  ROLES: {
-    ADMIN: 'Admin',
-    USER: 'User'
-  },
  
   /**
    * PERMISSION_GROUP: các nhóm phân quyền
@@ -76,7 +69,7 @@ export const PERMISSION_CONFIG = {
           },
           {
             key: 'loai_mau',
-            value: ['không khí, khí thải'],
+            value: ['không khí', 'khí thải'],
             type: 'contains'
           },        
         ],
@@ -91,7 +84,7 @@ export const PERMISSION_CONFIG = {
       // Quy tắc để xác định quyền người phân tích
       rules: [
         {
-          value: [''],
+          value: ['', null],
           key: 'ho_ten',        
           type: 'different'
         }
@@ -100,12 +93,12 @@ export const PERMISSION_CONFIG = {
         columns: [
           {
             key: 'nguoi_phan_tich',
-            value: '$value', // Lấy từ URL parameter 'ho_ten'
+            value: '$$ho_ten', // Lấy từ URL parameter 'ho_ten'
             type: 'exact'
           },
           {
             key: 'noi_phan_tich',
-            value: ['nội bộ'],
+            value: 'Nội bộ',
             type: 'exact'
           }
         ],
@@ -119,7 +112,7 @@ export const PERMISSION_CONFIG = {
     SEARCH_MAU_ID: {
       rules: [
         {
-          value: [''],
+          value: ['', null],
           key: 'mau_id',
           type: 'different'
         }
@@ -127,11 +120,12 @@ export const PERMISSION_CONFIG = {
       dataFilter: {
         columns: [
           {
-            key: 'mau_id',
-            value: '$value', // Lấy từ URL parameter 'mau_id'
+            key: 'ma_mau_id',
+            value: '$$mau_id', // Lấy từ URL parameter 'mau_id'
             type: 'exact'
           }
-        ],        
+        ], 
+        condition: 'AND'  // Điều kiện lọc: 'AND' hoặc 'OR'       
       }
     }
   },
@@ -142,77 +136,7 @@ export const PERMISSION_CONFIG = {
    */
   URL_PARAMS: ['phan_quyen', 'chuc_vu', 'phong_ban', 'ho_ten', 'ma_nv', 'nhom_phan_tich', 'quyen_action', 'tu_ngay', 'mau_id'],
 
-  // ========================================
-  // 2. CẤU HÌNH CHỨC VỤ
-  // ========================================
-  CHUC_VU: {
-    // Chức vụ có quyền xem tất cả
-    FULL_ACCESS: [
-      'NHÂN VIÊN TRẢ KẾT QUẢ',
-      'Nhân viên trả kết quả',
-      'TRƯỞNG NHÓM',
-      'Trưởng nhóm'
-    ],
-    
-    // Kiểm tra có phải trưởng nhóm không (chứa từ khóa)
-    TRUONG_NHOM_KEYWORDS: ['TRƯỞNG NHÓM', 'Trưởng nhóm', 'truong nhom']
-  },
-
-  // ========================================
-  // 3. CẤU HÌNH PHÒNG BAN
-  // ========================================
-  PHONG_BAN: {
-    QUAN_TRAC: {
-      name: 'PHÒNG QUAN TRẮC',
-      aliases: ['Phòng Quan trắc', 'phong quan trac', 'PHÒNG QUAN TRẮC'],
-      
-      // Các nhóm mẫu được phép xem
-      allowedNhomMau: ['Đo hiện trường', 'Đo Hiện Trường', 'do hien truong'],
-      
-      // Các loại mẫu được phép xem
-      allowedLoaiMau: [
-        'Không khí, khí thải',
-        'Không khí',
-        'Khí thải',
-        'khong khi',
-        'khi thai'
-      ]
-    }
-  },
-
-  // ========================================
-  // 4. CẤU HÌNH NƠI PHÂN TÍCH
-  // ========================================
-  NOI_PHAN_TICH: {
-    NOI_BO: 'Nội bộ',
-    BEN_NGOAI: 'Bên ngoài'
-  },
-
-  
-  // ========================================
-  // 6. CẤU HÌNH ĐIỀU KIỆN LỌC
-  // ========================================
-  FILTER_CONDITIONS: {
-    // Điều kiện về hạn hoàn thành
-    checkDeadline: true,  // Có kiểm tra hạn hoàn thành hay không
-    
-    // Điều kiện về nơi phân tích
-    requireNoiBo: true    // Có yêu cầu nơi phân tích = "Nội bộ" hay không
-  }
 };
-
-/**
- * ============================================
- * CẤU HÌNH THỨ TỰ ƯU TIÊN PHÂN QUYỀN
- * ============================================
- * Thứ tự kiểm tra từ cao xuống thấp
- */
-export const PERMISSION_PRIORITY = [
-  'ADMIN',              // 1. Kiểm tra Admin trước
-  'FULL_ACCESS_ROLE',   // 2. Kiểm tra chức vụ có quyền cao
-  'PHONG_BAN',          // 3. Kiểm tra phòng ban
-  'PERSONAL'            // 4. Kiểm tra quyền cá nhân
-];
 
 /**
  * ============================================

@@ -109,6 +109,7 @@
     "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "Chưa xác định",
 
     "phe_duyet": record["phe_duyet"] || "Chưa phê duyệt",
+    "loai_mau": record["loai_mau"] || record['maMau']?.['loai_mau'] || "Chưa xác định",
   });
 
   /**

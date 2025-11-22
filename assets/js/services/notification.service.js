@@ -23,7 +23,7 @@ const notificationService = {
             notyf.open({ type: 'info', message: message, background: '#ffc107' });
             break;
         default:
-            notyf.open({ type: 'info', message: message });
+            notyf.open({ type: 'info', message: message, background: '#2196f3' });
         }
     }
 }

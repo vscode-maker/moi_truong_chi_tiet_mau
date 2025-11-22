@@ -62,7 +62,7 @@ import permissionService from './services/permission.service.js';
   // Config load page
   let paginationState = {
     currentPage: 1,
-    pageSize: 50,
+    pageSize: 25,
     totalRecords: 0,
     totalPages: 0,
     isLoading: false
@@ -517,7 +517,90 @@ import permissionService from './services/permission.service.js';
    */
   function getTienDoGuiThau(record) {
     return record.tien_do_gui_thau || null;
-  }     
+  }   
+
+  /**
+   * Load dữ liệu theo trang (Lazy Loading)
+   * @param {number} page - Số trang cần load
+   * @param {number} pageSize - Số records mỗi trang
+   * @param {Object} additionalFilters - Filters bổ sung
+   * @returns {Promise<Object>}
+   */
+  async function loadDanhSachChiTieuPaginated(page = 1, pageSize = 50, additionalFilters = {}) {
+    try {
+      // Prevent multiple concurrent requests
+      if (paginationState.isLoading) {
+        console.warn('⚠️ Đang load dữ liệu, vui lòng đợi...');
+        return null;
+      }
+      const dataFilter = permissionService.matchedGroups.dataFilter;
+      // Xử lý phân quyền truy cập để load dữ liệu phù hợp
+      if (dataFilter != "ALL") {
+        dataFilter.columns.forEach((col, index) => {
+          let value = col.value;
+          if (col.value.includes('$$')) value = permissionInfo.userParams[col.value.replace('$$', '')];
+          additionalFilters[col.key] = value;
+        });
+      }
+
+      paginationState.isLoading = true;
+      showLoading(true);
+
+      // ⭐ Kết hợp keyword từ searchState vào filters
+      const searchParams = {
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+        search: { 
+          // ma_khach_hang: "admin",
+          ...additionalFilters
+        }
+      };
+
+      // Get mã mẫu id từ URL       
+      if (permissionInfo.userParams['mau_id']) {
+        searchParams.search['ma_mau_id'] = permissionInfo.userParams['mau_id'];          
+      } else {
+        // #TEST
+        searchParams.search['ma_khach_hang'] = 'admin';       
+      }
+
+      // ⭐ Nếu đang search, thêm keyword
+      if (searchState.keyword) {        
+        searchParams.search = {
+          ...searchParams.search,
+          ten_chi_tieu: searchState.keyword,          
+        };
+      }
+
+      console.warn('📡 API params:', searchParams);
+
+      const response = await sampleDetailsService.search(searchParams);        
+
+      // ⭐ KIỂM TRA: Response có đúng format không?
+      if (!response || !response.data) {
+        throw new Error('Response không hợp lệ hoặc không có data');
+      }
+
+      // Update pagination state
+      paginationState.currentPage = page;
+      paginationState.pageSize = pageSize;
+      paginationState.totalRecords = response.pagination.total;
+      paginationState.totalPages = response.pagination.pages;           
+
+      console.log(`✅ Loaded page ${page}/${paginationState.totalPages} (${response.data.length} records)`);
+      console.log('📊 Pagination State:', paginationState);
+
+      return response;
+
+    } catch (error) {
+      console.error('❌ Lỗi load dữ liệu phân trang:', error);
+      notificationService.show('Lỗi tải dữ liệu: ' + error.message, 'error');
+      throw error;
+    } finally {
+      paginationState.isLoading = false;
+      showLoading(false);
+    }
+  }
 
   /**
    * Load thêm dữ liệu (Load more)
@@ -556,8 +639,8 @@ import permissionService from './services/permission.service.js';
 
         updateProgressStats();
         
-        // ⭐ Thông báo thành công        
-        // notificationService.show(`Đã tải thêm ${response.data.length} records`, 'success');
+        // ⭐ Thông báo thành công
+        notificationService.show(`Đã tải thêm ${response.data.length} records`, 'success');
       }
     } finally {
       // ⭐ Xóa loading indicator
@@ -3507,100 +3590,14 @@ import permissionService from './services/permission.service.js';
   }  
 
   /**
-   * Load dữ liệu theo trang (Lazy Loading)
-   * @param {number} page - Số trang cần load
-   * @param {number} pageSize - Số records mỗi trang
-   * @param {Object} additionalFilters - Filters bổ sung
-   * @returns {Promise<Object>}
-   */
-  async function loadDanhSachChiTieuPaginated(page = 1, pageSize = 50, additionalFilters = {}) {
-    try {
-      // Prevent multiple concurrent requests
-      if (paginationState.isLoading) {
-        console.warn('⚠️ Đang load dữ liệu, vui lòng đợi...');
-        return null;
-      }
-
-      // 1️⃣ Build API search query (server-side filtering)
-      const apiQuery = permissionService.buildAPISearchQuery({
-        // Có thể thêm search điều kiện khác
-        // canh_bao_phan_tich: "Đã quá hạn"
-        ...additionalFilters,
-      });      
-
-      paginationState.isLoading = true;
-      showLoading(true);
-
-      // ⭐ Kết hợp keyword từ searchState vào filters
-      const searchParams = {
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
-        ...apiQuery
-      };
-
-      // Get mã mẫu id từ URL       
-      // if (permissionInfo.userParams['mau_id']) {
-      //   searchParams.search['ma_mau_id'] = permissionInfo.userParams['mau_id'];          
-      // } else {
-      //   // #TEST
-      //   searchParams.search['ma_khach_hang'] = 'admin';       
-      // }
-
-      // ⭐ Nếu đang search, thêm keyword
-      // if (searchState.keyword) {        
-      //   searchParams.search = {
-      //     ...searchParams.search,
-      //     ten_chi_tieu: searchState.keyword,          
-      //   };
-      // }
-
-      console.log('📡 API params:', searchParams);
-      notificationService.show(`Đã gửi yêu cầu tải ${searchParams.limit} records`, 'info');
-
-      const response = await sampleDetailsService.search(searchParams);        
-
-      // ⭐ KIỂM TRA: Response có đúng format không?
-      if (!response || !response.data) {
-        throw new Error('Response không hợp lệ hoặc không có data');
-      }
-
-      console.log('📥 API response:', response);
-
-      // Update pagination state
-      paginationState.currentPage = page;
-      paginationState.pageSize = pageSize;
-      paginationState.totalRecords = response.pagination.total;
-      paginationState.totalPages = response.pagination.pages;           
-
-      console.log(`✅ Loaded page ${page}/${paginationState.totalPages} (${response.data.length} records)`);
-      console.log('📊 Pagination State:', paginationState);
-
-      // Client-side filtering
-      response.prevData = response.data;
-      response.data = permissionService.filterData(response.data.results || response.data);
-      console.log('🔍 Filtered data:', response.data);
-      notificationService.show(`Đã lọc theo phân quyền còn ${response.data.length} records`, 'success');
-      return response;
-
-    } catch (error) {
-      console.error('❌ Lỗi load dữ liệu phân trang:', error);
-      notificationService.show('Lỗi tải dữ liệu: ' + error.message, 'error');
-      throw error;
-    } finally {
-      paginationState.isLoading = false;
-      showLoading(false);
-    }
-  }
-
-  /**
    * Khởi tạo ứng dụng
   */
   async function initializeApp() {
 
     // Kiểm tra quyền truy cập
-    if (permissionService.matchedGroups.length === 0) {
+    if (!permissionService.matchedGroups) {
       console.error('❌ Không có quyền truy cập trang này');
-      window.location.href = './access-denied.html';
+      // window.location.href = './access-denied.html';
       return;
     }    
 
