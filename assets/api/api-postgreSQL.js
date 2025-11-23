@@ -105,7 +105,7 @@
     "ten_don_hang": record["ten_don_hang"] || "Chưa xác định",
     "ma_nguoi_phan_tich": record["ma_nguoi_phan_tich"] || "Chưa xác định",
     "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "Chưa xác định",
-    "ten_mau": record["ten_mau"] || "Chưa xác định",
+    "ten_mau": record["ten_mau"] || record['maMau']?.['loai_mau'] || "Chưa xác định",
     "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "Chưa xác định",
 
     "phe_duyet": record["phe_duyet"] || "Chưa phê duyệt",

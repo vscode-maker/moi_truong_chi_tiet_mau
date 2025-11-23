@@ -397,77 +397,7 @@ import permissionService from './services/permission.service.js';
       icon: 'ri-refresh-line',
       color: 'success'
     }
-  };
-
-  /**
-   * Helper function: Validate item có đúng trạng thái required cho action không
-   * @param {Object} item - Item cần validate
-   * @param {string} actionKey - Key của bulk action (vd: 'approveThau', 'receive')
-   * @returns {boolean} - true nếu valid, false nếu không
-   */
-  function isValidStatusForAction(item, actionKey) {
-    const transition = BULK_ACTION_STATUS_TRANSITIONS[actionKey];
-    if (!transition) return false;
-
-    const itemStatus = item.trang_thai_tong_hop;
-    const requiredStatus = transition.requiredStatus;
-
-    // requiredStatus có thể là string hoặc array
-    if (Array.isArray(requiredStatus)) {
-      return requiredStatus.includes(itemStatus);
-    } else {
-      return itemStatus === requiredStatus;
-    }
-  }
-
-  /**
-   * Helper function: Lấy trạng thái tiếp theo cho action
-   * @param {string} actionKey - Key của bulk action
-   * @param {Object} options - Options bổ sung (vd: approvalDecision cho action 'approve')
-   * @returns {string} - Trạng thái tiếp theo
-   */
-  function getNextStatusForAction(actionKey, options = {}) {
-    const transition = BULK_ACTION_STATUS_TRANSITIONS[actionKey];
-    if (!transition) return null;
-
-    // Nếu có conditional logic (như approve action)
-    if (transition.conditionalNextStatus) {
-      const condition = transition.conditionalNextStatus.condition;
-      const conditionValue = options[condition];
-
-      if (conditionValue && transition.conditionalNextStatus.values[conditionValue]) {
-        return transition.conditionalNextStatus.values[conditionValue];
-      }
-
-      // Fallback về giá trị đầu tiên nếu không match
-      return Object.values(transition.conditionalNextStatus.values)[0];
-    }
-
-    // Trường hợp đơn giản: nextStatus trực tiếp
-    return transition.nextStatus;
-  }
-
-  /**
-   * Helper function: Lấy label của trạng thái
-   * @param {string} statusKey - Key của trạng thái (vd: 'CHO_DUYET_THAU')
-   * @returns {string} - Label hiển thị
-   */
-  function getStatusLabel(statusKey) {
-    const status = TRANG_THAI_TONG_HOP.find(s => s.key === statusKey);
-    return status ? status.label : statusKey;
-  }
-
-  /**
-   * Helper function: Lấy badge HTML cho trạng thái
-   * @param {string} statusKey - Key của trạng thái
-   * @returns {string} - HTML badge
-   */
-  function getStatusBadge(statusKey) {
-    const status = TRANG_THAI_TONG_HOP.find(s => s.key === statusKey);
-    if (!status) return `<span class="badge bg-secondary">${statusKey}</span>`;
-
-    return `<span class="badge bg-${status.color}">${status.label}</span>`;
-  }
+  };  
 
   /**
    * Helper function: Xử lý giá trị null/undefined
@@ -713,7 +643,7 @@ import permissionService from './services/permission.service.js';
    * Khởi tạo thống kê tiến độ - ĐÃ CẬP NHẬT CHO 13 TRẠNG THÁI
    */
   function initializeProgressStats() {
-    console.log('📊 Khởi tạo thống kê tiến độ (13 trạng thái tổng hợp)...');
+    // console.log('📊 Khởi tạo thống kê tiến độ (13 trạng thái tổng hợp)...');
 
     // Chỉ dùng 1 loại statistics duy nhất
     generateProgressStatsButtons();
@@ -757,7 +687,7 @@ import permissionService from './services/permission.service.js';
       `;
       container.append(chipHtml);
 
-      console.log(`✅ Button ${index + 1}/10: ${state.label} (khởi tạo count = 0)`);
+      // console.log(`✅ Button ${index + 1}/10: ${state.label} (khởi tạo count = 0)`);
     });
 
     console.log('✅ Đã tạo sẵn tất cả 10 button thống kê tiến độ');
@@ -804,7 +734,7 @@ import permissionService from './services/permission.service.js';
       $(`#count-${safeId}`).text(count);
 
       if (count > 0) {
-        console.log(`✅ Cập nhật ${state.label}: ${count}`);
+        // console.log(`✅ Cập nhật ${state.label}: ${count}`);
       }
     });
 
@@ -815,8 +745,8 @@ import permissionService from './services/permission.service.js';
     const pendingCount = totalCount - completedCount;
     $('#pendingIndicators').text(pendingCount);
 
-    console.log(`✅ Đã cập nhật thống kê tiến độ: 13 trạng thái (tất cả)`);
-    console.log(`📊 Tổng: ${totalCount} | Hoàn thành: ${completedCount} | Đang xử lý: ${pendingCount}`);    
+    // console.log(`✅ Đã cập nhật thống kê tiến độ: 13 trạng thái (tất cả)`);
+    // console.log(`📊 Tổng: ${totalCount} | Hoàn thành: ${completedCount} | Đang xử lý: ${pendingCount}`);    
 
     // ⭐ THÊM: Cập nhật Load More button
     updateLoadMoreButton();
@@ -3554,7 +3484,7 @@ import permissionService from './services/permission.service.js';
       //   };
       // }
 
-      console.log('📡 API params:', searchParams);
+      // console.log('📡 API params:', searchParams);
       notificationService.show(`Đã gửi yêu cầu tải ${searchParams.limit} records`, 'info');
 
       const response = await sampleDetailsService.search(searchParams);        
@@ -3564,7 +3494,7 @@ import permissionService from './services/permission.service.js';
         throw new Error('Response không hợp lệ hoặc không có data');
       }
 
-      console.log('📥 API response:', response);
+      // console.log('📥 API response:', response);
 
       // Update pagination state
       paginationState.currentPage = page;
@@ -3572,8 +3502,8 @@ import permissionService from './services/permission.service.js';
       paginationState.totalRecords = response.pagination.total;
       paginationState.totalPages = response.pagination.pages;           
 
-      console.log(`✅ Loaded page ${page}/${paginationState.totalPages} (${response.data.length} records)`);
-      console.log('📊 Pagination State:', paginationState);
+      // console.log(`✅ Loaded page ${page}/${paginationState.totalPages} (${response.data.length} records)`);
+      //console.log('📊 Pagination State:', paginationState);
 
       // Client-side filtering
       response.prevData = response.data;

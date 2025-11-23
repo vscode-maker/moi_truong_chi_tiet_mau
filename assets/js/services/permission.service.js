@@ -44,9 +44,9 @@ class PermissionService {
     
     this.initialized = true;
     
-    console.log('🔐 Permission Service Initialized');
-    console.log('📋 User Params:', this.userParams);
-    console.log('✅ Matched Groups:', this.matchedGroups);
+    // console.log('🔐 Permission Service Initialized');
+    // console.log('📋 User Params:', this.userParams);
+    // console.log('✅ Matched Groups:', this.matchedGroups);
     
     return {
       userParams: this.userParams,
