@@ -97,7 +97,7 @@
     "trang_thai_phan_tich": record["trang_thai_phan_tich"] || "Chưa xác định",
     "loai_don_hang": record["loai_don_hang"] || "Chưa xác định",
     // Ngày trả kết quả nếu không có thì để rỗng
-    "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "",
+    "ngay_tra_ket_qua": record["ngay_tra_ket_qua"] || "Chưa có",
     "ma_khach_hang": record["ma_khach_hang"] || "Chưa xác định",
     "ten_khach_hang": record["ten_khach_hang"] || "Chưa xác định",
     "ten_nguoi_phan_tich": record["ten_nguoi_phan_tich"] || "Chưa xác định",
@@ -107,6 +107,7 @@
     "ma_nguoi_duyet": record["ma_nguoi_duyet"] || "Chưa xác định",
     "ten_mau": record["ten_mau"] || record['maMau']?.['loai_mau'] || "Chưa xác định",
     "trang_thai_tong_hop": record["trang_thai_tong_hop"] || "Chưa xác định",
+    // "han_hoan_thanh_pt_gm": record["han_hoan_thanh_pt_gm"] || "Chưa có",
 
     "phe_duyet": record["phe_duyet"] || "Chưa phê duyệt",
     "loai_mau": record["loai_mau"] || record['maMau']?.['loai_mau'] || "Chưa xác định",

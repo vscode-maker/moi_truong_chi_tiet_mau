@@ -127,6 +127,29 @@ export const PERMISSION_CONFIG = {
         ], 
         condition: 'AND'  // Điều kiện lọc: 'AND' hoặc 'OR'       
       }
+    },
+
+    /**
+     * SEARCH: Quyền xem dữ liệu theo tìm kiếm đơn hàng ID
+     */
+    SEARCH_DON_HANG_ID: {
+      rules: [
+        {
+          value: ['', null],
+          key: 'don_hang_id',
+          type: 'different'
+        }
+      ],
+      dataFilter: {
+        columns: [
+          {
+            key: 'don_hang_id',
+            value: '$$don_hang_id', // Lấy từ URL parameter 'don_hang_id'
+            type: 'exact'
+          }
+        ], 
+        condition: 'AND'  // Điều kiện lọc: 'AND' hoặc 'OR' mặc định 1 cái nên để AND để xử lý trực tiếp ở api  
+      }
     }
   },
 
@@ -134,7 +157,7 @@ export const PERMISSION_CONFIG = {
    * Các key parameters trong URL liên quan đến phân quyền
    * Dùng để lấy giá trị phân quyền từ URL
    */
-  URL_PARAMS: ['phan_quyen', 'chuc_vu', 'phong_ban', 'ho_ten', 'ma_nv', 'nhom_phan_tich', 'quyen_action', 'tu_ngay', 'mau_id'],
+  URL_PARAMS: ['phan_quyen', 'chuc_vu', 'phong_ban', 'ho_ten', 'ma_nv', 'nhom_phan_tich', 'quyen_action', 'tu_ngay', 'mau_id', 'don_hang_id'],
 
 };
 

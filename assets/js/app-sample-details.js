@@ -3527,6 +3527,7 @@ import permissionService from './services/permission.service.js';
   */
   async function initializeApp() {
 
+    // console.warn(permissionService.matchedGroups)
     // Kiểm tra quyền truy cập
     if (permissionService.matchedGroups.length === 0) {
       console.error('❌ Không có quyền truy cập trang này');
