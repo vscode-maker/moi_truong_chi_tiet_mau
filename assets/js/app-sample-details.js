@@ -1984,8 +1984,7 @@ import permissionService from './services/permission.service.js';
    */
   function handleEdit() {
     const id = $(this).data('id');
-    const rowData = chiTietMauData.find(item => item.id === id);
-
+    const rowData = chiTietMauData.find(item => item.id == id.toString());
     if (rowData) {
       formBuilder.populateForm(rowData);
       setFormMode('edit');
@@ -1999,8 +1998,7 @@ import permissionService from './services/permission.service.js';
    */
   function handleView() {
     const id = $(this).data('id');
-    const rowData = chiTietMauData.find(item => item.id === id);
-
+    const rowData = chiTietMauData.find(item => item.id == id.toString());
     if (rowData) {
       formBuilder.populateForm(rowData);
       setFormMode('view');
@@ -2024,7 +2022,7 @@ import permissionService from './services/permission.service.js';
    */
   function handleDelete() {
     const id = $(this).data('id');
-    const rowData = chiTietMauData.find(item => item.id === id);
+    const rowData = chiTietMauData.find(item => item.id == id.toString());
 
     if (!rowData) {
       notificationService.show('Không tìm thấy dữ liệu để xóa', 'error');
