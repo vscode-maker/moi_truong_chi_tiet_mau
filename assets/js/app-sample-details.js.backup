@@ -745,49 +745,30 @@ import { calcTimeDiff } from './utils/helper.js';
 
   /**
    * Áp dụng column settings lên DataTable
-   * ⭐ KEY: Visibility được lưu theo originalIndex, cần map sang currentIndex
    */
   function applyColumnSettings() {
     if (!chiTietMauTable) return;
 
     try {
-      console.log('🔧 [applyColumnSettings] Applying visibility settings...');
+      // Áp dụng visibility
+      Object.keys(columnSettings.visibility).forEach(index => {
+        const colIndex = parseInt(index);
+        const isVisible = columnSettings.visibility[index];
 
-      // ⭐ TẠO MAP: Original Index → Current Index
-      const originalToCurrentMap = {};
+        // Không cho phép ẩn checkbox và action column
+        if (FIXED_COLUMNS.includes(colIndex)) return;
 
-      if (columnSettings.order && columnSettings.order.length > 0) {
-        columnSettings.order.forEach((originalIndex, currentIndex) => {
-          originalToCurrentMap[originalIndex] = currentIndex;
-        });
-      } else {
-        // Nếu chưa có order, dùng mặc định
-        DEFAULT_COLUMN_ORDER.forEach((originalIndex, currentIndex) => {
-          originalToCurrentMap[originalIndex] = currentIndex;
-        });
-      }
-
-      console.log('🗺️ [applyColumnSettings] Original → Current map:', originalToCurrentMap);
-
-      // Áp dụng visibility theo originalIndex → currentIndex
-      Object.keys(columnSettings.visibility).forEach(originalIndexStr => {
-        const originalIndex = parseInt(originalIndexStr);
-        const currentIndex = originalToCurrentMap[originalIndex];
-        const isVisible = columnSettings.visibility[originalIndex];
-
-        // Không cho phép ẩn checkbox và action column (check theo originalIndex)
-        if (FIXED_COLUMNS.includes(originalIndex)) {
-          console.log(`  [Original ${originalIndex} → Current ${currentIndex}] FIXED - Always visible`);
-          return;
-        }
-
-        if (currentIndex !== undefined) {
-          chiTietMauTable.column(currentIndex).visible(isVisible);
-          console.log(`  [Original ${originalIndex} → Current ${currentIndex}] Visible: ${isVisible}`);
-        }
+        chiTietMauTable.column(colIndex).visible(isVisible);
       });
 
-      console.log('✅ [applyColumnSettings] Applied column visibility settings');
+      // ⭐ Column order đã được áp dụng khi khởi tạo (reorderColumnsArray)
+      // User cần reload trang để thấy thay đổi thứ tự
+
+      console.log('✅ Đã áp dụng column visibility settings');
+
+      if (columnSettings.order && columnSettings.order.length > 0) {
+        console.info('ℹ️ Thứ tự cột đã được lưu. Reload trang để áp dụng.');
+      }
     } catch (error) {
       console.error('❌ Lỗi khi áp dụng column settings:', error);
     }
@@ -803,8 +784,6 @@ import { calcTimeDiff } from './utils/helper.js';
 
   /**
    * Render danh sách các cột để tùy chỉnh
-   * ⭐ KEY INSIGHT: DataTable columns đã được reorder khi khởi tạo
-   * Cần map ngược về original order để hiển thị đúng trong modal
    */
   function renderColumnsList() {
     const container = $('#columnsList');
@@ -817,45 +796,22 @@ import { calcTimeDiff } from './utils/helper.js';
 
     const columns = chiTietMauTable.settings()[0].aoColumns;
 
-    console.log('📊 [renderColumnsList] Total columns:', columns.length);
-    console.log('📊 [renderColumnsList] Saved order in localStorage:', columnSettings.order);
+    // ⭐ SỬA: Luôn dùng settings đã lưu, không cần gọi API
+    const currentOrder =
+      columnSettings.order && columnSettings.order.length > 0 ? columnSettings.order : DEFAULT_COLUMN_ORDER;
 
-    // ⭐ TẠO MAP: Current Index → Original Index
-    // Ví dụ: savedOrder = [2, 0, 1] nghĩa là:
-    //   - Vị trí 0 hiện tại (currentIndex=0) là cột gốc index=2 (originalIndex=2)
-    //   - Vị trí 1 hiện tại (currentIndex=1) là cột gốc index=0 (originalIndex=0)
-    //   - Vị trí 2 hiện tại (currentIndex=2) là cột gốc index=1 (originalIndex=1)
-    const currentToOriginalMap = {};
+    // Render theo thứ tự hiện tại
+    currentOrder.forEach((colIndex, position) => {
+      const column = columns[colIndex];
+      if (!column) return;
 
-    if (columnSettings.order && columnSettings.order.length > 0) {
-      columnSettings.order.forEach((originalIndex, currentIndex) => {
-        currentToOriginalMap[currentIndex] = originalIndex;
-      });
-    } else {
-      // Nếu chưa có order đã lưu, dùng order mặc định
-      DEFAULT_COLUMN_ORDER.forEach((originalIndex, currentIndex) => {
-        currentToOriginalMap[currentIndex] = originalIndex;
-      });
-    }
-
-    console.log('�️ [renderColumnsList] Current → Original map:', currentToOriginalMap);
-
-    // Render theo thứ tự hiện tại trong DataTable
-    for (let currentIndex = 0; currentIndex < columns.length; currentIndex++) {
-      const column = columns[currentIndex];
-      const originalIndex = currentToOriginalMap[currentIndex] || currentIndex;
-
-      if (!column) continue;
-
-      const title = column.sTitle || `Cột ${currentIndex}`;
-      const isVisible = chiTietMauTable.column(currentIndex).visible();
-      const isFixed = FIXED_COLUMNS.includes(originalIndex); // ⭐ Check fixed dựa trên originalIndex
+      const title = column.sTitle || `Cột ${colIndex}`;
+      const isVisible = columnSettings.visibility[colIndex] !== false;
+      const isFixed = FIXED_COLUMNS.includes(colIndex);
       const width = column.sWidth || 'auto';
 
       const itemHtml = `
-        <div class="column-item list-group-item ${isFixed ? 'disabled' : ''}" 
-             data-current-index="${currentIndex}" 
-             data-original-index="${originalIndex}">
+        <div class="column-item list-group-item ${isFixed ? 'disabled' : ''}" data-index="${colIndex}">
           <div class="column-item-content">
             ${!isFixed ? '<i class="ri-drag-move-line drag-handle"></i>' : '<i class="ri-lock-line text-muted" style="padding: 0 8px;"></i>'}
             
@@ -864,8 +820,7 @@ import { calcTimeDiff } from './utils/helper.js';
                      type="checkbox" 
                      ${isVisible ? 'checked' : ''} 
                      ${isFixed ? 'disabled' : ''}
-                     data-current-index="${currentIndex}"
-                     data-original-index="${originalIndex}">
+                     data-index="${colIndex}">
               <label class="form-check-label column-item-label">
                 ${title}
               </label>
@@ -879,13 +834,13 @@ import { calcTimeDiff } from './utils/helper.js';
       `;
 
       container.append(itemHtml);
-    }
-
-    console.log('✅ [renderColumnsList] Rendered', columns.length, 'columns in current order');
+    });
 
     // Khởi tạo drag & drop
     initializeColumnsDragDrop();
-  } /**
+  }
+
+  /**
    * Khởi tạo drag & drop cho danh sách cột
    */
   function initializeColumnsDragDrop() {
@@ -953,39 +908,19 @@ import { calcTimeDiff } from './utils/helper.js';
 
   /**
    * Lưu column settings từ modal
-   * ⭐ KEY: Lưu theo originalIndex (index gốc trước khi reorder)
    */
   function saveColumnSettingsFromModal() {
     const columnItems = $('#columnsList .column-item');
     const newOrder = [];
     const newVisibility = {};
 
-    console.log('💾 [saveColumnSettings] Starting to collect column settings...');
-    console.log('💾 [saveColumnSettings] Total column items:', columnItems.length);
-
-    // ⭐ QUAN TRỌNG: Duyệt qua DOM theo thứ tự hiện tại (sau khi drag & drop)
-    // Lấy originalIndex để lưu (không phải currentIndex)
-    columnItems.each(function (domPosition) {
-      const currentIndex = parseInt($(this).data('current-index'));
-      const originalIndex = parseInt($(this).data('original-index'));
+    columnItems.each(function () {
+      const index = parseInt($(this).data('index'));
       const isVisible = $(this).find('.column-checkbox').is(':checked');
 
-      console.log(`  [DOM ${domPosition}] Current: ${currentIndex}, Original: ${originalIndex}, Visible: ${isVisible}`);
-
-      // ⭐ Lưu theo originalIndex (thứ tự gốc)
-      newOrder.push(originalIndex);
-      newVisibility[originalIndex] = isVisible;
+      newOrder.push(index);
+      newVisibility[index] = isVisible;
     });
-
-    console.log('💾 [saveColumnSettings] New column order (original indexes):', newOrder);
-    console.log('💾 [saveColumnSettings] New visibility settings:', newVisibility);
-
-    // ⭐ SO SÁNH với settings cũ
-    const hasOrderChanged = JSON.stringify(columnSettings.order) !== JSON.stringify(newOrder);
-    const hasVisibilityChanged = JSON.stringify(columnSettings.visibility) !== JSON.stringify(newVisibility);
-
-    console.log('💾 [saveColumnSettings] Order changed:', hasOrderChanged);
-    console.log('💾 [saveColumnSettings] Visibility changed:', hasVisibilityChanged);
 
     // Cập nhật settings
     columnSettings.order = newOrder;
@@ -996,19 +931,10 @@ import { calcTimeDiff } from './utils/helper.js';
       // Đóng modal
       $('#columnSettingsModal').modal('hide');
 
-      // ⭐ Chỉ reinit nếu thứ tự thay đổi (visibility thì áp dụng trực tiếp)
-      if (hasOrderChanged) {
-        console.log('🔄 [saveColumnSettings] Order changed, reinitializing DataTable...');
-        reinitDataTableWithNewSettings();
-        notificationService.show('Đã lưu và áp dụng cài đặt cột! (Bảng đã được làm mới)', 'success');
-      } else if (hasVisibilityChanged) {
-        console.log('👁️ [saveColumnSettings] Only visibility changed, applying directly...');
-        applyColumnSettings();
-        notificationService.show('Đã cập nhật hiển thị cột!', 'success');
-      } else {
-        console.log('ℹ️ [saveColumnSettings] No changes detected');
-        notificationService.show('Không có thay đổi nào', 'info');
-      }
+      // ⭐ Reinit DataTable để áp dụng cả order và visibility
+      reinitDataTableWithNewSettings();
+
+      notificationService.show('Đã lưu và áp dụng cài đặt cột!', 'success');
     }
   }
 
@@ -4130,11 +4056,11 @@ import { calcTimeDiff } from './utils/helper.js';
   async function initializeApp() {
     // console.warn(permissionService.matchedGroups)
     // Kiểm tra quyền truy cập
-    if (permissionService.matchedGroups.length === 0) {
-      console.error('❌ Không có quyền truy cập trang này');
-      window.location.href = './access-denied.html';
-      return;
-    }
+    // if (permissionService.matchedGroups.length === 0) {
+    //   console.error('❌ Không có quyền truy cập trang này');
+    //   window.location.href = './access-denied.html';
+    //   return;
+    // }
 
     console.log('🚀 Init Sample Details Management');
 

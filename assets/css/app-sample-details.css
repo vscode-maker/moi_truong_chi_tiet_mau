@@ -1,1254 +1,1334 @@
-    /* Loading Spinner Overlay */
-      .loading-spinner {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 8000; /* Thấp hơn SweetAlert2 */
-        color: white;
-      }
-
-      /* SweetAlert2 z-index override if needed */
-      .swal2-container {
-        z-index: 10000 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-      }
-
-      .swal2-container-custom {
-        z-index: 10000 !important;
-      }
-
-      .swal2-popup {
-        max-height: 100%;
-        overflow-y: scroll;
-        position: relative !important;
-        z-index: 10001 !important;
-        margin: 0 !important;
-        transform: none !important;
-        top: auto !important;
-        left: auto !important;
-        right: auto !important;
-        bottom: auto !important;
-      }
-
-      /* Bulk Edit Popup - Center positioning */
-      .bulk-edit-swal-container {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-      }
-
-      .bulk-edit-swal-container .swal2-popup {
-        max-width: 95vw !important;
-        max-height: 90vh !important;
-        width: auto !important;
-        margin: 0 !important;
-        position: relative !important;
-        transform: none !important;
-      }
-
-      /* Responsive center positioning */
-      @media (max-width: 768px) {
-        .swal2-popup {
-          max-width: 95vw !important;
-          max-height: 95vh !important;
-          margin: 10px !important;
-        }
-
-        .bulk-edit-swal-container .swal2-popup {
-          max-width: 98vw !important;
-          max-height: 98vh !important;
-        }
-      }
-
-      /* Đảm bảo SweetAlert2 không bị ảnh hưởng bởi layout container */
-      body.swal2-shown > .layout-wrapper {
-        filter: blur(2px);
-      }
-
-      /* DataTable custom styles */
-      .table th {
-        background-color: #f8f9fa;
-        border-top: 1px solid #dee2e6;
-        font-weight: 600;
-        font-size: 0.875rem;
-      }
-
-      .table td {
-        vertical-align: middle;
-        font-size: 0.875rem;
-      }
-
-      /* Never hidden columns - always visible */
-      .never-hidden {
-        display: table-cell !important;
-      }
-
-      /* Action column styling - Icon-only button */
-      .btn-icon-action {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        border: none;
-        background: transparent;
-        color: #6c757d;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-      }
-
-      .btn-icon-action:hover {
-        background: rgba(108, 117, 125, 0.1);
-        color: #495057;
-        transform: scale(1.05);
-      }
-
-      .btn-icon-action:active {
-        background: rgba(108, 117, 125, 0.2);
-        transform: scale(0.95);
-      }
-
-      .btn-icon-action:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.15);
-      }
-
-      .btn-icon-action .icon-base {
-        font-size: 18px;
-        line-height: 1;
-      }
-
-      /* Remove dropdown arrow */
-      .btn-icon-action.dropdown-toggle::after {
-        display: none;
-      }
-
-      /* Old button styling (fallback) */
-      .table .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-      }
-
-      /* Dropdown menu positioning */
-      .dropdown-menu-end {
-        --bs-position: end;
-      }
-
-      /* Responsive table improvements */
-      @media (max-width: 991.98px) {
-        /* Ensure action column is always visible on mobile */
-        table.dataTable.dtr-inline.collapsed > tbody > tr > td.never-hidden,
-        table.dataTable.dtr-inline.collapsed > tbody > tr > th.never-hidden {
-          display: table-cell !important;
-        }
-
-        /* Compact action buttons for mobile */
-        .table .btn-sm {
-          padding: 0.125rem 0.25rem;
-          font-size: 0.7rem;
-        }
-
-        .dropdown-menu {
-          font-size: 0.875rem;
-        }
-      }
-
-      @media (max-width: 576px) {
-        /* Very compact for small screens */
-        .table .btn-sm {
-          padding: 0.1rem 0.2rem;
-        }
-
-        .dropdown-toggle::after {
-          display: none;
-        }
-      } /* Badge styles */
-      .badge {
-        font-size: 0.75rem;
-      }
-
-      /* Dropdown button in table */
-      .table .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-      }
-
-      /* Checkbox alignment */
-      .form-check {
-        margin: 0;
-      }
-
-      .form-check-input {
-        margin-top: 0.125em;
-      }
-
-      /* Responsive table improvements */
-      @media (max-width: 768px) {
-        .table-responsive {
-          font-size: 0.8rem;
-          overflow-x: auto;
-          overflow-y: visible; /* Allow dropdown to show */
-        }
-
-        .btn-sm {
-          padding: 0.125rem 0.25rem;
-          font-size: 0.7rem;
-        }
-      }
-
-      /* Modal improvements */
-      .modal-dialog.modal-spreadsheet {
-        max-width: 90vw;
-      }
-
-      .modal-lg {
-        max-width: 900px;
-      }
-
-      .spreadsheet-toolbar {
-        padding: 0.75rem 1.25rem;
-        border-bottom: 1px solid #dee2e6;
-        background-color: #f8f9fa;
-      }
-
-      /* Bulk Edit Button styling */
-      #bulkEditBtn {
-        transition: all 0.2s ease;
-      }
-
-      #bulkEditBtn:not(:disabled):hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
-      }
-
-      /* Fixed Action Column - Sticky right column */
-      table.dataTable thead th:last-child,
-      table.dataTable tbody td:last-child {
-        position: sticky !important;
-        right: 0;
-        background-color: #fff;
-        z-index: 2;
-        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
-      }
-
-      table.dataTable thead th:last-child {
-        background-color: #f8f9fa;
-        z-index: 3;
-      }
-
-      /* Hover effect for sticky column */
-      table.dataTable tbody tr:hover td:last-child {
-        background-color: #f8f9fa;
-      }
-
-      /* Fix dropdown menu z-index trong cột sticky */
-      table.dataTable tbody td:last-child .dropdown {
-        position: static !important; /* Change from relative to static */
-      }
-
-      /* Dropdown toggle button */
-      table.dataTable tbody td:last-child .dropdown-toggle {
-        position: relative;
-        z-index: 5;
-      }
-
-      /* Dropdown menu - must be higher than sticky column */
-      /* Using very high z-index to ensure visibility above sticky column (z-index: 2-3) */
-      table.dataTable tbody td:last-child .dropdown-menu,
-      table.dataTable .dropdown-menu,
-      .dropdown-menu.show,
-      .dropdown-menu {
-        z-index: 9999 !important; /* Very high to ensure visibility */
-      }
-
-      /* Specific override for dropdown-menu-end */
-      .dropdown-menu-end {
-        z-index: 9999 !important;
-      }
-
-      /* Đảm bảo dropdown không bị overflow hidden */
-      .dataTables_wrapper {
-        overflow: visible !important;
-      }
-
-      table.dataTable {
-        overflow: visible !important;
-      }
-
-      /* Table rows - ensure no clipping */
-      table.dataTable tbody tr {
-        position: relative;
-      }
-
-      /* Table responsive container - allow dropdown overflow */
-      .table-responsive {
-        overflow-x: auto;
-        overflow-y: visible !important; /* Critical: Allow dropdown to overflow vertically */
-        position: relative;
-      }
-
-      .table-responsive .dt-scroll-body {
-        min-height: 250px !important;
-      }
-
-      /* Card body containing table - ensure no overflow clip */
-      .card-body:has(.table-responsive) {
-        overflow: visible !important;
-      }
-
-      /* Content wrapper - ensure dropdown can escape */
-      .content-wrapper {
-        overflow: visible !important;
-      }
-
-      /* Ensure sticky column works on mobile */
-      @media (max-width: 768px) {
-        table.dataTable thead th:last-child,
-        table.dataTable tbody td:last-child {
-          min-width: 100px;
-        }
-      }
-
-      /* DataTables RowGroup Styling */
-      table.dataTable tbody tr.dtrg-group td {
-        background-color: #f8f9fa;
-        font-weight: 600;
-        font-size: 0.9rem;
-        padding: 12px 10px;
-        border-top: 2px solid #dee2e6;
-        border-bottom: 2px solid #dee2e6;
-        color: #495057;
-      }
-
-      table.dataTable tbody tr.dtrg-group td:hover {
-        background-color: #e9ecef;
-        cursor: pointer;
-      }
-
-      /* Group row expand/collapse icon */
-      table.dataTable tbody tr.dtrg-group td::before {
-        content: '▼';
-        margin-right: 8px;
-        font-size: 0.75rem;
-        display: inline-block;
-        transition: transform 0.2s ease;
-      }
-
-      table.dataTable tbody tr.dtrg-group.collapsed td::before {
-        content: '▶';
-      }
-
-      /* Group toggle button */
-      .btn-group-toggle {
-        transition: all 0.2s ease;
-      }
-
-      .btn-group-toggle:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
-      }
-
-      /* Group By Dropdown Styles */
-      .group-by-dropdown {
-        min-width: 280px;
-        max-height: 450px;
-        overflow-y: auto;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      }
-
-      .group-by-dropdown .dropdown-header {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #5a5f7d;
-        padding: 0.75rem 1rem;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      }
-
-      .group-by-option {
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .group-by-option:hover {
-        background-color: #f8f9fa;
-      }
-
-      .group-by-option .form-check {
-        margin: 0;
-        display: flex;
-        align-items: center;
-      }
-
-      .group-by-option .form-check-input {
-        margin-top: 0;
-        cursor: pointer;
-        width: 18px;
-        height: 18px;
-      }
-
-      .group-by-option .form-check-label {
-        cursor: pointer;
-        margin-left: 0.5rem;
-        margin-bottom: 0;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        font-weight: 500;
-      }
-
-      .group-by-option .form-check-input:checked {
-        background-color: var(--bs-primary);
-        border-color: var(--bs-primary);
-      }
-
-      .group-by-dropdown .dropdown-item.text-center {
-        font-weight: 600;
-        padding: 0.65rem 1rem;
-        transition: all 0.2s ease;
-      }
-
-      .group-by-dropdown .dropdown-item.text-center:hover {
-        background-color: #f8f9fa;
-        transform: translateX(3px);
-      }
-
-      .group-by-dropdown .dropdown-item.text-primary:hover {
-        color: #5a5cf7 !important;
-      }
-
-      .group-by-dropdown .dropdown-item.text-danger:hover {
-        color: #ff4444 !important;
-      }
-
-      #groupByDropdownBtn.active {
-        background-color: var(--bs-primary);
-        border-color: var(--bs-primary);
-        color: white;
-      }
-
-      #groupByDropdownBtn.active i {
-        animation: pulse 1.5s infinite;
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.1);
-        }
-      }
-
-      .text-purple {
-        color: #9b59b6 !important;
-      }
-
-      /* Progress Stats Inline List - Option 3 - Compact */
-      .progress-stats-grid {
-        /* display: flex;
+/* Loading Spinner Overlay */
+.loading-spinner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 8000; /* Thấp hơn SweetAlert2 */
+  color: white;
+}
+
+/* SweetAlert2 z-index override if needed */
+.swal2-container {
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+.swal2-container-custom {
+  z-index: 10000 !important;
+}
+
+.swal2-popup {
+  max-height: 100%;
+  overflow-y: scroll;
+  position: relative !important;
+  z-index: 10001 !important;
+  margin: 0 !important;
+  transform: none !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+}
+
+/* Bulk Edit Popup - Center positioning */
+.bulk-edit-swal-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.bulk-edit-swal-container .swal2-popup {
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  width: auto !important;
+  margin: 0 !important;
+  position: relative !important;
+  transform: none !important;
+}
+
+/* Responsive center positioning */
+@media (max-width: 768px) {
+  .swal2-popup {
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+    margin: 10px !important;
+  }
+
+  .bulk-edit-swal-container .swal2-popup {
+    max-width: 98vw !important;
+    max-height: 98vh !important;
+  }
+}
+
+/* Đảm bảo SweetAlert2 không bị ảnh hưởng bởi layout container */
+body.swal2-shown > .layout-wrapper {
+  filter: blur(2px);
+}
+
+/* DataTable custom styles */
+.table th {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.875rem;
+}
+
+/* Never hidden columns - always visible */
+.never-hidden {
+  display: table-cell !important;
+}
+
+/* Action column styling - Icon-only button */
+.btn-icon-action {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.btn-icon-action:hover {
+  background: rgba(108, 117, 125, 0.1);
+  color: #495057;
+  transform: scale(1.05);
+}
+
+.btn-icon-action:active {
+  background: rgba(108, 117, 125, 0.2);
+  transform: scale(0.95);
+}
+
+.btn-icon-action:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.15);
+}
+
+.btn-icon-action .icon-base {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Remove dropdown arrow */
+.btn-icon-action.dropdown-toggle::after {
+  display: none;
+}
+
+/* Old button styling (fallback) */
+.table .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Dropdown menu positioning */
+.dropdown-menu-end {
+  --bs-position: end;
+}
+
+/* Responsive table improvements */
+@media (max-width: 991.98px) {
+  /* Ensure action column is always visible on mobile */
+  table.dataTable.dtr-inline.collapsed > tbody > tr > td.never-hidden,
+  table.dataTable.dtr-inline.collapsed > tbody > tr > th.never-hidden {
+    display: table-cell !important;
+  }
+
+  /* Compact action buttons for mobile */
+  .table .btn-sm {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .dropdown-menu {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 576px) {
+  /* Very compact for small screens */
+  .table .btn-sm {
+    padding: 0.1rem 0.2rem;
+  }
+
+  .dropdown-toggle::after {
+    display: none;
+  }
+} /* Badge styles */
+.badge {
+  font-size: 0.75rem;
+}
+
+/* Dropdown button in table */
+.table .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Checkbox alignment */
+.form-check {
+  margin: 0;
+}
+
+.form-check-input {
+  margin-top: 0.125em;
+}
+
+/* Responsive table improvements */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.8rem;
+    overflow-x: auto;
+    overflow-y: visible; /* Allow dropdown to show */
+  }
+
+  .btn-sm {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.7rem;
+  }
+}
+
+/* Modal improvements */
+.modal-dialog.modal-spreadsheet {
+  max-width: 90vw;
+}
+
+.modal-lg {
+  max-width: 900px;
+}
+
+.spreadsheet-toolbar {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+/* Bulk Edit Button styling */
+#bulkEditBtn {
+  transition: all 0.2s ease;
+}
+
+#bulkEditBtn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Fixed Action Column - Sticky right column */
+table.dataTable thead th:last-child,
+table.dataTable tbody td:last-child {
+  position: sticky !important;
+  right: 0;
+  background-color: #fff;
+  z-index: 2;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+table.dataTable thead th:last-child {
+  background-color: #f8f9fa;
+  z-index: 3;
+}
+
+/* Hover effect for sticky column */
+table.dataTable tbody tr:hover td:last-child {
+  background-color: #f8f9fa;
+}
+
+/* Fix dropdown menu z-index trong cột sticky */
+table.dataTable tbody td:last-child .dropdown {
+  position: static !important; /* Change from relative to static */
+}
+
+/* Dropdown toggle button */
+table.dataTable tbody td:last-child .dropdown-toggle {
+  position: relative;
+  z-index: 5;
+}
+
+/* Dropdown menu - must be higher than sticky column */
+/* Using very high z-index to ensure visibility above sticky column (z-index: 2-3) */
+table.dataTable tbody td:last-child .dropdown-menu,
+table.dataTable .dropdown-menu,
+.dropdown-menu.show,
+.dropdown-menu {
+  z-index: 9999 !important; /* Very high to ensure visibility */
+}
+
+/* Specific override for dropdown-menu-end */
+.dropdown-menu-end {
+  z-index: 9999 !important;
+}
+
+/* Đảm bảo dropdown không bị overflow hidden */
+.dataTables_wrapper {
+  overflow: visible !important;
+}
+
+table.dataTable {
+  overflow: visible !important;
+}
+
+/* Table rows - ensure no clipping */
+table.dataTable tbody tr {
+  position: relative;
+}
+
+/* Table responsive container - allow dropdown overflow */
+.table-responsive {
+  overflow-x: auto;
+  overflow-y: visible !important; /* Critical: Allow dropdown to overflow vertically */
+  position: relative;
+}
+
+.table-responsive .dt-scroll-body {
+  min-height: 250px !important;
+}
+
+/* Card body containing table - ensure no overflow clip */
+.card-body:has(.table-responsive) {
+  overflow: visible !important;
+}
+
+/* Content wrapper - ensure dropdown can escape */
+.content-wrapper {
+  overflow: visible !important;
+}
+
+/* Ensure sticky column works on mobile */
+@media (max-width: 768px) {
+  table.dataTable thead th:last-child,
+  table.dataTable tbody td:last-child {
+    min-width: 100px;
+  }
+}
+
+/* DataTables RowGroup Styling */
+table.dataTable tbody tr.dtrg-group td {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 12px 10px;
+  border-top: 2px solid #dee2e6;
+  border-bottom: 2px solid #dee2e6;
+  color: #495057;
+}
+
+table.dataTable tbody tr.dtrg-group td:hover {
+  background-color: #e9ecef;
+  cursor: pointer;
+}
+
+/* Group row expand/collapse icon */
+table.dataTable tbody tr.dtrg-group td::before {
+  content: '▼';
+  margin-right: 8px;
+  font-size: 0.75rem;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+table.dataTable tbody tr.dtrg-group.collapsed td::before {
+  content: '▶';
+}
+
+/* Group toggle button */
+.btn-group-toggle {
+  transition: all 0.2s ease;
+}
+
+.btn-group-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Group By Dropdown Styles */
+.group-by-dropdown {
+  min-width: 280px;
+  max-height: 450px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.group-by-dropdown .dropdown-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #5a5f7d;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.group-by-option {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.group-by-option:hover {
+  background-color: #f8f9fa;
+}
+
+.group-by-option .form-check {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.group-by-option .form-check-input {
+  margin-top: 0;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.group-by-option .form-check-label {
+  cursor: pointer;
+  margin-left: 0.5rem;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.group-by-option .form-check-input:checked {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.group-by-dropdown .dropdown-item.text-center {
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.group-by-dropdown .dropdown-item.text-center:hover {
+  background-color: #f8f9fa;
+  transform: translateX(3px);
+}
+
+.group-by-dropdown .dropdown-item.text-primary:hover {
+  color: #5a5cf7 !important;
+}
+
+.group-by-dropdown .dropdown-item.text-danger:hover {
+  color: #ff4444 !important;
+}
+
+#groupByDropdownBtn.active {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: white;
+}
+
+#groupByDropdownBtn.active i {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.text-purple {
+  color: #9b59b6 !important;
+}
+
+/* Progress Stats Inline List - Option 3 - Compact */
+.progress-stats-grid {
+  /* display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 10px;
         padding: 5px 0;
         font-size: 13px; */
-      }
-
-      /* Stat Item Button */
-      .progress-stat-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        background: transparent;
-        border: none;
-        border-radius: 6px;
-        border-left: 3px solid transparent;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        color: #5a5f7d;
-        font-size: 13px;
-        font-weight: 500;
-        white-space: nowrap;
-        position: relative;
-      }
-
-      .progress-stat-chip:hover {
-        background: #f0f0f0;
-        color: var(--bs-primary);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        padding-left: 12px;
-      }
-
-      .progress-stat-chip.active {
-        background: var(--bs-primary);
-        color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-        border-left: 3px solid rgba(255, 255, 255, 0.5);
-      }
-
-      .progress-stat-chip i {
-        font-size: 16px;
-        transition: all 0.2s ease;
-      }
-
-      .progress-stat-chip:hover i {
-        transform: scale(1.15);
-      }
-
-      .stat-label {
-        font-weight: 500;
-      }
-
-      .stat-count {
-        font-weight: 700;
-        padding: 2px 8px;
-        background: rgba(0, 0, 0, 0.08);
-        border-radius: 10px;
-        min-width: 24px;
-        text-align: center;
-        font-size: 12px;
-        transition: all 0.2s ease;
-      }
-
-      .progress-stat-chip:hover .stat-count {
-        transform: scale(1.1);
-        font-weight: 800;
-      }
-
-      .progress-stat-chip.active .stat-count {
-        background: rgba(255, 255, 255, 0.25);
-        color: white;
-      }
-
-      /* Separator */
-      .stat-separator {
-        color: #ddd;
-        font-size: 12px;
-        user-select: none;
-      }
-
-      /* Màu sắc riêng biệt cho từng trạng thái tiến độ */
-      /* 1. Chờ nhận mẫu - Secondary Gray */
-      .progress-stat-chip[data-filter*='Chờ nhận mẫu'] i,
-      .progress-stat-chip[data-filter*='Chờ QT'] i {
-        color: #6c757d;
-      }
-      .progress-stat-chip[data-filter*='Chờ nhận mẫu']:hover,
-      .progress-stat-chip[data-filter*='Chờ QT']:hover {
-        background: rgba(108, 117, 125, 0.1);
-        border-left: 3px solid #6c757d;
-      }
-      .progress-stat-chip[data-filter*='Chờ nhận mẫu'].active,
-      .progress-stat-chip[data-filter*='Chờ QT'].active {
-        background: #6c757d;
-        border-color: #6c757d;
-      }
-
-      /* 2. Chờ mã hóa - Info Blue */
-      .progress-stat-chip[data-filter*='mã hóa'] i {
-        color: #17a2b8;
-      }
-      .progress-stat-chip[data-filter*='mã hóa']:hover {
-        background: rgba(23, 162, 184, 0.1);
-        border-left: 3px solid #17a2b8;
-      }
-      .progress-stat-chip[data-filter*='mã hóa'].active {
-        background: #17a2b8;
-        border-color: #17a2b8;
-      }
-
-      /* 3. Chờ duyệt thầu - Warning Yellow */
-      .progress-stat-chip[data-filter*='duyệt thầu'] i {
-        color: #ffc107;
-      }
-      .progress-stat-chip[data-filter*='duyệt thầu']:hover {
-        background: rgba(255, 193, 7, 0.15);
-        border-left: 3px solid #ffc107;
-        color: #212529;
-      }
-      .progress-stat-chip[data-filter*='duyệt thầu'].active {
-        background: #ffc107;
-        border-color: #ffc107;
-        color: #212529;
-      }
-      .progress-stat-chip[data-filter*='duyệt thầu'].active .stat-count {
-        color: #212529;
-      }
-
-      /* 3. Chờ chuyển mẫu - Primary Blue */
-      .progress-stat-chip[data-filter*='chuyển mẫu'] i {
-        color: #007bff;
-      }
-      .progress-stat-chip[data-filter*='chuyển mẫu']:hover {
-        background: rgba(0, 123, 255, 0.1);
-        border-left: 3px solid #007bff;
-      }
-      .progress-stat-chip[data-filter*='chuyển mẫu'].active {
-        background: #007bff;
-        border-color: #007bff;
-      }
-
-      /* 4. Đang phân tích - Warning Yellow */
-      .progress-stat-chip[data-filter*='Đang phân tích'] i {
-        color: #ffc107;
-      }
-      .progress-stat-chip[data-filter*='Đang phân tích']:hover {
-        background: rgba(255, 193, 7, 0.15);
-        border-left: 3px solid #ffc107;
-        color: #212529;
-      }
-      .progress-stat-chip[data-filter*='Đang phân tích'].active {
-        background: #ffc107;
-        border-color: #ffc107;
-        color: #212529;
-      }
-      .progress-stat-chip[data-filter*='Đang phân tích'].active .stat-count {
-        color: #212529;
-      }
-
-      /* 4. Chờ nhận mẫu PT - Cyan */
-      .progress-stat-chip[data-filter*='nhận mẫu PT'] i {
-        color: #17a2b8;
-      }
-      .progress-stat-chip[data-filter*='nhận mẫu PT']:hover {
-        background: rgba(23, 162, 184, 0.1);
-        border-left: 3px solid #17a2b8;
-      }
-      .progress-stat-chip[data-filter*='nhận mẫu PT'].active {
-        background: #17a2b8;
-        border-color: #17a2b8;
-      }
-
-      /* 4. Chờ gửi mẫu - Orange */
-      .progress-stat-chip[data-filter*='gửi mẫu'] i {
-        color: #fd7e14;
-      }
-      .progress-stat-chip[data-filter*='gửi mẫu']:hover {
-        background: rgba(253, 126, 20, 0.1);
-        border-left: 3px solid #fd7e14;
-      }
-      .progress-stat-chip[data-filter*='gửi mẫu'].active {
-        background: #fd7e14;
-        border-color: #fd7e14;
-      }
-
-      /* 5. Chờ kết quả PT - Primary Blue */
-      .progress-stat-chip[data-filter*='kết quả PT'] i {
-        color: #007bff;
-      }
-      .progress-stat-chip[data-filter*='kết quả PT']:hover {
-        background: rgba(0, 123, 255, 0.1);
-        border-left: 3px solid #007bff;
-      }
-      .progress-stat-chip[data-filter*='kết quả PT'].active {
-        background: #007bff;
-        border-color: #007bff;
-      }
-
-      /* 5. Chờ nhận KQ thầu - Yellow */
-      .progress-stat-chip[data-filter*='KQ thầu'] i {
-        color: #ffc107;
-      }
-      .progress-stat-chip[data-filter*='KQ thầu']:hover {
-        background: rgba(255, 193, 7, 0.15);
-        border-left: 3px solid #ffc107;
-        color: #212529;
-      }
-      .progress-stat-chip[data-filter*='KQ thầu'].active {
-        background: #ffc107;
-        border-color: #ffc107;
-        color: #212529;
-      }
-      .progress-stat-chip[data-filter*='KQ thầu'].active .stat-count {
-        color: #212529;
-      }
-
-      /* 6. Chờ duyệt KQ - Teal */
-      .progress-stat-chip[data-filter*='duyệt KQ'] i {
-        color: #20c997;
-      }
-      .progress-stat-chip[data-filter*='duyệt KQ']:hover {
-        background: rgba(32, 201, 151, 0.1);
-        border-left: 3px solid #20c997;
-      }
-      .progress-stat-chip[data-filter*='duyệt KQ'].active {
-        background: #20c997;
-        border-color: #20c997;
-      }
-
-      /* 7. Chờ trả KQ - Purple */
-      .progress-stat-chip[data-filter*='trả KQ'] i {
-        color: #9b59b6;
-      }
-      .progress-stat-chip[data-filter*='trả KQ']:hover {
-        background: rgba(155, 89, 182, 0.1);
-        border-left: 3px solid #9b59b6;
-      }
-      .progress-stat-chip[data-filter*='trả KQ'].active {
-        background: #9b59b6;
-        border-color: #9b59b6;
-      }
-
-      /* 8. Hoàn thành - Success Green */
-      .progress-stat-chip[data-filter*='Hoàn thành'] i {
-        color: #28a745;
-      }
-      .progress-stat-chip[data-filter*='Hoàn thành']:hover {
-        background: rgba(40, 167, 69, 0.1);
-        border-left: 3px solid #28a745;
-      }
-      .progress-stat-chip[data-filter*='Hoàn thành'].active {
-        background: #28a745;
-        border-color: #28a745;
-      }
-
-      /* 9. Cần xét lại - Danger Red */
-      .progress-stat-chip[data-filter*='xét lại'] i {
-        color: #dc3545;
-      }
-      .progress-stat-chip[data-filter*='xét lại']:hover {
-        background: rgba(220, 53, 69, 0.1);
-        border-left: 3px solid #dc3545;
-      }
-      .progress-stat-chip[data-filter*='xét lại'].active {
-        background: #dc3545;
-        border-color: #dc3545;
-      }
-
-      /* 10. Hủy - Dark */
-      .progress-stat-chip[data-filter*='Hủy'] i {
-        color: #343a40;
-      }
-      .progress-stat-chip[data-filter*='Hủy']:hover {
-        background: rgba(52, 58, 64, 0.1);
-        border-left: 3px solid #343a40;
-      }
-      .progress-stat-chip[data-filter*='Hủy'].active {
-        background: #343a40;
-        border-color: #343a40;
-      }
-
-      /* Extra small button class */
-      .btn-xs {
-        padding: 0.125rem 0.375rem;
-        font-size: 0.6875rem;
-        border-radius: 0.375rem;
-      }
-
-      /* Custom orange color */
-      .btn-outline-orange {
-        color: #fd7e14;
-        border-color: #fd7e14;
-      }
-
-      .btn-outline-orange:hover {
-        color: #fff;
-        background-color: #fd7e14;
-        border-color: #fd7e14;
-      }
-
-      .bg-orange {
-        background-color: #fd7e14 !important;
-      }
-
-      /* Custom purple color for classify badges */
-      .bg-purple {
-        background-color: #6f42c1 !important;
-        color: white !important;
-      }
-
-      /* Responsive design for inline list */
-      @media (max-width: 768px) {
-        .progress-stats-grid {
-          gap: 8px;
-        }
-
-        .progress-stat-chip {
-          font-size: 12px;
-          padding: 5px 10px;
-        }
-
-        .progress-stat-chip i {
-          font-size: 14px;
-        }
-
-        .stat-count {
-          padding: 2px 6px;
-          font-size: 11px;
-        }
-
-        .stat-separator {
-          display: none;
-        }
-      }
-
-      /* Animation for count */
-      .stat-count {
-        transition: all 0.2s ease;
-      }
-
-      .progress-stat-chip:hover .stat-count {
-        transform: scale(1.1);
-      }
-
-      #bulkEditBtn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-
-      /* Clear selection button */
-      #clearSelectionBtn {
-        transition: all 0.2s ease;
-      }
-
-      #clearSelectionBtn:hover {
-        background-color: #6c757d;
-        border-color: #6c757d;
-      }
-
-      /* Bulk Edit Popup Styling */
-      .bulk-edit-swal-container .swal2-popup {
-        max-width: 95vw !important;
-        width: auto !important;
-      }
-
-      .bulk-edit-container {
-        max-width: 100%;
-      }
-
-      .bulk-edit-table {
-        font-size: 0.875rem;
-      }
-
-      .bulk-edit-table th {
-        background-color: #212529 !important;
-        color: white !important;
-        font-weight: 600;
-        padding: 8px 6px;
-        text-align: center;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-
-      .bulk-edit-table td {
-        padding: 4px 6px;
-        vertical-align: middle;
-      }
-
-      .bulk-edit-table .form-control-sm {
-        font-size: 0.8rem;
-        padding: 0.25rem 0.4rem;
-        border: 1px solid #dee2e6;
-        transition:
-          border-color 0.15s ease-in-out,
-          box-shadow 0.15s ease-in-out;
-      }
-
-      .bulk-edit-table .form-control-sm:focus {
-        border-color: #86b7fe;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-      }
-
-      .bulk-edit-table .badge {
-        font-size: 0.75rem;
-      }
-
-      /* Hover effect for table rows */
-      .bulk-edit-table tbody tr:hover {
-        background-color: #f8f9fa;
-      }
-
-      /* Scroll styling */
-      .table-responsive::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-
-      .table-responsive::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-      }
-
-      .table-responsive::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 4px;
-      }
-
-      .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-      }
-
-      /* Form sections */
-      .modal-body h6 {
-        color: #495057;
-        border-bottom: 2px solid #e9ecef;
-        padding-bottom: 0.5rem;
-        margin-bottom: 1rem;
-      }
-
-      /* Form control static for view mode */
-      .form-control-static {
-        min-height: calc(1.5em + 0.75rem + 2px);
-        padding: 0.375rem 0.75rem;
-        margin-bottom: 0;
-        font-size: 1rem;
-        font-weight: 400;
-        line-height: 1.5;
-        background-color: #f8f9fa;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
-      }
-
-      /* Disabled form styling */
-      .form-control:disabled,
-      .form-select:disabled {
-        background-color: #f8f9fa;
-        opacity: 1;
-      } /* Text truncate with tooltip */
-      .text-truncate-tooltip {
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        cursor: help;
-      }
-
-      /* SweetAlert2 Custom Button Styling */
-      .swal2-confirm,
-      .swal2-cancel {
-        padding: 12px 24px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        border-radius: 8px !important;
-        border: none !important;
-        cursor: pointer !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-        position: relative !important;
-        overflow: hidden !important;
-        min-width: 140px !important;
-      }
-
-      /* Confirm Button (Lưu thay đổi) */
-      .swal2-confirm {
-        background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
-        color: white !important;
-        margin-right: 12px !important;
-      }
-
-      .swal2-confirm:hover {
-        background: linear-gradient(135deg, #157347 0%, #146c43 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(21, 135, 71, 0.4) !important;
-      }
-
-      .swal2-confirm:active {
-        transform: translateY(0px) !important;
-        box-shadow: 0 2px 6px rgba(21, 135, 71, 0.3) !important;
-      }
-
-      /* Cancel Button (Hủy) */
-      .swal2-cancel {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
-        color: white !important;
-      }
-
-      .swal2-cancel:hover {
-        background: linear-gradient(135deg, #5a6268 0%, #495057 100%) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4) !important;
-      }
-
-      .swal2-cancel:active {
-        transform: translateY(0px) !important;
-        box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3) !important;
-      }
-
-      /* Ripple Effect */
-      .swal2-confirm::before,
-      .swal2-cancel::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.3);
-        transform: translate(-50%, -50%);
-        transition:
-          width 0.3s ease,
-          height 0.3s ease;
-        pointer-events: none;
-      }
-
-      .swal2-confirm:active::before,
-      .swal2-cancel:active::before {
-        width: 120px;
-        height: 120px;
-      }
-
-      /* Loading State */
-      .swal2-confirm:disabled {
-        background: linear-gradient(135deg, #adb5bd 0%, #868e96 100%) !important;
-        cursor: not-allowed !important;
-        transform: none !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-      }
-
-      /* Button Container */
-      .swal2-actions {
-        padding: 20px 24px !important;
-        gap: 12px !important;
-        justify-content: center !important;
-      }
-
-      /* Focus states */
-      .swal2-confirm:focus,
-      .swal2-cancel:focus {
-        outline: none !important;
-        box-shadow:
-          0 4px 12px rgba(21, 135, 71, 0.4),
-          0 0 0 3px rgba(21, 135, 71, 0.2) !important;
-      }
-
-      .swal2-cancel:focus {
-        box-shadow:
-          0 4px 12px rgba(108, 117, 125, 0.4),
-          0 0 0 3px rgba(108, 117, 125, 0.2) !important;
-      }
-
-      /* Smooth scale animation on click */
-      .swal2-confirm:active,
-      .swal2-cancel:active {
-        animation: buttonClick 0.1s ease-in-out;
-      }
-
-      @keyframes buttonClick {
-        0% {
-          transform: scale(1) translateY(-2px);
-        }
-        50% {
-          transform: scale(0.98) translateY(0px);
-        }
-        100% {
-          transform: scale(1) translateY(0px);
-        }
-      }
-
-      /* Pulse effect for confirm button */
-      .swal2-confirm::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border-radius: 8px;
-        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-        transform: translateX(-100%);
-        animation: shimmer 2s infinite;
-      }
-
-      @keyframes shimmer {
-        0% {
-          transform: translateX(-100%);
-        }
-        100% {
-          transform: translateX(100%);
-        }
-      }
-
-      /* Loading Button States */
-      .swal2-confirm.loading {
-        background: linear-gradient(135deg, #adb5bd 0%, #868e96 100%) !important;
-        cursor: not-allowed !important;
-        transform: none !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-        pointer-events: none !important;
-      }
-
-      .swal2-confirm.loading::after {
-        display: none !important;
-      }
-
-      /* Loading Spinner */
-      .btn-loading-spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top-color: rgba(255, 255, 255, 0.8);
-        animation: btnSpin 1s ease-in-out infinite;
-        margin-right: 8px;
-      }
-
-      @keyframes btnSpin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      /* Loading text animation */
-      .loading-dots::after {
-        content: '';
-        animation: loadingDots 1.4s steps(4, end) infinite;
-      }
-
-      @keyframes loadingDots {
-        0%,
-        20% {
-          content: '';
-        }
-        40% {
-          content: '.';
-        }
-        60% {
-          content: '..';
-        }
-        80%,
-        100% {
-          content: '...';
-        }
-      }
-
-      /* Bulk Classify Modal Styling */
-      .classify-option-card {
-        border: 2px solid #dee2e6;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #fff;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .classify-option-card:hover {
-        border-color: #0dcaf0;
-        background: #f0f9ff;
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(13, 202, 240, 0.2);
-      }
-
-      .classify-option-card.selected {
-        border-color: #0dcaf0;
-        background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
-        color: white;
-        box-shadow: 0 6px 20px rgba(13, 202, 240, 0.4);
-      }
-
-      .classify-option-card.selected .classify-icon {
-        color: white;
-      }
-
-      .classify-option-card.selected .classify-label {
-        color: white;
-        font-weight: 600;
-      }
-
-      .classify-icon {
-        font-size: 48px;
-        color: #0dcaf0;
-        margin-bottom: 12px;
-        transition: all 0.3s ease;
-      }
-
-      .classify-label {
-        font-size: 18px;
-        font-weight: 500;
-        color: #495057;
-        margin-bottom: 8px;
-      }
-
-      .classify-description {
-        font-size: 13px;
-        color: #6c757d;
-        line-height: 1.4;
-      }
-
-      .classify-option-card.selected .classify-description {
-        color: rgba(255, 255, 255, 0.9);
-      }
-
-      /* Checkmark animation */
-      .classify-option-card.selected::after {
-        content: '✓';
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 30px;
-        height: 30px;
-        background: white;
-        color: #0dcaf0;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        font-weight: bold;
-        animation: checkmarkPop 0.3s ease;
-      }
-
-      @keyframes checkmarkPop {
-        0% {
-          transform: scale(0);
-        }
-        50% {
-          transform: scale(1.2);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-
-      /* Responsive grid for classify options */
-      .classify-options-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        margin: 20px 0;
-      }
-
-      @media (max-width: 768px) {
-        .classify-options-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      /* Only Page */
-      @media (min-width: 1200px) {
-        .layout-menu-fixed.layout-menu-collapsed .layout-page {
-            padding-inline-start: 0px;
-        }
-
-        .layout-navbar-fixed.layout-menu-collapsed:not(.layout-menu-offcanvas,.layout-menu-fixed-offcanvas) .layout-content-navbar .layout-navbar, .layout-menu-fixed.layout-navbar-fixed.layout-menu-collapsed .layout-content-navbar .layout-navbar {
-            inset-inline-start: 0px;
-        }
-      }    
+}
+
+/* Stat Item Button */
+.progress-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #5a5f7d;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  position: relative;
+}
+
+.progress-stat-chip:hover {
+  background: #f0f0f0;
+  color: var(--bs-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding-left: 12px;
+}
+
+.progress-stat-chip.active {
+  background: var(--bs-primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border-left: 3px solid rgba(255, 255, 255, 0.5);
+}
+
+.progress-stat-chip i {
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.progress-stat-chip:hover i {
+  transform: scale(1.15);
+}
+
+.stat-label {
+  font-weight: 500;
+}
+
+.stat-count {
+  font-weight: 700;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  min-width: 24px;
+  text-align: center;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.progress-stat-chip:hover .stat-count {
+  transform: scale(1.1);
+  font-weight: 800;
+}
+
+.progress-stat-chip.active .stat-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+/* Separator */
+.stat-separator {
+  color: #ddd;
+  font-size: 12px;
+  user-select: none;
+}
+
+/* Màu sắc riêng biệt cho từng trạng thái tiến độ */
+/* 1. Chờ nhận mẫu - Secondary Gray */
+.progress-stat-chip[data-filter*='Chờ nhận mẫu'] i,
+.progress-stat-chip[data-filter*='Chờ QT'] i {
+  color: #6c757d;
+}
+.progress-stat-chip[data-filter*='Chờ nhận mẫu']:hover,
+.progress-stat-chip[data-filter*='Chờ QT']:hover {
+  background: rgba(108, 117, 125, 0.1);
+  border-left: 3px solid #6c757d;
+}
+.progress-stat-chip[data-filter*='Chờ nhận mẫu'].active,
+.progress-stat-chip[data-filter*='Chờ QT'].active {
+  background: #6c757d;
+  border-color: #6c757d;
+}
+
+/* 2. Chờ mã hóa - Info Blue */
+.progress-stat-chip[data-filter*='mã hóa'] i {
+  color: #17a2b8;
+}
+.progress-stat-chip[data-filter*='mã hóa']:hover {
+  background: rgba(23, 162, 184, 0.1);
+  border-left: 3px solid #17a2b8;
+}
+.progress-stat-chip[data-filter*='mã hóa'].active {
+  background: #17a2b8;
+  border-color: #17a2b8;
+}
+
+/* 3. Chờ duyệt thầu - Warning Yellow */
+.progress-stat-chip[data-filter*='duyệt thầu'] i {
+  color: #ffc107;
+}
+.progress-stat-chip[data-filter*='duyệt thầu']:hover {
+  background: rgba(255, 193, 7, 0.15);
+  border-left: 3px solid #ffc107;
+  color: #212529;
+}
+.progress-stat-chip[data-filter*='duyệt thầu'].active {
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+.progress-stat-chip[data-filter*='duyệt thầu'].active .stat-count {
+  color: #212529;
+}
+
+/* 3. Chờ chuyển mẫu - Primary Blue */
+.progress-stat-chip[data-filter*='chuyển mẫu'] i {
+  color: #007bff;
+}
+.progress-stat-chip[data-filter*='chuyển mẫu']:hover {
+  background: rgba(0, 123, 255, 0.1);
+  border-left: 3px solid #007bff;
+}
+.progress-stat-chip[data-filter*='chuyển mẫu'].active {
+  background: #007bff;
+  border-color: #007bff;
+}
+
+/* 4. Đang phân tích - Warning Yellow */
+.progress-stat-chip[data-filter*='Đang phân tích'] i {
+  color: #ffc107;
+}
+.progress-stat-chip[data-filter*='Đang phân tích']:hover {
+  background: rgba(255, 193, 7, 0.15);
+  border-left: 3px solid #ffc107;
+  color: #212529;
+}
+.progress-stat-chip[data-filter*='Đang phân tích'].active {
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+.progress-stat-chip[data-filter*='Đang phân tích'].active .stat-count {
+  color: #212529;
+}
+
+/* 4. Chờ nhận mẫu PT - Cyan */
+.progress-stat-chip[data-filter*='nhận mẫu PT'] i {
+  color: #17a2b8;
+}
+.progress-stat-chip[data-filter*='nhận mẫu PT']:hover {
+  background: rgba(23, 162, 184, 0.1);
+  border-left: 3px solid #17a2b8;
+}
+.progress-stat-chip[data-filter*='nhận mẫu PT'].active {
+  background: #17a2b8;
+  border-color: #17a2b8;
+}
+
+/* 4. Chờ gửi mẫu - Orange */
+.progress-stat-chip[data-filter*='gửi mẫu'] i {
+  color: #fd7e14;
+}
+.progress-stat-chip[data-filter*='gửi mẫu']:hover {
+  background: rgba(253, 126, 20, 0.1);
+  border-left: 3px solid #fd7e14;
+}
+.progress-stat-chip[data-filter*='gửi mẫu'].active {
+  background: #fd7e14;
+  border-color: #fd7e14;
+}
+
+/* 5. Chờ kết quả PT - Primary Blue */
+.progress-stat-chip[data-filter*='kết quả PT'] i {
+  color: #007bff;
+}
+.progress-stat-chip[data-filter*='kết quả PT']:hover {
+  background: rgba(0, 123, 255, 0.1);
+  border-left: 3px solid #007bff;
+}
+.progress-stat-chip[data-filter*='kết quả PT'].active {
+  background: #007bff;
+  border-color: #007bff;
+}
+
+/* 5. Chờ nhận KQ thầu - Yellow */
+.progress-stat-chip[data-filter*='KQ thầu'] i {
+  color: #ffc107;
+}
+.progress-stat-chip[data-filter*='KQ thầu']:hover {
+  background: rgba(255, 193, 7, 0.15);
+  border-left: 3px solid #ffc107;
+  color: #212529;
+}
+.progress-stat-chip[data-filter*='KQ thầu'].active {
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+.progress-stat-chip[data-filter*='KQ thầu'].active .stat-count {
+  color: #212529;
+}
+
+/* 6. Chờ duyệt KQ - Teal */
+.progress-stat-chip[data-filter*='duyệt KQ'] i {
+  color: #20c997;
+}
+.progress-stat-chip[data-filter*='duyệt KQ']:hover {
+  background: rgba(32, 201, 151, 0.1);
+  border-left: 3px solid #20c997;
+}
+.progress-stat-chip[data-filter*='duyệt KQ'].active {
+  background: #20c997;
+  border-color: #20c997;
+}
+
+/* 7. Chờ trả KQ - Purple */
+.progress-stat-chip[data-filter*='trả KQ'] i {
+  color: #9b59b6;
+}
+.progress-stat-chip[data-filter*='trả KQ']:hover {
+  background: rgba(155, 89, 182, 0.1);
+  border-left: 3px solid #9b59b6;
+}
+.progress-stat-chip[data-filter*='trả KQ'].active {
+  background: #9b59b6;
+  border-color: #9b59b6;
+}
+
+/* 8. Hoàn thành - Success Green */
+.progress-stat-chip[data-filter*='Hoàn thành'] i {
+  color: #28a745;
+}
+.progress-stat-chip[data-filter*='Hoàn thành']:hover {
+  background: rgba(40, 167, 69, 0.1);
+  border-left: 3px solid #28a745;
+}
+.progress-stat-chip[data-filter*='Hoàn thành'].active {
+  background: #28a745;
+  border-color: #28a745;
+}
+
+/* 9. Cần xét lại - Danger Red */
+.progress-stat-chip[data-filter*='xét lại'] i {
+  color: #dc3545;
+}
+.progress-stat-chip[data-filter*='xét lại']:hover {
+  background: rgba(220, 53, 69, 0.1);
+  border-left: 3px solid #dc3545;
+}
+.progress-stat-chip[data-filter*='xét lại'].active {
+  background: #dc3545;
+  border-color: #dc3545;
+}
+
+/* 10. Hủy - Dark */
+.progress-stat-chip[data-filter*='Hủy'] i {
+  color: #343a40;
+}
+.progress-stat-chip[data-filter*='Hủy']:hover {
+  background: rgba(52, 58, 64, 0.1);
+  border-left: 3px solid #343a40;
+}
+.progress-stat-chip[data-filter*='Hủy'].active {
+  background: #343a40;
+  border-color: #343a40;
+}
+
+/* Extra small button class */
+.btn-xs {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  border-radius: 0.375rem;
+}
+
+/* Custom orange color */
+.btn-outline-orange {
+  color: #fd7e14;
+  border-color: #fd7e14;
+}
+
+.btn-outline-orange:hover {
+  color: #fff;
+  background-color: #fd7e14;
+  border-color: #fd7e14;
+}
+
+.bg-orange {
+  background-color: #fd7e14 !important;
+}
+
+/* Custom purple color for classify badges */
+.bg-purple {
+  background-color: #6f42c1 !important;
+  color: white !important;
+}
+
+/* Responsive design for inline list */
+@media (max-width: 768px) {
+  .progress-stats-grid {
+    gap: 8px;
+  }
+
+  .progress-stat-chip {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .progress-stat-chip i {
+    font-size: 14px;
+  }
+
+  .stat-count {
+    padding: 2px 6px;
+    font-size: 11px;
+  }
+
+  .stat-separator {
+    display: none;
+  }
+}
+
+/* Animation for count */
+.stat-count {
+  transition: all 0.2s ease;
+}
+
+.progress-stat-chip:hover .stat-count {
+  transform: scale(1.1);
+}
+
+#bulkEditBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Clear selection button */
+#clearSelectionBtn {
+  transition: all 0.2s ease;
+}
+
+#clearSelectionBtn:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+/* Bulk Edit Popup Styling */
+.bulk-edit-swal-container .swal2-popup {
+  max-width: 95vw !important;
+  width: auto !important;
+}
+
+.bulk-edit-container {
+  max-width: 100%;
+}
+
+.bulk-edit-table {
+  font-size: 0.875rem;
+}
+
+.bulk-edit-table th {
+  background-color: #212529 !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 8px 6px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.bulk-edit-table td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.bulk-edit-table .form-control-sm {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #dee2e6;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.bulk-edit-table .form-control-sm:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.bulk-edit-table .badge {
+  font-size: 0.75rem;
+}
+
+/* Hover effect for table rows */
+.bulk-edit-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Scroll styling */
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Form sections */
+.modal-body h6 {
+  color: #495057;
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Form control static for view mode */
+.form-control-static {
+  min-height: calc(1.5em + 0.75rem + 2px);
+  padding: 0.375rem 0.75rem;
+  margin-bottom: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+}
+
+/* Disabled form styling */
+.form-control:disabled,
+.form-select:disabled {
+  background-color: #f8f9fa;
+  opacity: 1;
+} /* Text truncate with tooltip */
+.text-truncate-tooltip {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+
+/* SweetAlert2 Custom Button Styling */
+.swal2-confirm,
+.swal2-cancel {
+  padding: 12px 24px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-width: 140px !important;
+}
+
+/* Confirm Button (Lưu thay đổi) */
+.swal2-confirm {
+  background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
+  color: white !important;
+  margin-right: 12px !important;
+}
+
+.swal2-confirm:hover {
+  background: linear-gradient(135deg, #157347 0%, #146c43 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(21, 135, 71, 0.4) !important;
+}
+
+.swal2-confirm:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 6px rgba(21, 135, 71, 0.3) !important;
+}
+
+/* Cancel Button (Hủy) */
+.swal2-cancel {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+  color: white !important;
+}
+
+.swal2-cancel:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4) !important;
+}
+
+.swal2-cancel:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3) !important;
+}
+
+/* Ripple Effect */
+.swal2-confirm::before,
+.swal2-cancel::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.3s ease,
+    height 0.3s ease;
+  pointer-events: none;
+}
+
+.swal2-confirm:active::before,
+.swal2-cancel:active::before {
+  width: 120px;
+  height: 120px;
+}
+
+/* Loading State */
+.swal2-confirm:disabled {
+  background: linear-gradient(135deg, #adb5bd 0%, #868e96 100%) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Button Container */
+.swal2-actions {
+  padding: 20px 24px !important;
+  gap: 12px !important;
+  justify-content: center !important;
+}
+
+/* Focus states */
+.swal2-confirm:focus,
+.swal2-cancel:focus {
+  outline: none !important;
+  box-shadow:
+    0 4px 12px rgba(21, 135, 71, 0.4),
+    0 0 0 3px rgba(21, 135, 71, 0.2) !important;
+}
+
+.swal2-cancel:focus {
+  box-shadow:
+    0 4px 12px rgba(108, 117, 125, 0.4),
+    0 0 0 3px rgba(108, 117, 125, 0.2) !important;
+}
+
+/* Smooth scale animation on click */
+.swal2-confirm:active,
+.swal2-cancel:active {
+  animation: buttonClick 0.1s ease-in-out;
+}
+
+@keyframes buttonClick {
+  0% {
+    transform: scale(1) translateY(-2px);
+  }
+  50% {
+    transform: scale(0.98) translateY(0px);
+  }
+  100% {
+    transform: scale(1) translateY(0px);
+  }
+}
+
+/* Pulse effect for confirm button */
+.swal2-confirm::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 8px;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Loading Button States */
+.swal2-confirm.loading {
+  background: linear-gradient(135deg, #adb5bd 0%, #868e96 100%) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  pointer-events: none !important;
+}
+
+.swal2-confirm.loading::after {
+  display: none !important;
+}
+
+/* Loading Spinner */
+.btn-loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: rgba(255, 255, 255, 0.8);
+  animation: btnSpin 1s ease-in-out infinite;
+  margin-right: 8px;
+}
+
+@keyframes btnSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loading text animation */
+.loading-dots::after {
+  content: '';
+  animation: loadingDots 1.4s steps(4, end) infinite;
+}
+
+@keyframes loadingDots {
+  0%,
+  20% {
+    content: '';
+  }
+  40% {
+    content: '.';
+  }
+  60% {
+    content: '..';
+  }
+  80%,
+  100% {
+    content: '...';
+  }
+}
+
+/* Bulk Classify Modal Styling */
+.classify-option-card {
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.classify-option-card:hover {
+  border-color: #0dcaf0;
+  background: #f0f9ff;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(13, 202, 240, 0.2);
+}
+
+.classify-option-card.selected {
+  border-color: #0dcaf0;
+  background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+  color: white;
+  box-shadow: 0 6px 20px rgba(13, 202, 240, 0.4);
+}
+
+.classify-option-card.selected .classify-icon {
+  color: white;
+}
+
+.classify-option-card.selected .classify-label {
+  color: white;
+  font-weight: 600;
+}
+
+.classify-icon {
+  font-size: 48px;
+  color: #0dcaf0;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.classify-label {
+  font-size: 18px;
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.classify-description {
+  font-size: 13px;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+.classify-option-card.selected .classify-description {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Checkmark animation */
+.classify-option-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: white;
+  color: #0dcaf0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  animation: checkmarkPop 0.3s ease;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Responsive grid for classify options */
+.classify-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .classify-options-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Only Page */
+@media (min-width: 1200px) {
+  .layout-menu-fixed.layout-menu-collapsed .layout-page {
+    padding-inline-start: 0px;
+  }
+
+  .layout-navbar-fixed.layout-menu-collapsed:not(.layout-menu-offcanvas, .layout-menu-fixed-offcanvas)
+    .layout-content-navbar
+    .layout-navbar,
+  .layout-menu-fixed.layout-navbar-fixed.layout-menu-collapsed .layout-content-navbar .layout-navbar {
+    inset-inline-start: 0px;
+  }
+}
+
+/* ============================================ */
+/* COLUMN SETTINGS STYLES */
+/* ============================================ */
+
+#columnsList {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.column-item {
+  cursor: move;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.column-item:hover {
+  background-color: #f8f9fa;
+  border-color: #696cff;
+}
+
+.column-item.dragging {
+  opacity: 0.5;
+  border-color: #696cff;
+  box-shadow: 0 4px 8px rgba(105, 108, 255, 0.2);
+}
+
+.column-item.drag-over {
+  border-top: 3px solid #696cff;
+}
+
+.column-item .form-check {
+  margin: 0;
+}
+
+.column-item .drag-handle {
+  cursor: grab;
+  color: #999;
+  padding: 0 8px;
+}
+
+.column-item .drag-handle:active {
+  cursor: grabbing;
+}
+
+.column-item .drag-handle:hover {
+  color: #696cff;
+}
+
+.column-item-content {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  gap: 10px;
+}
+
+.column-item-label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.column-item-info {
+  font-size: 0.75rem;
+  color: #999;
+  margin-left: auto;
+}
+
+.column-item.disabled {
+  opacity: 0.5;
+  background-color: #f5f5f5;
+}
+
+.column-item.disabled .form-check-input {
+  cursor: not-allowed;
+}
