@@ -1332,3 +1332,9 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 .column-item.disabled .form-check-input {
   cursor: not-allowed;
 }
+
+/* #region [ Custom waves framework ] */
+input.waves-button-input {
+  padding: 0 !important;
+}
+/* #endregion */

@@ -53,8 +53,6 @@
     <link rel="stylesheet" href="./assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
     <link rel="stylesheet" href="./assets/vendor/libs/datatables-fixedcolumns-bs5/fixedcolumns.bootstrap5.css" />
     <link rel="stylesheet" href="./assets/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css" />
-    <!-- ❌ ColReorder CSS REMOVED - Gây conflict -->
-    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.7.0/css/colReorder.dataTables.min.css" /> -->
 
     <link rel="stylesheet" href="./assets/vendor/libs/animate-css/animate.css" />
     <link rel="stylesheet" href="./assets/vendor/libs/sweetalert2/sweetalert2.css" />
@@ -86,6 +84,18 @@
             class="layout-navbar container-fluid navbar-detached navbar navbar-expand-xl align-items-center bg-navbar-theme"
             id="layout-navbar">
             <div class="navbar-nav-right d-flex align-items-center justify-content-end" id="navbar-collapse">
+              <!-- Title -->
+              <div class="navbar-nav align-items-center">
+                <div class="nav-item navbar-search-wrapper mb-0">
+                  <h5 class="card-title mb-0">
+                    <i class="ri-flask-line me-2"></i>Danh sách chi tiết mẫu - còn
+                    <span class="mb-0 text-danger" id="pendingIndicators">0</span>
+                    <span>chỉ tiêu cần xử lý</span>
+                  </h5>
+                </div>
+              </div>
+              <!-- /Title -->
+
               <ul class="navbar-nav flex-row align-items-center ms-md-auto">
                 <!-- #region [Mode Switcher] -->
                 <li class="nav-item dropdown me-sm-2 me-xl-0">
@@ -198,9 +208,9 @@
           <!-- Content wrapper -->
           <div class="content-wrapper">
             <!-- Content -->
-            <div class="container-fluid flex-grow-1 container-p-y">
+            <div class="container-fluid flex-grow-1">
               <!-- Page Header -->
-              <div class="row">
+              <!-- <div class="row">
                 <div class="col-12">
                   <div class="card bg-primary text-white mb-4">
                     <div class="card-body">
@@ -230,7 +240,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
               <!-- Thống kê tiến độ compact -->
               <div class="mb-3">
@@ -240,13 +250,17 @@
               </div>
 
               <!-- Bulk Actions Toolbar đã được di chuyển vào trong card bên dưới -->
-              <hr class="my-2" />
+              <!-- <hr class="my-2" /> -->
               <!-- DataTable -->
               <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center pb-0">
-                  <h5 class="card-title mb-0"><i class="ri-flask-line me-2"></i>Danh sách chi tiết mẫu</h5>
+                <div class="card-header d-flex justify-content-end align-items-center pb-0">
+                  <!-- <h6 class="card-title mb-0">
+                    <i class="ri-flask-line me-2"></i>Danh sách chi tiết mẫu - còn
+                    <span class="mb-0 text-danger" id="pendingIndicators">0</span>
+                    <span>chỉ tiêu cần xử lý</span>
+                  </h6> -->
 
-                  <div class="d-flex gap-2">
+                  <div class="d-flex justify-content-end gap-2">
                     <!-- Group By Dropdown -->
                     <div class="btn-group">
                       <button
@@ -288,40 +302,79 @@
                       <i class="ri-add-line me-1"></i>Thêm mới
                     </button>
 
-                    <button type="button" class="btn btn-success btn-sm" id="exportExcelBtn">
-                      <i class="ri-file-excel-2-line me-1"></i>Xuất Excel
-                    </button>
-
-                    <button type="button" class="btn btn-secondary btn-sm" id="columnSettingsBtn" title="Tùy chỉnh cột">
-                      <i class="ri-settings-3-line me-1"></i>Tùy chỉnh cột
-                    </button>
-                  </div>
-                </div>
-
-                <div class="card-header d-flex justify-content-end align-items-center">
-                  <div class="d-flex gap-2">
-                    <div class="mb-1">
-                      <span class="mb-2 mt-1 mt-md-0 d-none d-md-block">Từ hạn hoàn thành</span>
-                      <input type="date" class="form-control" id="formFilterFromHanHoanThanh" />
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 mt-md-0 d-none d-md-block">&nbsp;</span>
+                      <button type="button" class="btn btn-success" id="exportExcelBtn">
+                        <i class="ri-file-excel-2-line me-1"></i>Xuất Excel
+                      </button>
                     </div>
 
-                    <div class="mb-1">
-                      <span class="mb-2 mt-1 mt-md-0 d-none d-md-block">Đến hạn hoàn thành</span>
-                      <input type="date" class="form-control" id="formFilterToHanHoanThanh" />
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 mt-md-0 d-none d-md-block">&nbsp;</span>
+                      <button type="button" class="btn btn-secondary" id="columnSettingsBtn" title="Tùy chỉnh cột">
+                        <i class="ri-settings-3-line me-1"></i>Tùy chỉnh cột
+                      </button>
                     </div>
 
-                    <div class="mb-1">
-                      <span class="mb-2 mt-1 mt-md-0 d-none d-md-block">&nbsp;</span>
-                      <button type="button" class="form-control btn-primary btn" id="queryHanHoanThanhBtn">
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">From:</span>
+                      <input
+                        type="date"
+                        class="form-control"
+                        style="padding-block: 0.4806rem"
+                        id="formFilterFromHanHoanThanh" />
+                    </div>
+
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">To:</span>
+                      <input
+                        type="date"
+                        class="form-control"
+                        style="padding-block: 0.4806rem"
+                        id="formFilterToHanHoanThanh" />
+                    </div>
+
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 mt-md-0 d-none d-md-block">&nbsp;</span>
+                      <button type="button" class="btn btn-primary" id="queryHanHoanThanhBtn">
                         <i class="ri-file-search-fill me-1"></i>Truy Vấn
                       </button>
                     </div>
                   </div>
                 </div>
 
+                <!-- <div class="card-header d-flex justify-content-end align-items-center pb-0">
+                  <div class="d-flex gap-2">
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">From:</span>
+                      <input
+                        type="date"
+                        class="form-control"
+                        style="padding-block: 0.4806rem"
+                        id="formFilterFromHanHoanThanh" />
+                    </div>
+
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">To:</span>
+                      <input
+                        type="date"
+                        class="form-control"
+                        style="padding-block: 0.4806rem"
+                        id="formFilterToHanHoanThanh" />
+                    </div>
+
+                    <div class="mb-1 d-flex align-items-center">
+                      <span class="mt-1 mt-md-0 d-none d-md-block">&nbsp;</span>
+                      <button type="button" class="btn btn-primary" id="queryHanHoanThanhBtn">
+                        <i class="ri-file-search-fill me-1"></i>Truy Vấn
+                      </button>
+                    </div>
+                  </div>
+                </div> -->
+
                 <!-- Bulk Actions Toolbar - Hiển thị khi có checkbox được chọn -->
                 <!-- Bulk Actions Toolbar - Compact Style -->
-                <div id="bulkActionsToolbar" class="d-none py-2 px-3 bg-light border-bottom">
+                <div id="bulkActionsToolbar" class="d-none py-2 px-3 bg-light border-bottom mt-2">
                   <div class="d-flex justify-content-between align-items-center flex-wrap">
                     <!-- Left: Selected Count -->
                     <div class="d-flex align-items-center me-3">
@@ -392,7 +445,7 @@
                   </div>
                 </div>
 
-                <div class="card-body">
+                <div class="card-body pt-0">
                   <div class="table-responsive">
                     <table id="chiTietMauTable" class="table table-bordered dt-responsive nowrap w-100">
                       <thead>

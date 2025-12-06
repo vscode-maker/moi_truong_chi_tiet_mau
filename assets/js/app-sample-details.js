@@ -1467,7 +1467,7 @@ import { calcTimeDiff } from './utils/helper.js';
       data: chiTietMauData,
       destroy: true,
       scrollX: true, // Enable horizontal scrolling - HIỂN THỊ TẤT CẢ CỘT
-      scrollY: '600px', // Chiều cao cố định cho scroll vertical
+      scrollY: '800px', // Chiều cao cố định cho scroll vertical
       scrollCollapse: true, // Thu gọn khi ít dữ liệu
       autoWidth: false, // Tắt auto width để kiểm soát width từng cột
       responsive: false, // TẮT RESPONSIVE - Hiển thị tất cả cột
