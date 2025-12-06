@@ -5,26 +5,23 @@
  * Cấu hình các quy tắc phân quyền dựa trên URL parameters
  */
 export const PERMISSION_CONFIG = {
- 
   /**
    * PERMISSION_GROUP: các nhóm phân quyền
    * Mỗi nhóm có các quy tắc riêng để xác định quyền truy cập
    * rules: Mảng các quy tắc để xác định quyền
    * condition: Điều kiện áp dụng giữa các rule ('AND' hoặc 'OR')
-   * dataFilter: Quy tắc lọc dữ liệu được phép xem 
+   * dataFilter: Quy tắc lọc dữ liệu được phép xem
    */
   PERMISSION_GROUP: {
-
     /**
      * FULL_ACCESS: Quyền xem tất cả dữ liệu
-    */
+     */
     FULL_ACCESS: {
-     
       rules: [
         /**
          * Nếu 'phan_quyen' = 'admin' EXACTLY
          */
-        { 
+        {
           value: ['admin'],
           key: 'phan_quyen',
           type: 'exact' // trong chuỗi phải bằng chính xác giá trị này
@@ -32,19 +29,19 @@ export const PERMISSION_CONFIG = {
         /**
          * Nếu 'chuc_vu' chứa 'nhân viên trả kết quả' OR 'trưởng nhóm'
          */
-        { 
+        {
           value: ['nhân viên trả kết quả', 'trưởng nhóm'],
           key: 'chuc_vu',
           type: 'contains' // trong chuỗi bao gồm các ký tự này
         }
       ],
       condition: 'OR', // Điều kiện áp dụng giữa các rule: 'AND' hoặc 'OR'
-      dataFilter: 'ALL'  // Xem tất cả dữ liệu
+      dataFilter: 'ALL' // Xem tất cả dữ liệu
     },
 
     /**
      * PHONG_QUAN_TRAC: Quyền xem dữ liệu nhóm mẫu đo hiện trường hoặc loại mẫu không khí, khí thải
-    */
+     */
     PHONG_QUAN_TRAC: {
       /**
        * rules: Quy tắc để xác định quyền phòng Quan Trắc
@@ -53,7 +50,7 @@ export const PERMISSION_CONFIG = {
         /**
          * Nếu 'phong_ban' là 'phòng quan trắc'
          */
-        { 
+        {
           value: ['phòng quan trắc'],
           key: 'phong_ban',
           type: 'exact'
@@ -71,21 +68,21 @@ export const PERMISSION_CONFIG = {
             key: 'loai_mau',
             value: ['không khí', 'khí thải'],
             type: 'contains'
-          },        
+          }
         ],
-        condition: 'OR'  // Điều kiện lọc: 'AND' hoặc 'OR'  
+        condition: 'OR' // Điều kiện lọc: 'AND' hoặc 'OR'
       }
     },
 
     /**
      * NGUOI_PHAN_TICH: Quyền xem dữ liệu theo người phân tích nội bộ
-    */
+     */
     NGUOI_PHAN_TICH: {
       // Quy tắc để xác định quyền người phân tích
       rules: [
         {
           value: ['', null],
-          key: 'ho_ten',        
+          key: 'ho_ten',
           type: 'different'
         }
       ],
@@ -102,7 +99,7 @@ export const PERMISSION_CONFIG = {
             type: 'exact'
           }
         ],
-        condition: 'AND'  // Điều kiện lọc: 'AND' hoặc 'OR'
+        condition: 'AND' // Điều kiện lọc: 'AND' hoặc 'OR'
       }
     },
 
@@ -124,8 +121,8 @@ export const PERMISSION_CONFIG = {
             value: '$$mau_id', // Lấy từ URL parameter 'mau_id'
             type: 'exact'
           }
-        ], 
-        condition: 'AND'  // Điều kiện lọc: 'AND' hoặc 'OR'       
+        ],
+        condition: 'AND' // Điều kiện lọc: 'AND' hoặc 'OR'
       }
     },
 
@@ -147,8 +144,8 @@ export const PERMISSION_CONFIG = {
             value: '$$don_hang_id', // Lấy từ URL parameter 'don_hang_id'
             type: 'exact'
           }
-        ], 
-        condition: 'AND'  // Điều kiện lọc: 'AND' hoặc 'OR' mặc định 1 cái nên để AND để xử lý trực tiếp ở api  
+        ],
+        condition: 'AND' // Điều kiện lọc: 'AND' hoặc 'OR' mặc định 1 cái nên để AND để xử lý trực tiếp ở api
       }
     }
   },
@@ -157,8 +154,20 @@ export const PERMISSION_CONFIG = {
    * Các key parameters trong URL liên quan đến phân quyền
    * Dùng để lấy giá trị phân quyền từ URL
    */
-  URL_PARAMS: ['phan_quyen', 'chuc_vu', 'phong_ban', 'ho_ten', 'ma_nv', 'nhom_phan_tich', 'quyen_action', 'tu_ngay', 'mau_id', 'don_hang_id'],
-
+  URL_PARAMS: [
+    'phan_quyen',
+    'chuc_vu',
+    'phong_ban',
+    'ho_ten',
+    'ma_nv',
+    'nhom_phan_tich',
+    'quyen_action',
+    'tu_ngay',
+    'mau_id',
+    'don_hang_id',
+    'ngay_bat_dau',
+    'ngay_ket_thuc'
+  ]
 };
 
 /**

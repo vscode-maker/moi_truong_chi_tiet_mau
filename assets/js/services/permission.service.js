@@ -13,8 +13,8 @@ import urlSearchService from './url-search.service.js';
 
 class PermissionService {
   constructor() {
-    this.userParams = null;          // URL parameters của user
-    this.matchedGroups = [];         // Các nhóm quyền phù hợp
+    this.userParams = null; // URL parameters của user
+    this.matchedGroups = []; // Các nhóm quyền phù hợp
     this.initialized = false;
   }
 
@@ -38,16 +38,18 @@ class PermissionService {
     //   "tu_ngay": "",
     //   // "mau_id": "7f18ebcd"
     // };
-    
+
+    console.log(this.userParams);
+
     // Xác định các nhóm quyền phù hợp
     this.matchedGroups = this.determinePermissionGroups();
-    
+
     this.initialized = true;
-    
+
     // console.log('🔐 Permission Service Initialized');
     // console.log('📋 User Params:', this.userParams);
     // console.log('✅ Matched Groups:', this.matchedGroups);
-    
+
     return {
       userParams: this.userParams,
       matchedGroups: this.matchedGroups
@@ -77,17 +79,17 @@ class PermissionService {
    */
   determinePermissionGroups() {
     const matchedGroups = [];
-    const groups = PERMISSION_CONFIG.PERMISSION_GROUP;    
+    const groups = PERMISSION_CONFIG.PERMISSION_GROUP;
 
     // Duyệt qua tất cả nhóm quyền
-    for (const [groupName, groupConfig] of Object.entries(groups)) {      
+    for (const [groupName, groupConfig] of Object.entries(groups)) {
       if (this.checkGroupRules(groupConfig.rules, groupConfig.condition)) {
         matchedGroups.push({
           name: groupName,
-          config: groupConfig,          
+          config: groupConfig
         });
       }
-    }   
+    }
     return matchedGroups;
   }
 
@@ -114,9 +116,9 @@ class PermissionService {
    */
   checkSingleRule(rule) {
     const userValue = this.userParams[rule.key];
-    
+
     // Nếu không có giá trị từ URL
-    if (userValue === undefined || userValue === null) {      
+    if (userValue === undefined || userValue === null) {
       return false;
     }
 
@@ -125,21 +127,15 @@ class PermissionService {
     switch (rule.type) {
       case 'exact':
         // Kiểm tra exact match (case-insensitive)
-        return rule.value.some(v => 
-          this.normalizeString(v) === normalizedUserValue
-        );
+        return rule.value.some(v => this.normalizeString(v) === normalizedUserValue);
 
       case 'contains':
         // Kiểm tra có chứa bất kỳ giá trị nào trong mảng
-        return rule.value.some(v => 
-          normalizedUserValue.includes(this.normalizeString(v))
-        );
+        return rule.value.some(v => normalizedUserValue.includes(this.normalizeString(v)));
 
       case 'different':
         // Kiểm tra khác với tất cả giá trị trong mảng
-        return rule.value.every(v => 
-          this.normalizeString(v) !== normalizedUserValue
-        );        
+        return rule.value.every(v => this.normalizeString(v) !== normalizedUserValue);
 
       default:
         return false;
@@ -213,13 +209,11 @@ class PermissionService {
 
     // Áp dụng filter từ TẤT CẢ các nhóm quyền (OR logic)
     const filteredData = data.filter(item => {
-      return this.matchedGroups.some(group => 
-        this.checkItemPermission(item, group.config.dataFilter)
-      );
+      return this.matchedGroups.some(group => this.checkItemPermission(item, group.config.dataFilter));
     });
 
     console.log(`📊 Filtered: ${filteredData.length}/${data.length} items`);
-    
+
     return filteredData;
   }
 
@@ -238,7 +232,7 @@ class PermissionService {
     }
 
     const results = dataFilter.columns.map(column => {
-      const pass = this.checkColumnFilter(item, column);      
+      const pass = this.checkColumnFilter(item, column);
       return pass;
     });
 
@@ -254,29 +248,25 @@ class PermissionService {
    * Kiểm tra một column filter
    */
   checkColumnFilter(item, column) {
-    const itemValue = item[column.key];    
-    const filterValue = this.resolveFilterValue(column.value);        
+    const itemValue = item[column.key];
+    const filterValue = this.resolveFilterValue(column.value);
 
     if (itemValue === undefined || itemValue === null) {
       return false;
     }
 
-    const normalizedItemValue = this.normalizeString(itemValue);    
+    const normalizedItemValue = this.normalizeString(itemValue);
 
     switch (column.type) {
       case 'exact':
         if (Array.isArray(filterValue)) {
-          return filterValue.some(v => 
-            this.normalizeString(v) === normalizedItemValue
-          );
+          return filterValue.some(v => this.normalizeString(v) === normalizedItemValue);
         }
         return this.normalizeString(filterValue) === normalizedItemValue;
 
       case 'contains':
-        if (Array.isArray(filterValue)) {          
-          return filterValue.some(v => 
-            normalizedItemValue.includes(this.normalizeString(v))
-          );
+        if (Array.isArray(filterValue)) {
+          return filterValue.some(v => normalizedItemValue.includes(this.normalizeString(v)));
         }
         return normalizedItemValue.includes(this.normalizeString(filterValue));
 
@@ -307,31 +297,27 @@ class PermissionService {
    */
   normalizeString(str) {
     if (str === null || str === undefined) return '';
-    
-    return String(str)
-      .toLowerCase()
-      .trim()
-      // .normalize('NFD')
-      // .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics
-  } 
+
+    return String(str).toLowerCase().trim();
+    // .normalize('NFD')
+    // .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics
+  }
 
   /**
    * Kiểm tra có quyền thực hiện action không
    */
   canPerformAction(action) {
     const fullAccessGroups = ['FULL_ACCESS'];
-    
+
     switch (action) {
       case 'view':
         return this.matchedGroups.length > 0;
-      
+
       case 'edit':
       case 'delete':
       case 'approve':
-        return this.matchedGroups.some(g => 
-          fullAccessGroups.includes(g.name)
-        );
-      
+        return this.matchedGroups.some(g => fullAccessGroups.includes(g.name));
+
       default:
         return false;
     }

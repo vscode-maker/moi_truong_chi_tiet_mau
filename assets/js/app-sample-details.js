@@ -23,6 +23,7 @@ import permissionService from './services/permission.service.js';
 
 // Import utils
 import { calcTimeDiff } from './utils/helper.js';
+import DateFormatter from './utils/date-formatter.js';
 
 // #endregion
 
@@ -732,9 +733,9 @@ import { calcTimeDiff } from './utils/helper.js';
       // Tạo mảng mới theo thứ tự đã lưu
       const reorderedColumns = savedOrder.map(index => columnsArray[index]);
 
-      console.log('✅ Đã reorder columns array theo saved settings');
-      console.log('📊 Original order:', DEFAULT_COLUMN_ORDER);
-      console.log('📊 Saved order:', savedOrder);
+      // console.log('✅ Đã reorder columns array theo saved settings');
+      // console.log('📊 Original order:', DEFAULT_COLUMN_ORDER);
+      // console.log('📊 Saved order:', savedOrder);
 
       return reorderedColumns;
     } catch (error) {
@@ -767,7 +768,7 @@ import { calcTimeDiff } from './utils/helper.js';
         });
       }
 
-      console.log('🗺️ [applyColumnSettings] Original → Current map:', originalToCurrentMap);
+      // console.log('🗺️ [applyColumnSettings] Original → Current map:', originalToCurrentMap);
 
       // Áp dụng visibility theo originalIndex → currentIndex
       Object.keys(columnSettings.visibility).forEach(originalIndexStr => {
@@ -777,13 +778,13 @@ import { calcTimeDiff } from './utils/helper.js';
 
         // Không cho phép ẩn checkbox và action column (check theo originalIndex)
         if (FIXED_COLUMNS.includes(originalIndex)) {
-          console.log(`  [Original ${originalIndex} → Current ${currentIndex}] FIXED - Always visible`);
+          // console.log(`  [Original ${originalIndex} → Current ${currentIndex}] FIXED - Always visible`);
           return;
         }
 
         if (currentIndex !== undefined) {
           chiTietMauTable.column(currentIndex).visible(isVisible);
-          console.log(`  [Original ${originalIndex} → Current ${currentIndex}] Visible: ${isVisible}`);
+          // console.log(`  [Original ${originalIndex} → Current ${currentIndex}] Visible: ${isVisible}`);
         }
       });
 
@@ -1788,11 +1789,11 @@ import { calcTimeDiff } from './utils/helper.js';
 
           // Nếu là filtering/grouping → trả về formatted date
           if (type === 'filter') {
-            return data ? formatDate(data) : '';
+            return data ? DateFormatter.toVietnamese(data) : '';
           }
 
           let hanHoanThanh = handleNullValue(data);
-          hanHoanThanh = hanHoanThanh ? formatDate(hanHoanThanh) : '';
+          hanHoanThanh = hanHoanThanh ? DateFormatter.toVietnamese(hanHoanThanh) : '';
           return `<span class="text-danger fw-semibold"><i class="ri-alarm-warning-line me-1"></i>${hanHoanThanh}</span>`;
         }
       },
@@ -2035,7 +2036,7 @@ import { calcTimeDiff } from './utils/helper.js';
         width: '120px',
         render: function (data, type, row) {
           const ngayNhan = handleNullValue(data);
-          return ngayNhan ? formatDate(ngayNhan) : '';
+          return ngayNhan ? DateFormatter.toVietnamese(ngayNhan) : '';
         }
       },
       {
@@ -2047,7 +2048,7 @@ import { calcTimeDiff } from './utils/helper.js';
           if (!ngayTra) return '<span class="text-muted">Chưa có</span>';
 
           // Format date
-          const formattedDate = formatDate(ngayTra);
+          const formattedDate = DateFormatter.toVietnamese(ngayTra);
 
           // Check if overdue (ngay_tra_ket_qua < today and trang_thai != completed)
           const today = new Date();
@@ -3067,24 +3068,6 @@ import { calcTimeDiff } from './utils/helper.js';
     updateProgressStats();
 
     return rowsToHighlight.length;
-  }
-
-  /**
-   * Format ngày tháng
-   */
-  function formatDate(dateString) {
-    if (!dateString) return '';
-
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    } catch (error) {
-      return dateString;
-    }
   }
 
   /**
@@ -4112,23 +4095,29 @@ import { calcTimeDiff } from './utils/helper.js';
    * Render filter hạn hoàn thành mặc định
    */
   function renderFilterHanHoanThanh() {
-    const crrDate = new Date().toISOString().split('T')[0];
-    $('#formFilterToHanHoanThanh').val(crrDate);
-    paginationState.ngayKetThuc = crrDate;
+    let ngayKetThuc = new Date().toISOString().split('T')[0];
+    if (permissionService.userParams.ngay_ket_thuc) {
+      ngayKetThuc = DateFormatter.toISO(permissionService.userParams.ngay_ket_thuc);
+    }
+    paginationState.ngayKetThuc = ngayKetThuc;
+    $('#formFilterToHanHoanThanh').val(ngayKetThuc);
 
     const today = new Date(); // Lấy ngày hiện tại
     const twentyDaysAgo = new Date(today); // Tạo bản sao của ngày hiện tại
     twentyDaysAgo.setDate(today.getDate() - 20); // Trừ 20 ngày
-    const fromDate = twentyDaysAgo.toISOString().split('T')[0];
-    $('#formFilterFromHanHoanThanh').val(fromDate);
-    paginationState.ngayBatDau = fromDate;
+    let ngayBatDau = twentyDaysAgo.toISOString().split('T')[0];
+    if (permissionService.userParams.ngay_bat_dau) {
+      ngayBatDau = DateFormatter.toISO(permissionService.userParams.ngay_bat_dau);
+    }
+    $('#formFilterFromHanHoanThanh').val(ngayBatDau);
+    paginationState.ngayBatDau = ngayBatDau;
   }
 
   /**
    * Khởi tạo ứng dụng
    */
   async function initializeApp() {
-    // console.warn(permissionService.matchedGroups)
+    console.warn(permissionService);
     // Kiểm tra quyền truy cập
     if (permissionService.matchedGroups.length === 0) {
       console.error('❌ Không có quyền truy cập trang này');
