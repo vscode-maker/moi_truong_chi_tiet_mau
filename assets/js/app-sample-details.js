@@ -475,7 +475,7 @@ import DateFormatter from './utils/date-formatter.js';
     const nextPage = paginationState.currentPage + 1;
 
     if (nextPage > paginationState.totalPages) {
-      console.log('✅ Đã load hết dữ liệu');
+      // console.log('✅ Đã load hết dữ liệu');
       notificationService.show('Đã tải hết dữ liệu', 'info');
       return;
     }
@@ -526,7 +526,7 @@ import DateFormatter from './utils/date-formatter.js';
       searchState.keyword = keyword;
 
       showLoading(true);
-      console.log('🔍 Searching for:', keyword);
+      // console.log('🔍 Searching for:', keyword);
 
       // Reset pagination khi search
       paginationState.currentPage = 0;
@@ -551,7 +551,7 @@ import DateFormatter from './utils/date-formatter.js';
         // Update stats
         updateProgressStats();
 
-        console.log(`✅ Found ${chiTietMauData.length} records for "${keyword}"`);
+        // console.log(`✅ Found ${chiTietMauData.length} records for "${keyword}"`);
 
         // Hiển thị thông báo
         if (chiTietMauData.length === 0) {
@@ -588,12 +588,12 @@ import DateFormatter from './utils/date-formatter.js';
     if (!keyword || keyword.trim() === '') {
       // ⭐ KIỂM TRA: Đang reload thì không làm gì
       if (searchState.isReloading) {
-        console.log('⚠️ Đang reload, bỏ qua yêu cầu clear search');
+        // console.log('⚠️ Đang reload, bỏ qua yêu cầu clear search');
         return;
       }
 
       searchState.searchTimeout = setTimeout(async () => {
-        console.log('🔄 Clear search, reload original data');
+        // console.log('🔄 Clear search, reload original data');
         searchState.keyword = '';
         searchState.oldKeyword = ''; // ⭐ SET = '' thay vì null
         searchState.isReloading = true;
@@ -633,7 +633,7 @@ import DateFormatter from './utils/date-formatter.js';
         }
 
         updateProgressStats();
-        console.log('✅ Reloaded original data');
+        // console.log('✅ Reloaded original data');
       }
     } catch (error) {
       console.error('❌ Reload error:', error);
@@ -652,7 +652,7 @@ import DateFormatter from './utils/date-formatter.js';
       const saved = localStorage.getItem(COLUMN_SETTINGS_KEY);
       if (saved) {
         columnSettings = JSON.parse(saved);
-        console.log('✅ Đã load column settings từ localStorage:', columnSettings);
+        // console.log('✅ Đã load column settings từ localStorage:', columnSettings);
         return true;
       }
     } catch (error) {
@@ -670,7 +670,7 @@ import DateFormatter from './utils/date-formatter.js';
   function saveColumnSettings() {
     try {
       localStorage.setItem(COLUMN_SETTINGS_KEY, JSON.stringify(columnSettings));
-      console.log('✅ Đã lưu column settings vào localStorage');
+      // console.log('✅ Đã lưu column settings vào localStorage');
       return true;
     } catch (error) {
       console.error('❌ Lỗi khi lưu column settings:', error);
@@ -702,7 +702,7 @@ import DateFormatter from './utils/date-formatter.js';
       saveColumnSettings();
     }
 
-    console.log('✅ Đã reset column settings về mặc định');
+    // console.log('✅ Đã reset column settings về mặc định');
   }
 
   /**
@@ -711,7 +711,7 @@ import DateFormatter from './utils/date-formatter.js';
    */
   function reorderColumnsArray(columnsArray) {
     if (!columnSettings || !columnSettings.order || columnSettings.order.length === 0) {
-      console.log('ℹ️ Không có column order settings, sử dụng thứ tự mặc định');
+      // console.log('ℹ️ Không có column order settings, sử dụng thứ tự mặc định');
       return columnsArray;
     }
 
@@ -752,7 +752,7 @@ import DateFormatter from './utils/date-formatter.js';
     if (!chiTietMauTable) return;
 
     try {
-      console.log('🔧 [applyColumnSettings] Applying visibility settings...');
+      // console.log('🔧 [applyColumnSettings] Applying visibility settings...');
 
       // ⭐ TẠO MAP: Original Index → Current Index
       const originalToCurrentMap = {};
@@ -788,7 +788,7 @@ import DateFormatter from './utils/date-formatter.js';
         }
       });
 
-      console.log('✅ [applyColumnSettings] Applied column visibility settings');
+      // console.log('✅ [applyColumnSettings] Applied column visibility settings');
     } catch (error) {
       console.error('❌ Lỗi khi áp dụng column settings:', error);
     }
@@ -1463,12 +1463,19 @@ import DateFormatter from './utils/date-formatter.js';
    * Khởi tạo DataTable với đầy đủ tính năng
    */
   function initializeDataTable() {
+    // Tính toán động chiều cao
+    const calculateTableHeight = () => {
+      const windowHeight = $(window).height();
+      const offset = 320; // Tổng height của các phần tử khác
+      return Math.max(400, windowHeight - offset); // Min 400px
+    };
+
     // Cấu hình DataTable cơ bản
     const tableConfig = {
       data: chiTietMauData,
       destroy: true,
       scrollX: true, // Enable horizontal scrolling - HIỂN THỊ TẤT CẢ CỘT
-      scrollY: '800px', // Chiều cao cố định cho scroll vertical
+      scrollY: calculateTableHeight() + 'px', // Chiều cao cố định cho scroll vertical
       scrollCollapse: true, // Thu gọn khi ít dữ liệu
       autoWidth: false, // Tắt auto width để kiểm soát width từng cột
       responsive: false, // TẮT RESPONSIVE - Hiển thị tất cả cột
@@ -1741,7 +1748,8 @@ import DateFormatter from './utils/date-formatter.js';
         }
       },
       {
-        data: 'ten_mau',
+        // data: 'ten_mau',
+        data: 'loai_mau',
         title: 'Tên mẫu',
         width: '150px',
         render: function (data, type, row) {
@@ -2965,10 +2973,10 @@ import DateFormatter from './utils/date-formatter.js';
    * Cập nhật dòng cụ thể trong DataTable mà không làm thay đổi sort order
    */
   function updateTableRowInPlace(updatedItems) {
-    console.log('🔄 [UPDATE TABLE] Starting updateTableRowInPlace:', {
-      updatedItemsCount: updatedItems.length,
-      hasTable: !!chiTietMauTable
-    });
+    // console.log('🔄 [UPDATE TABLE] Starting updateTableRowInPlace:', {
+    //   updatedItemsCount: updatedItems.length,
+    //   hasTable: !!chiTietMauTable
+    // });
 
     if (!chiTietMauTable || updatedItems.length === 0) {
       console.warn('⚠️ [UPDATE TABLE] No table or no items to update');
@@ -2978,10 +2986,8 @@ import DateFormatter from './utils/date-formatter.js';
     const rowsToHighlight = [];
 
     updatedItems.forEach((updatedItem, index) => {
-      console.log(`🔍 [UPDATE TABLE] Processing item ${index + 1}/${updatedItems.length}:`, updatedItem.id);
       // Tìm index trong chiTietMauData array
       const dataIndex = chiTietMauData.findIndex(item => item.id === updatedItem.id);
-      console.log(`📍 [UPDATE TABLE] Data index for ${updatedItem.id}:`, dataIndex);
 
       if (dataIndex === -1) {
         console.error(`❌ [UPDATE TABLE] Data index not found for ID: ${updatedItem.id}`);
@@ -2996,18 +3002,17 @@ import DateFormatter from './utils/date-formatter.js';
         const rowData = this.data();
         if (rowData && rowData.id === updatedItem.id) {
           targetRowIndex = index;
-          console.log(`🎯 [UPDATE TABLE] Found row index ${targetRowIndex} for ID: ${updatedItem.id}`);
           return false; // Break the loop
         }
         return true;
       });
 
       if (targetRowIndex !== -1) {
-        console.log(`🔄 [UPDATE TABLE] Updating row ${targetRowIndex} with data:`, {
-          id: updatedItem.id,
-          phe_duyet: updatedItem.phe_duyet,
-          ma_nguoi_duyet: updatedItem.ma_nguoi_duyet
-        });
+        // console.log(`🔄 [UPDATE TABLE] Updating row ${targetRowIndex} with data:`, {
+        //   id: updatedItem.id,
+        //   phe_duyet: updatedItem.phe_duyet,
+        //   ma_nguoi_duyet: updatedItem.ma_nguoi_duyet
+        // });
 
         // Cập nhật dữ liệu gốc
         chiTietMauData[dataIndex] = { ...chiTietMauData[dataIndex], ...updatedItem };
@@ -3015,7 +3020,6 @@ import DateFormatter from './utils/date-formatter.js';
         // Cập nhật dòng cụ thể mà không redraw toàn bộ bảng
         const row = chiTietMauTable.row(targetRowIndex);
         row.data(chiTietMauData[dataIndex]);
-        console.log(`✅ [UPDATE TABLE] Row data updated for index ${targetRowIndex}`);
 
         // Lưu reference để highlight sau
         rowsToHighlight.push(row.node());
@@ -3024,14 +3028,14 @@ import DateFormatter from './utils/date-formatter.js';
       }
     });
 
-    console.log('🎨 [UPDATE TABLE] Redrawing table and highlighting rows:', rowsToHighlight.length);
+    // console.log('🎨 [UPDATE TABLE] Redrawing table and highlighting rows:', rowsToHighlight.length);
 
     // Chỉ invalidate các dòng đã thay đổi
     chiTietMauTable.draw('page');
 
     // Refresh tooltips cho các dòng đã cập nhật
     setTimeout(() => {
-      console.log('🔧 [UPDATE TABLE] Refreshing tooltips...');
+      // console.log('🔧 [UPDATE TABLE] Refreshing tooltips...');
 
       // Destroy existing tooltips first
       rowsToHighlight.forEach(rowNode => {
@@ -3043,26 +3047,26 @@ import DateFormatter from './utils/date-formatter.js';
         $(rowNode).find('[data-bs-toggle="tooltip"]').tooltip();
       });
 
-      console.log('✅ [UPDATE TABLE] Tooltips refreshed');
+      // console.log('✅ [UPDATE TABLE] Tooltips refreshed');
     }, 50);
 
     // Highlight các dòng đã cập nhật
     setTimeout(() => {
-      console.log('✨ [UPDATE TABLE] Applying highlight animation...');
+      // console.log('✨ [UPDATE TABLE] Applying highlight animation...');
 
       rowsToHighlight.forEach((rowNode, index) => {
         $(rowNode).addClass('row-updated');
-        console.log(`💡 [UPDATE TABLE] Highlighted row ${index + 1}/${rowsToHighlight.length}`);
+        // console.log(`💡 [UPDATE TABLE] Highlighted row ${index + 1}/${rowsToHighlight.length}`);
 
         // Tự động remove highlight sau 3 giây
         setTimeout(() => {
           $(rowNode).removeClass('row-updated');
-          console.log(`💭 [UPDATE TABLE] Removed highlight from row ${index + 1}`);
+          // console.log(`💭 [UPDATE TABLE] Removed highlight from row ${index + 1}`);
         }, 3000);
       });
     }, 100);
 
-    console.log('🏁 [UPDATE TABLE] COMPLETED: Updated', rowsToHighlight.length, 'rows');
+    // console.log('🏁 [UPDATE TABLE] COMPLETED: Updated', rowsToHighlight.length, 'rows');
 
     // Refresh progress statistics after updating rows
     updateProgressStats();
@@ -3448,8 +3452,6 @@ import DateFormatter from './utils/date-formatter.js';
         // Tìm item trong chiTietMauData
         const item = chiTietMauData.find(x => x.id === itemId);
         if (!item) return null;
-
-        console.warn(contractor);
 
         validItems.push(item);
 
@@ -4117,7 +4119,6 @@ import DateFormatter from './utils/date-formatter.js';
    * Khởi tạo ứng dụng
    */
   async function initializeApp() {
-    console.warn(permissionService);
     // Kiểm tra quyền truy cập
     if (permissionService.matchedGroups.length === 0) {
       console.error('❌ Không có quyền truy cập trang này');
@@ -4161,6 +4162,7 @@ import DateFormatter from './utils/date-formatter.js';
       const response = await loadDanhSachChiTieuPaginated(1, paginationState.pageSize);
 
       if (response && response.data) {
+        console.warn(response.data);
         chiTietMauData = response.data;
       } else {
         throw new Error('Không có dữ liệu');
@@ -4197,5 +4199,17 @@ import DateFormatter from './utils/date-formatter.js';
   // Initialize when document is ready
   $(window).on('load', function () {
     initializeApp();
+  });
+
+  // ⭐ Thêm resize handler
+  let resizeTimeout;
+  $(window).on('resize', function () {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function () {
+      if (chiTietMauTable) {
+        const newHeight = Math.max(400, $(window).height() - 320);
+        $('.dataTables_scrollBody').css('max-height', newHeight + 'px');
+      }
+    }, 250);
   });
 })();
