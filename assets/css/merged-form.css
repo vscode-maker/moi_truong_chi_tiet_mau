@@ -1,0 +1,222 @@
+/* Cấu hình chung cho trang */
+body {
+  font-family: 'Times New Roman', Times, serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0; /* Màu nền web để dễ nhìn khung giấy */
+}
+
+/* Khung giấy A4 hiển thị trên màn hình */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 0.92cm 1.05cm 1.43cm 1.9cm;
+  margin: 20px auto;
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Nút in */
+.btn-print {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 5px;
+  z-index: 9999;
+}
+
+/* --- 1. HEADER BRAND (LOGO & ĐỊA CHỈ) --- */
+.brand-table {
+  margin-bottom: 15px;
+  border: none;
+}
+.brand-table td {
+  padding: 2px;
+}
+.logo-cell {
+  width: 80px;
+  vertical-align: middle;
+  text-align: center;
+}
+.logo-img {
+  width: 70px; /* Chỉnh kích thước logo tại đây */
+  height: auto;
+}
+.org-name {
+  font-weight: bold;
+  font-size: 10pt;
+  text-transform: uppercase;
+  padding-left: 10px;
+  line-height: 1.4;
+}
+.org-contact {
+  font-size: 10pt;
+  /* padding-left: 20px; */
+  line-height: 1.4;
+}
+
+/* --- 2. KHUNG TIÊU ĐỀ (BOX CÓ VIỀN) --- */
+.title-box-table {
+  border: 1px solid black; /* Khung viền đen bao quanh */
+  margin-bottom: 10px;
+}
+.title-box-table td {
+  padding: 10px 5px;
+  vertical-align: middle;
+}
+/* Đường kẻ dọc chấm bi ngăn cách các ô */
+.border-right-dotted {
+  border-right: 1px dotted black;
+}
+.so-pkq {
+  font-size: 11pt;
+  text-align: center;
+  width: 20%;
+}
+.main-title {
+  text-align: center;
+  width: 60%;
+}
+.ky-hieu {
+  font-size: 11pt;
+  text-align: center;
+  width: 20%;
+}
+
+/* --- 3. THÔNG TIN KHÁCH HÀNG --- */
+.info-table {
+  margin-bottom: 10px;
+  font-size: 12pt;
+}
+.info-table td {
+  padding: 3px 0;
+}
+.lbl {
+  white-space: nowrap;
+  width: 1px;
+  padding-right: 5px;
+}
+.val {
+  font-weight: bold;
+}
+
+/* Bố cục nội dung */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.header-table td {
+  vertical-align: top;
+}
+
+.title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16pt;
+  margin-bottom: 5px;
+}
+.sub-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 14pt;
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+/* Thông tin khách hàng */
+.info-table td {
+  padding: 5px 0;
+  font-size: 12pt;
+}
+.label {
+  width: 130px;
+  font-weight: bold;
+}
+.colon {
+  width: 20px;
+  text-align: center;
+}
+
+/* Bảng kết quả */
+.result-table {
+  margin-top: 15px;
+  border: 1px solid black;
+}
+.result-table th,
+.result-table td {
+  border: 1px solid black;
+  padding: 5px;
+  text-align: center;
+  font-size: 12pt;
+}
+.result-table th {
+  background-color: #fff; /* Tránh màu nền khi in */
+  /* background-color: #e8e8e8; */
+}
+
+/* Ghi chú */
+.notes {
+  font-size: 10pt;
+  font-style: italic;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+/* Chữ ký */
+.footer-date {
+  text-align: right;
+  font-style: italic;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 12pt;
+}
+.signature-table td {
+  text-align: center;
+  vertical-align: top;
+  font-size: 12pt;
+}
+.signature-title {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 80px; /* Khoảng trống ký tên */
+}
+.signature-name {
+  font-weight: bold;
+  display: block;
+}
+
+/* Cấu hình IN ẤN (Quan trọng) */
+@media print {
+  body {
+    background: none;
+    -webkit-print-color-adjust: exact;
+  }
+  .page {
+    margin: 0;
+    box-shadow: none;
+    width: 100%;
+    height: auto;
+    page-break-after: always;
+  }
+  .no-print {
+    display: none;
+  }
+  thead {
+    display: table-header-group;
+  }
+  @page {
+    size: A4;
+    margin: auto;
+    /* margin: 0; Xóa margin mặc định của trình duyệt, margin đã set trong .page */
+  }
+}

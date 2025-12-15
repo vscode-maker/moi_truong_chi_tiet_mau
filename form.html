@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phiếu Kết Quả Thử Nghiệm</title>
+    <style>
+      /* --- CẤU HÌNH TRANG IN --- */
+      @page {
+        size: A4;
+        /* Lề trang in: Top-Bottom-Left-Right */
+        margin: 10mm 15mm 10mm 20mm;
+      }
+
+      body {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 12pt;
+        line-height: 1.3;
+        margin: 0;
+        background: #ccc; /* Màu nền khi xem trên web */
+      }
+
+      /* Container chính mô phỏng trang giấy trên màn hình */
+      .page-container {
+        background: white;
+        width: 210mm;
+        min-height: 297mm;
+        padding: 10mm 15mm 10mm 20mm; /* Padding giống margin khi in */
+        margin: 20px auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        box-sizing: border-box;
+      }
+
+      /* --- QUAN TRỌNG: CẤU TRÚC BẢNG LẶP HEADER --- */
+      .main-wrapper-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: none;
+      }
+
+      /* Bắt buộc thead hiển thị dạng nhóm header để trình duyệt hiểu cần lặp lại */
+      thead {
+        display: table-header-group;
+      }
+      tfoot {
+        display: table-footer-group;
+      }
+
+      /* Tránh bị ngắt trang giữa chừng trong các dòng bảng con */
+      tr {
+        page-break-inside: avoid;
+      }
+
+      /* Ẩn giao diện web khi in */
+      @media print {
+        body {
+          background: none;
+        }
+        .page-container {
+          margin: 0;
+          box-shadow: none;
+          width: 100%;
+          padding: 0; /* Khi in, @page đã lo margin, nên padding về 0 */
+        }
+        .no-print {
+          display: none !important;
+        }
+
+        /* Đảm bảo lặp lại header trên Firefox/Chrome cũ */
+        .main-wrapper-table {
+          page-break-inside: auto;
+        }
+        thead {
+          display: table-header-group;
+        }
+      }
+
+      /* --- CSS CHO CÁC THÀNH PHẦN CON (GIỮ NGUYÊN) --- */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td,
+      th {
+        vertical-align: top;
+      }
+
+      /* 1. Brand Header */
+      .brand-table {
+        border-bottom: 1px solid #fff;
+        margin-bottom: 5px;
+      } /* Mẹo: border trắng để tạo khoảng cách */
+      .logo-cell {
+        width: 80px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      .logo-img {
+        width: 70px;
+        height: auto;
+      }
+      .org-name {
+        font-weight: bold;
+        font-size: 10pt;
+        text-transform: uppercase;
+        padding-left: 10px;
+      }
+      .org-contact {
+        font-size: 10pt;
+        padding-left: 20px;
+      }
+
+      /* 2. Title Box */
+      .title-box-table {
+        border: 1px solid black;
+        margin-bottom: 10px;
+      }
+      .title-box-table td {
+        padding: 5px;
+        vertical-align: middle;
+      }
+      .border-right-dotted {
+        border-right: 1px dotted black;
+      }
+      .so-pkq {
+        font-size: 11pt;
+        text-align: center;
+        width: 20%;
+      }
+      .main-title {
+        text-align: center;
+        width: 60%;
+      }
+      .ky-hieu {
+        font-size: 11pt;
+        text-align: center;
+        width: 20%;
+      }
+
+      /* 3. Info Table */
+      .info-table {
+        margin-bottom: 10px;
+        font-size: 12pt;
+      }
+      .info-table td {
+        padding: 3px 0;
+      }
+      .lbl {
+        white-space: nowrap;
+        width: 1px;
+        padding-right: 5px;
+      }
+      .val {
+        font-weight: bold;
+      }
+
+      /* 4. Result Table */
+      .res-table {
+        width: 100%;
+        border: 1px solid black;
+        margin-top: 5px;
+        font-size: 12pt;
+      }
+      .res-table th,
+      .res-table td {
+        border: 1px solid black;
+        text-align: center;
+        padding: 5px;
+      }
+      .res-table th {
+        font-weight: bold;
+        background-color: #fff;
+      }
+
+      /* 5. Notes & Footer */
+      .notes {
+        font-size: 11pt;
+        font-style: italic;
+        margin-top: 10px;
+        text-align: justify;
+      }
+      .footer-date {
+        text-align: right;
+        font-style: italic;
+        margin-top: 15px;
+        margin-bottom: 10px;
+      }
+      .signature-table td {
+        text-align: center;
+        vertical-align: top;
+        padding-top: 10px;
+      }
+      .signature-title {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 80px;
+      }
+      .signature-name {
+        font-weight: bold;
+        display: block;
+      }
+
+      /* Button */
+      .btn-print {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        padding: 10px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 5px;
+        z-index: 9999;
+      }
+
+      /* Khoảng trống giữa header lặp lại và nội dung body */
+      .header-spacer {
+        height: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="btn-print no-print" onclick="window.print()">🖨️ In Phiếu PDF</button>
+
+    <div class="page-container">
+      <table class="main-wrapper-table">
+        <thead>
+          <tr>
+            <td>
+              <table class="brand-table">
+                <tr>
+                  <td class="logo-cell">
+                    <img src="https://via.placeholder.com/150x150?text=LOGO" alt="Logo" class="logo-img" />
+                  </td>
+                  <td style="width: 40%">
+                    <div class="org-name">
+                      VIỆN MÔI TRƯỜNG & TÀI NGUYÊN<br />
+                      TRUNG TÂM CÔNG NGHỆ MÔI TRƯỜNG<br />
+                      PTN PHÂN TÍCH & KỸ THUẬT CÔNG NGHỆ<br />
+                      (VIMCERTS 077)
+                    </div>
+                  </td>
+                  <td style="width: 50%">
+                    <div class="org-contact">
+                      Trụ sở chính: 142 Tô Hiến Thành, P.14, Q.10, Tp.HCM<br />
+                      Địa chỉ PTN: Khu đô thị ĐHQG, P. Đông Hòa, Tp. HCM<br />
+                      Tel: 028.2252.4567 - Hotline: 0799435426<br />
+                      Email: ketquacefine@gmail.com
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <table class="title-box-table">
+                <tr>
+                  <td class="so-pkq border-right-dotted">
+                    <div style="text-decoration: underline; font-weight: bold">Số PKQ:</div>
+                    <div id="so_pkq" style="font-weight: bold; margin-top: 5px">.../2025/PKQ</div>
+                  </td>
+                  <td class="main-title border-right-dotted">
+                    <div style="font-weight: bold; font-size: 16pt; text-transform: uppercase">
+                      PHIẾU KẾT QUẢ THỬ NGHIỆM
+                    </div>
+                    <div style="font-weight: bold; font-size: 14pt">TEST REPORT</div>
+                  </td>
+                  <td class="ky-hieu">
+                    <div style="text-decoration: underline; font-weight: bold">Kí hiệu mẫu:</div>
+                    <div id="ky_hieu_mau" style="font-weight: bold; margin-top: 5px">...</div>
+                  </td>
+                </tr>
+              </table>
+
+              <div class="header-spacer"></div>
+            </td>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>
+              <table class="info-table">
+                <tr>
+                  <td class="lbl">Tên khách hàng</td>
+                  <td>: <span id="khach_hang" class="val uppercase">...</span></td>
+                  <td class="lbl" style="padding-left: 20px">Ngày nhận mẫu</td>
+                  <td style="width: 120px">: <span id="ngay_nhan">...</span></td>
+                </tr>
+                <tr>
+                  <td class="lbl">Địa chỉ</td>
+                  <td>: <span id="dia_chi">...</span></td>
+                  <td class="lbl" style="padding-left: 20px">Loại mẫu</td>
+                  <td>: <span id="loai_mau">...</span></td>
+                </tr>
+                <tr>
+                  <td class="lbl">Tên mẫu</td>
+                  <td colspan="3">: <span id="ten_mau">...</span></td>
+                </tr>
+                <tr>
+                  <td class="lbl">Mô tả mẫu</td>
+                  <td colspan="3">: <span id="mo_ta_mau">...</span></td>
+                </tr>
+              </table>
+
+              <table class="res-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="width: 50px">TT</th>
+                    <th rowspan="2">Chỉ tiêu</th>
+                    <th rowspan="2" style="width: 80px">Đơn vị</th>
+                    <th rowspan="2" style="width: 150px">Phương pháp thử</th>
+                    <th>Kết quả</th>
+                  </tr>
+                  <tr>
+                    <th><span id="col_header_mau">...</span></th>
+                  </tr>
+                </thead>
+                <tbody id="table_body">
+                  <tr>
+                    <td>1</td>
+                    <td style="text-align: left">Dầu mỡ động, thực vật(b)</td>
+                    <td>mg/L</td>
+                    <td>SMEWW 5520B&F:2023</td>
+                    <td>KPH(LOD=1)</td>
+                  </tr>
+                  <script>
+                    for (let i = 2; i <= 25; i++) {
+                      document.write(
+                        `<tr><td>${i}</td><td style="text-align:left">Chỉ tiêu test ${i}</td><td>mg/L</td><td>ISO 12345</td><td>KPH</td></tr>`
+                      );
+                    }
+                  </script>
+                </tbody>
+              </table>
+
+              <div class="notes">
+                <span style="text-decoration: underline">Ghi chú:</span><br />
+                1. (b)- Thông số đã được Bộ Nông nghiệp và Môi trường công nhận (Số hiệu VIMCERTS 077);<br />
+                2. KPH: Không phát hiện; LOD: Giới hạn phát hiện của phương pháp;<br />
+                3. Thông tin tên khách hàng và mẫu thử được ghi trên phiếu kết quả này theo yêu cầu khách hàng;<br />
+                4. Các kết quả phân tích chỉ có giá trị trên mẫu thử/tại thời điểm đo;<br />
+                5. Thời gian lưu mẫu: 7 ngày kể từ ngày trả kết quả đối với mẫu đất, nước, bùn, chất thải, không lưu đối
+                với mẫu khí, vi sinh;<br />
+                6. Không được trích sao một phần hoặc toàn bộ phiếu kết quả thử nghiệm nếu không có sự đồng ý của Trung
+                tâm Công nghệ Môi trường.
+              </div>
+
+              <div class="footer-date">
+                Tp. Hồ Chí Minh, ngày <span id="ngay">...</span> tháng <span id="thang">...</span> năm
+                <span id="nam">...</span>
+              </div>
+
+              <table class="signature-table">
+                <tr>
+                  <td style="width: 33%">
+                    <span class="signature-title">Phụ trách kỹ thuật</span>
+                    <span class="signature-name">KS. Trần Thị Phương Linh</span>
+                  </td>
+                  <td style="width: 33%">
+                    <span class="signature-title">Trưởng phòng PTN</span>
+                    <span class="signature-name">ThS. Phan Thị Hoài Trinh</span>
+                  </td>
+                  <td style="width: 33%">
+                    <span class="signature-title">Giám đốc</span>
+                    <span class="signature-name">TS. Nguyễn Như Hiển</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      // --- JS LOGIC GIỮ NGUYÊN NHƯ CŨ ---
+      function getParam(key) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(key) || '';
+      }
+
+      window.onload = function () {
+        document.getElementById('so_pkq').innerText = getParam('so_pkq');
+        document.getElementById('ky_hieu_mau').innerText = getParam('ky_hieu_mau');
+        document.getElementById('khach_hang').innerText = getParam('khach_hang');
+        document.getElementById('ngay_nhan').innerText = getParam('ngay_nhan');
+        document.getElementById('dia_chi').innerText = getParam('dia_chi');
+        document.getElementById('loai_mau').innerText = getParam('loai_mau');
+        document.getElementById('ten_mau').innerText = getParam('ten_mau');
+        document.getElementById('mo_ta_mau').innerText = getParam('mo_ta_mau');
+        document.getElementById('col_header_mau').innerText = getParam('ky_hieu_mau');
+
+        const dateStr = getParam('ngay_ky');
+        if (dateStr) {
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            document.getElementById('ngay').innerText = parts[0];
+            document.getElementById('thang').innerText = parts[1];
+            document.getElementById('nam').innerText = parts[2];
+          }
+        }
+
+        const jsonTable = getParam('table_data');
+        if (jsonTable) {
+          try {
+            const data = JSON.parse(jsonTable);
+            const tbody = document.getElementById('table_body');
+            tbody.innerHTML = '';
+            data.forEach(row => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                        <td>${row.tt}</td>
+                        <td style="text-align: left;">${row.chi_tieu}</td>
+                        <td>${row.don_vi}</td>
+                        <td>${row.pp}</td>
+                        <td>${row.kq}</td>
+                    `;
+              tbody.appendChild(tr);
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      };
+    </script>
+  </body>
+</html>

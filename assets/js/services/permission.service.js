@@ -1,14 +1,10 @@
-// d:\GoogleDrive_le.tung_personal\workspace\workspace_ems\cefinea\CEFINEA\assets\js\services\permission.service.js
-
 /**
  * ============================================
  * PERMISSION SERVICE - HYBRID FILTERING
  * ============================================
- * Kết hợp server-side và client-side filtering
- * để đảm bảo hiệu suất và tính chính xác
  */
 
-import { PERMISSION_CONFIG, PERMISSION_MESSAGES } from '../configs/permission.config.js';
+import { PERMISSION_CONFIG } from '../configs/permission.config.js';
 import urlSearchService from './url-search.service.js';
 
 class PermissionService {
@@ -26,29 +22,10 @@ class PermissionService {
   init() {
     // Lấy tất cả URL parameters liên quan phân quyền
     this.userParams = this.extractURLParams();
-    // this.userParams = {
-    //   ...this.userParams,
-    //   "phan_quyen": "admi",
-    //   "chuc_vu": "trưởng",
-    //   "phong_ban": "phòng quan trắc",
-    //   "ho_ten": "",
-    //   "ma_nv": "NV044",
-    //   "nhom_phan_tich": "Đo hiện trường",
-    //   "quyen_action": "Xin gia hạn việc , Gửi mẫu thầu , Nhận mẫu phân tích , Bốc mẫu đơn hàng , Copy mẫu , Cập nhật file kết quả thầu , Thêm chỉ tiêu",
-    //   "tu_ngay": "",
-    //   // "mau_id": "7f18ebcd"
-    // };
-
-    console.log(this.userParams);
 
     // Xác định các nhóm quyền phù hợp
     this.matchedGroups = this.determinePermissionGroups();
-
     this.initialized = true;
-
-    // console.log('🔐 Permission Service Initialized');
-    // console.log('📋 User Params:', this.userParams);
-    // console.log('✅ Matched Groups:', this.matchedGroups);
 
     return {
       userParams: this.userParams,
@@ -211,8 +188,6 @@ class PermissionService {
     const filteredData = data.filter(item => {
       return this.matchedGroups.some(group => this.checkItemPermission(item, group.config.dataFilter));
     });
-
-    console.log(`📊 Filtered: ${filteredData.length}/${data.length} items`);
 
     return filteredData;
   }

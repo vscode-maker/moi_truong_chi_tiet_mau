@@ -343,7 +343,7 @@ table.dataTable tbody tr.dtrg-group td:hover {
 
 /* Group row expand/collapse icon */
 table.dataTable tbody tr.dtrg-group td::before {
-  content: "▼";
+  content: '▼';
   margin-right: 8px;
   font-size: 0.75rem;
   display: inline-block;
@@ -351,7 +351,7 @@ table.dataTable tbody tr.dtrg-group td::before {
 }
 
 table.dataTable tbody tr.dtrg-group.collapsed td::before {
-  content: "▶";
+  content: '▶';
 }
 
 /* Group toggle button */
@@ -530,91 +530,6 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
   transition: all 0.2s ease;
 }
 
-/* Màu sắc riêng cho mỗi stat-count */
-/* Tất cả - Primary */
-.progress-stat-chip[data-filter="all"] .stat-count {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
-}
-
-/* 1. Chờ nhận mẫu - Gray */
-.progress-stat-chip[data-filter*="CHO_NHAN_MAU"] .stat-count {
-  background: linear-gradient(135deg, #6c757d, #5a6268);
-  color: white;
-}
-
-/* 2. Chờ mã hóa - Cyan */
-.progress-stat-chip[data-filter*="CHO_MA_HOA"] .stat-count {
-  background: linear-gradient(135deg, #17a2b8, #138496);
-  color: white;
-}
-
-/* 3. Chờ duyệt thầu - Warning Yellow */
-.progress-stat-chip[data-filter*="CHO_DUYET_THAU"] .stat-count {
-  background: linear-gradient(135deg, #ffc107, #e0a800);
-  color: #212529;
-}
-
-/* 4. Chờ chuyển mẫu - Blue */
-.progress-stat-chip[data-filter*="CHO_CHUYEN_MAU"] .stat-count {
-  background: linear-gradient(135deg, #007bff, #0056b3);
-  color: white;
-}
-
-/* 5. Chờ nhận mẫu PT - Teal */
-.progress-stat-chip[data-filter*="CHO_NHAN_MAU_PT"] .stat-count {
-  background: linear-gradient(135deg, #20c997, #1aa179);
-  color: white;
-}
-
-/* 6. Chờ gửi mẫu - Orange */
-.progress-stat-chip[data-filter*="CHO_GUI_MAU"] .stat-count {
-  background: linear-gradient(135deg, #fd7e14, #e36209);
-  color: white;
-}
-
-/* 7. Chờ kết quả PT - Info */
-.progress-stat-chip[data-filter*="CHO_KET_QUA_PT"] .stat-count {
-  background: linear-gradient(135deg, #17a2b8, #117a8b);
-  color: white;
-}
-
-/* 8. Chờ nhận KQ thầu - Amber */
-.progress-stat-chip[data-filter*="CHO_NHAN_KQ_THAU"] .stat-count {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  color: white;
-}
-
-/* 9. Chờ duyệt KQ - Teal Green */
-.progress-stat-chip[data-filter*="CHO_DUYET_KQ"] .stat-count {
-  background: linear-gradient(135deg, #20c997, #17a589);
-  color: white;
-}
-
-/* 10. Chờ trả KQ - Purple */
-.progress-stat-chip[data-filter*="CHO_TRA_KQ"] .stat-count {
-  background: linear-gradient(135deg, #9b59b6, #8e44ad);
-  color: white;
-}
-
-/* 11. Hoàn thành - Success Green */
-.progress-stat-chip[data-filter*="HOAN_THANH"] .stat-count {
-  background: linear-gradient(135deg, #28a745, #218838);
-  color: white;
-}
-
-/* 12. Cần xét lại - Danger Red */
-.progress-stat-chip[data-filter*="CAN_XET_LAI"] .stat-count {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
-}
-
-/* 13. Hủy - Dark */
-.progress-stat-chip[data-filter*="HUY"] .stat-count {
-  background: linear-gradient(135deg, #343a40, #23272b);
-  color: white;
-}
-
 .progress-stat-chip:hover .stat-count {
   transform: scale(1.1);
   font-weight: 800;
@@ -634,201 +549,201 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 
 /* Màu sắc riêng biệt cho từng trạng thái tiến độ */
 /* 1. Chờ nhận mẫu - Secondary Gray */
-.progress-stat-chip[data-filter*="Chờ nhận mẫu"] i,
-.progress-stat-chip[data-filter*="Chờ QT"] i {
+.progress-stat-chip[data-filter*='Chờ nhận mẫu'] i,
+.progress-stat-chip[data-filter*='Chờ QT'] i {
   color: #6c757d;
 }
-.progress-stat-chip[data-filter*="Chờ nhận mẫu"]:hover,
-.progress-stat-chip[data-filter*="Chờ QT"]:hover {
+.progress-stat-chip[data-filter*='Chờ nhận mẫu']:hover,
+.progress-stat-chip[data-filter*='Chờ QT']:hover {
   background: rgba(108, 117, 125, 0.1);
   border-left: 3px solid #6c757d;
 }
-.progress-stat-chip[data-filter*="Chờ nhận mẫu"].active,
-.progress-stat-chip[data-filter*="Chờ QT"].active {
+.progress-stat-chip[data-filter*='Chờ nhận mẫu'].active,
+.progress-stat-chip[data-filter*='Chờ QT'].active {
   background: #6c757d;
   border-color: #6c757d;
 }
 
 /* 2. Chờ mã hóa - Info Blue */
-.progress-stat-chip[data-filter*="mã hóa"] i {
+.progress-stat-chip[data-filter*='mã hóa'] i {
   color: #17a2b8;
 }
-.progress-stat-chip[data-filter*="mã hóa"]:hover {
+.progress-stat-chip[data-filter*='mã hóa']:hover {
   background: rgba(23, 162, 184, 0.1);
   border-left: 3px solid #17a2b8;
 }
-.progress-stat-chip[data-filter*="mã hóa"].active {
+.progress-stat-chip[data-filter*='mã hóa'].active {
   background: #17a2b8;
   border-color: #17a2b8;
 }
 
 /* 3. Chờ duyệt thầu - Warning Yellow */
-.progress-stat-chip[data-filter*="duyệt thầu"] i {
+.progress-stat-chip[data-filter*='duyệt thầu'] i {
   color: #ffc107;
 }
-.progress-stat-chip[data-filter*="duyệt thầu"]:hover {
+.progress-stat-chip[data-filter*='duyệt thầu']:hover {
   background: rgba(255, 193, 7, 0.15);
   border-left: 3px solid #ffc107;
   color: #212529;
 }
-.progress-stat-chip[data-filter*="duyệt thầu"].active {
+.progress-stat-chip[data-filter*='duyệt thầu'].active {
   background: #ffc107;
   border-color: #ffc107;
   color: #212529;
 }
-.progress-stat-chip[data-filter*="duyệt thầu"].active .stat-count {
+.progress-stat-chip[data-filter*='duyệt thầu'].active .stat-count {
   color: #212529;
 }
 
 /* 3. Chờ chuyển mẫu - Primary Blue */
-.progress-stat-chip[data-filter*="chuyển mẫu"] i {
+.progress-stat-chip[data-filter*='chuyển mẫu'] i {
   color: #007bff;
 }
-.progress-stat-chip[data-filter*="chuyển mẫu"]:hover {
+.progress-stat-chip[data-filter*='chuyển mẫu']:hover {
   background: rgba(0, 123, 255, 0.1);
   border-left: 3px solid #007bff;
 }
-.progress-stat-chip[data-filter*="chuyển mẫu"].active {
+.progress-stat-chip[data-filter*='chuyển mẫu'].active {
   background: #007bff;
   border-color: #007bff;
 }
 
 /* 4. Đang phân tích - Warning Yellow */
-.progress-stat-chip[data-filter*="Đang phân tích"] i {
+.progress-stat-chip[data-filter*='Đang phân tích'] i {
   color: #ffc107;
 }
-.progress-stat-chip[data-filter*="Đang phân tích"]:hover {
+.progress-stat-chip[data-filter*='Đang phân tích']:hover {
   background: rgba(255, 193, 7, 0.15);
   border-left: 3px solid #ffc107;
   color: #212529;
 }
-.progress-stat-chip[data-filter*="Đang phân tích"].active {
+.progress-stat-chip[data-filter*='Đang phân tích'].active {
   background: #ffc107;
   border-color: #ffc107;
   color: #212529;
 }
-.progress-stat-chip[data-filter*="Đang phân tích"].active .stat-count {
+.progress-stat-chip[data-filter*='Đang phân tích'].active .stat-count {
   color: #212529;
 }
 
 /* 4. Chờ nhận mẫu PT - Cyan */
-.progress-stat-chip[data-filter*="nhận mẫu PT"] i {
+.progress-stat-chip[data-filter*='nhận mẫu PT'] i {
   color: #17a2b8;
 }
-.progress-stat-chip[data-filter*="nhận mẫu PT"]:hover {
+.progress-stat-chip[data-filter*='nhận mẫu PT']:hover {
   background: rgba(23, 162, 184, 0.1);
   border-left: 3px solid #17a2b8;
 }
-.progress-stat-chip[data-filter*="nhận mẫu PT"].active {
+.progress-stat-chip[data-filter*='nhận mẫu PT'].active {
   background: #17a2b8;
   border-color: #17a2b8;
 }
 
 /* 4. Chờ gửi mẫu - Orange */
-.progress-stat-chip[data-filter*="gửi mẫu"] i {
+.progress-stat-chip[data-filter*='gửi mẫu'] i {
   color: #fd7e14;
 }
-.progress-stat-chip[data-filter*="gửi mẫu"]:hover {
+.progress-stat-chip[data-filter*='gửi mẫu']:hover {
   background: rgba(253, 126, 20, 0.1);
   border-left: 3px solid #fd7e14;
 }
-.progress-stat-chip[data-filter*="gửi mẫu"].active {
+.progress-stat-chip[data-filter*='gửi mẫu'].active {
   background: #fd7e14;
   border-color: #fd7e14;
 }
 
 /* 5. Chờ kết quả PT - Primary Blue */
-.progress-stat-chip[data-filter*="kết quả PT"] i {
+.progress-stat-chip[data-filter*='kết quả PT'] i {
   color: #007bff;
 }
-.progress-stat-chip[data-filter*="kết quả PT"]:hover {
+.progress-stat-chip[data-filter*='kết quả PT']:hover {
   background: rgba(0, 123, 255, 0.1);
   border-left: 3px solid #007bff;
 }
-.progress-stat-chip[data-filter*="kết quả PT"].active {
+.progress-stat-chip[data-filter*='kết quả PT'].active {
   background: #007bff;
   border-color: #007bff;
 }
 
 /* 5. Chờ nhận KQ thầu - Yellow */
-.progress-stat-chip[data-filter*="KQ thầu"] i {
+.progress-stat-chip[data-filter*='KQ thầu'] i {
   color: #ffc107;
 }
-.progress-stat-chip[data-filter*="KQ thầu"]:hover {
+.progress-stat-chip[data-filter*='KQ thầu']:hover {
   background: rgba(255, 193, 7, 0.15);
   border-left: 3px solid #ffc107;
   color: #212529;
 }
-.progress-stat-chip[data-filter*="KQ thầu"].active {
+.progress-stat-chip[data-filter*='KQ thầu'].active {
   background: #ffc107;
   border-color: #ffc107;
   color: #212529;
 }
-.progress-stat-chip[data-filter*="KQ thầu"].active .stat-count {
+.progress-stat-chip[data-filter*='KQ thầu'].active .stat-count {
   color: #212529;
 }
 
 /* 6. Chờ duyệt KQ - Teal */
-.progress-stat-chip[data-filter*="duyệt KQ"] i {
+.progress-stat-chip[data-filter*='duyệt KQ'] i {
   color: #20c997;
 }
-.progress-stat-chip[data-filter*="duyệt KQ"]:hover {
+.progress-stat-chip[data-filter*='duyệt KQ']:hover {
   background: rgba(32, 201, 151, 0.1);
   border-left: 3px solid #20c997;
 }
-.progress-stat-chip[data-filter*="duyệt KQ"].active {
+.progress-stat-chip[data-filter*='duyệt KQ'].active {
   background: #20c997;
   border-color: #20c997;
 }
 
 /* 7. Chờ trả KQ - Purple */
-.progress-stat-chip[data-filter*="trả KQ"] i {
+.progress-stat-chip[data-filter*='trả KQ'] i {
   color: #9b59b6;
 }
-.progress-stat-chip[data-filter*="trả KQ"]:hover {
+.progress-stat-chip[data-filter*='trả KQ']:hover {
   background: rgba(155, 89, 182, 0.1);
   border-left: 3px solid #9b59b6;
 }
-.progress-stat-chip[data-filter*="trả KQ"].active {
+.progress-stat-chip[data-filter*='trả KQ'].active {
   background: #9b59b6;
   border-color: #9b59b6;
 }
 
 /* 8. Hoàn thành - Success Green */
-.progress-stat-chip[data-filter*="Hoàn thành"] i {
+.progress-stat-chip[data-filter*='Hoàn thành'] i {
   color: #28a745;
 }
-.progress-stat-chip[data-filter*="Hoàn thành"]:hover {
+.progress-stat-chip[data-filter*='Hoàn thành']:hover {
   background: rgba(40, 167, 69, 0.1);
   border-left: 3px solid #28a745;
 }
-.progress-stat-chip[data-filter*="Hoàn thành"].active {
+.progress-stat-chip[data-filter*='Hoàn thành'].active {
   background: #28a745;
   border-color: #28a745;
 }
 
 /* 9. Cần xét lại - Danger Red */
-.progress-stat-chip[data-filter*="xét lại"] i {
+.progress-stat-chip[data-filter*='xét lại'] i {
   color: #dc3545;
 }
-.progress-stat-chip[data-filter*="xét lại"]:hover {
+.progress-stat-chip[data-filter*='xét lại']:hover {
   background: rgba(220, 53, 69, 0.1);
   border-left: 3px solid #dc3545;
 }
-.progress-stat-chip[data-filter*="xét lại"].active {
+.progress-stat-chip[data-filter*='xét lại'].active {
   background: #dc3545;
   border-color: #dc3545;
 }
 
 /* 10. Hủy - Dark */
-.progress-stat-chip[data-filter*="Hủy"] i {
+.progress-stat-chip[data-filter*='Hủy'] i {
   color: #343a40;
 }
-.progress-stat-chip[data-filter*="Hủy"]:hover {
+.progress-stat-chip[data-filter*='Hủy']:hover {
   background: rgba(52, 58, 64, 0.1);
   border-left: 3px solid #343a40;
 }
-.progress-stat-chip[data-filter*="Hủy"].active {
+.progress-stat-chip[data-filter*='Hủy'].active {
   background: #343a40;
   border-color: #343a40;
 }
@@ -945,7 +860,9 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
   font-size: 0.8rem;
   padding: 0.25rem 0.4rem;
   border: 1px solid #dee2e6;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
 }
 
 .bulk-edit-table .form-control-sm:focus {
@@ -1071,7 +988,7 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 /* Ripple Effect */
 .swal2-confirm::before,
 .swal2-cancel::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1080,7 +997,9 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition: width 0.3s ease, height 0.3s ease;
+  transition:
+    width 0.3s ease,
+    height 0.3s ease;
   pointer-events: none;
 }
 
@@ -1109,12 +1028,14 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 .swal2-confirm:focus,
 .swal2-cancel:focus {
   outline: none !important;
-  box-shadow: 0 4px 12px rgba(21, 135, 71, 0.4),
+  box-shadow:
+    0 4px 12px rgba(21, 135, 71, 0.4),
     0 0 0 3px rgba(21, 135, 71, 0.2) !important;
 }
 
 .swal2-cancel:focus {
-  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4),
+  box-shadow:
+    0 4px 12px rgba(108, 117, 125, 0.4),
     0 0 0 3px rgba(108, 117, 125, 0.2) !important;
 }
 
@@ -1138,19 +1059,14 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 
 /* Pulse effect for confirm button */
 .swal2-confirm::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   border-radius: 8px;
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 70%
-  );
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
   transform: translateX(-100%);
   animation: shimmer 2s infinite;
 }
@@ -1200,24 +1116,24 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 
 /* Loading text animation */
 .loading-dots::after {
-  content: "";
+  content: '';
   animation: loadingDots 1.4s steps(4, end) infinite;
 }
 
 @keyframes loadingDots {
   0%,
   20% {
-    content: "";
+    content: '';
   }
   40% {
-    content: ".";
+    content: '.';
   }
   60% {
-    content: "..";
+    content: '..';
   }
   80%,
   100% {
-    content: "...";
+    content: '...';
   }
 }
 
@@ -1283,7 +1199,7 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 
 /* Checkmark animation */
 .classify-option-card.selected::after {
-  content: "✓";
+  content: '✓';
   position: absolute;
   top: 10px;
   right: 10px;
@@ -1332,15 +1248,10 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
     padding-inline-start: 0px;
   }
 
-  .layout-navbar-fixed.layout-menu-collapsed:not(
-      .layout-menu-offcanvas,
-      .layout-menu-fixed-offcanvas
-    )
+  .layout-navbar-fixed.layout-menu-collapsed:not(.layout-menu-offcanvas, .layout-menu-fixed-offcanvas)
     .layout-content-navbar
     .layout-navbar,
-  .layout-menu-fixed.layout-navbar-fixed.layout-menu-collapsed
-    .layout-content-navbar
-    .layout-navbar {
+  .layout-menu-fixed.layout-navbar-fixed.layout-menu-collapsed .layout-content-navbar .layout-navbar {
     inset-inline-start: 0px;
   }
 }

@@ -20,7 +20,7 @@
    * - readonly: Chỉ đọc trong view mode
    * - placeholder: Placeholder text
    * - helpText: Text hướng dẫn
-   */ 
+   */
   const SAMPLE_DETAILS_FORM_CONFIG = {
     // === SECTION 1: THÔNG TIN CƠ BẢN ===
     basicInfo: {
@@ -131,13 +131,11 @@
           id: 'formNguoiPhanTich',
           name: 'nguoi_phan_tich',
           label: 'Người phân tích',
-          type: 'text',
+          type: 'select',
           required: false,
           colSize: 6,
-          validation: {
-            type: 'string',
-            maxLength: 100
-          }
+          isPass: true, // Sẽ được load động
+          options: [{ value: '', label: 'Chọn người phân tích' }]
         },
         {
           id: 'formTienDoPhanTich',
@@ -156,7 +154,7 @@
             { value: '6.Chờ duyệt KQ', label: '6.Chờ duyệt KQ' },
             { value: '7.Chờ trả KQ', label: '7.Chờ trả KQ' },
             { value: '8.Hoàn thành', label: '8.Hoàn thành' },
-            { value: '9.Cần xét lại', label: '9.Cần xét lại' },
+            { value: '9.Phân tích lại', label: '9.Phân tích lại' },
             { value: '10.Hủy', label: '10.Hủy' }
           ]
         },

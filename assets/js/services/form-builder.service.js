@@ -35,8 +35,7 @@
      * Render hidden fields
      * @private
      */
-    renderHiddenFields() {    
-      
+    renderHiddenFields() {
       if (!this.config.hiddenFields) return '';
 
       return this.config.hiddenFields
@@ -103,7 +102,9 @@
               ${readonlyAttr} 
               ${requiredAttr}
               ${placeholder ? `placeholder="${placeholder}"` : ''}
-              ${Object.entries(attributes).map(([key, value]) => `${key}="${value}"`).join(' ')}
+              ${Object.entries(attributes)
+                .map(([key, value]) => `${key}="${value}"`)
+                .join(' ')}
             />
           `;
           break;
@@ -122,7 +123,9 @@
               class="form-control" 
               id="${id}" 
               ${requiredAttr}
-              ${Object.entries(attributes).map(([key, value]) => `${key}="${value}"`).join(' ')}
+              ${Object.entries(attributes)
+                .map(([key, value]) => `${key}="${value}"`)
+                .join(' ')}
             >${''}</textarea>
           `;
           break;
@@ -177,7 +180,7 @@
         if (sectionKey === 'hiddenFields') continue;
 
         sectionConfig.fields.forEach(field => {
-          this.populateField(field, data);
+          if (!field.isPass) this.populateField(field, data);
         });
       }
     }
@@ -270,7 +273,7 @@
             formData[field.name] = $(`#${field.id}`).val();
           }
         });
-      } 
+      }
 
       // Collect từng section
       for (const [sectionKey, sectionConfig] of Object.entries(this.config)) {
