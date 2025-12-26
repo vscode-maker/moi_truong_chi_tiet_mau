@@ -1,4 +1,34 @@
 /* Loading Spinner Overlay */
+
+/* ========================================
+   STICKY PROGRESS STATS BAR
+   ======================================== */
+.sticky-stats-wrapper {
+  position: sticky;
+  top: 0; /* Luôn nằm trên cùng */
+  z-index: 100;
+  background: var(--bs-body-bg, #fff);
+  padding: 10px 0;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  transition: box-shadow 0.3s ease;
+}
+
+.sticky-stats-wrapper.is-sticky {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .sticky-stats-wrapper {
+  background: var(--bs-body-bg, #1a1d21);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .loading-spinner {
   position: fixed;
   top: 0;
@@ -80,8 +110,11 @@ body.swal2-shown > .layout-wrapper {
 }
 
 /* DataTable custom styles */
-.table th {
-  background-color: #f8f9fa;
+.table th,
+table.dataTable thead th,
+#chiTietMauTable thead th {
+  background-color: #070F7B !important;
+  color: #ffffff !important;
   border-top: 1px solid #dee2e6;
   font-weight: 600;
   font-size: 0.875rem;
@@ -746,6 +779,86 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 .progress-stat-chip[data-filter*='Hủy'].active {
   background: #343a40;
   border-color: #343a40;
+}
+
+/* ========================================
+   MÀU SẮC CHO CÁC TRẠNG THÁI MỚI (data-color)
+   ======================================== */
+
+/* Secondary - Tất cả */
+.progress-stat-chip[data-color="secondary"]:hover {
+  background: rgba(108, 117, 125, 0.1);
+  border-left: 3px solid var(--bs-secondary);
+}
+.progress-stat-chip[data-color="secondary"].active {
+  background: var(--bs-secondary);
+  border-color: var(--bs-secondary);
+}
+
+/* Info - Chờ mã hóa, Chờ gửi mẫu thầu, Chờ duyệt KQ */
+.progress-stat-chip[data-color="info"]:hover {
+  background: rgba(23, 162, 184, 0.1);
+  border-left: 3px solid var(--bs-info);
+}
+.progress-stat-chip[data-color="info"].active {
+  background: var(--bs-info);
+  border-color: var(--bs-info);
+}
+
+/* Primary - Chờ chuyển mẫu */
+.progress-stat-chip[data-color="primary"]:hover {
+  background: rgba(0, 123, 255, 0.1);
+  border-left: 3px solid var(--bs-primary);
+}
+.progress-stat-chip[data-color="primary"].active {
+  background: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+/* Warning - Chờ duyệt thầu, Đang phân tích */
+.progress-stat-chip[data-color="warning"]:hover {
+  background: rgba(255, 193, 7, 0.15);
+  border-left: 3px solid var(--bs-warning);
+  color: #212529;
+}
+.progress-stat-chip[data-color="warning"].active {
+  background: var(--bs-warning);
+  border-color: var(--bs-warning);
+  color: #212529;
+}
+.progress-stat-chip[data-color="warning"].active .stat-count {
+  color: #212529;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Danger - Phân tích lại */
+.progress-stat-chip[data-color="danger"]:hover {
+  background: rgba(220, 53, 69, 0.1);
+  border-left: 3px solid var(--bs-danger);
+}
+.progress-stat-chip[data-color="danger"].active {
+  background: var(--bs-danger);
+  border-color: var(--bs-danger);
+}
+
+/* Success - Hoàn thành */
+.progress-stat-chip[data-color="success"]:hover {
+  background: rgba(40, 167, 69, 0.1);
+  border-left: 3px solid var(--bs-success);
+}
+.progress-stat-chip[data-color="success"].active {
+  background: var(--bs-success);
+  border-color: var(--bs-success);
+}
+
+/* Dark - Hủy */
+.progress-stat-chip[data-color="dark"]:hover {
+  background: rgba(52, 58, 64, 0.1);
+  border-left: 3px solid var(--bs-dark);
+}
+.progress-stat-chip[data-color="dark"].active {
+  background: var(--bs-dark);
+  border-color: var(--bs-dark);
 }
 
 /* Extra small button class */

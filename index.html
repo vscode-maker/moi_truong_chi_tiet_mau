@@ -76,368 +76,206 @@
       <div class="layout-container">
         <!-- Layout container -->
         <div class="layout-page">
-          <!-- #region [Navbar] -->
-          <nav
-            class="layout-navbar container-fluid navbar-detached navbar navbar-expand-xl align-items-center bg-navbar-theme d-none"
-            id="layout-navbar">
-            <div class="navbar-nav-right d-flex align-items-center justify-content-end" id="navbar-collapse">
-              <!-- Title -->
-              <div class="navbar-nav align-items-center">
-                <div class="nav-item navbar-search-wrapper mb-0">
-                  <h5 class="card-title mb-0">
-                    <i class="ri-flask-line me-2"></i>Danh sách chi tiết mẫu - còn
-                    <span class="mb-0 text-danger" id="pendingIndicators">0</span>
-                    <span>chỉ tiêu cần xử lý</span>
-                  </h5>
-                </div>
-              </div>
-              <!-- /Title -->
-
-              <ul class="navbar-nav flex-row align-items-center ms-md-auto">
-                <!-- #region [Mode Switcher] -->
-                <li class="nav-item dropdown me-sm-2 me-xl-0">
-                  <a
-                    class="nav-link dropdown-toggle hide-arrow btn btn-icon btn-text-secondary rounded-pill"
-                    id="nav-theme"
-                    href="javascript:void(0);"
-                    data-bs-toggle="dropdown">
-                    <i class="icon-base ri ri-sun-line icon-22px theme-icon-active"></i>
-                    <span class="d-none ms-2" id="nav-theme-text">Toggle theme</span>
-                  </a>
-                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="nav-theme-text">
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item align-items-center active"
-                        data-bs-theme-value="light"
-                        aria-pressed="false">
-                        <span> <i class="icon-base ri ri-sun-line icon-md me-3" data-icon="sun-line"></i>Light</span>
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item align-items-center"
-                        data-bs-theme-value="dark"
-                        aria-pressed="true">
-                        <span>
-                          <i class="icon-base ri ri-moon-clear-line icon-md me-3" data-icon="moon-clear-line"></i
-                          >Dark</span
-                        >
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item align-items-center"
-                        data-bs-theme-value="system"
-                        aria-pressed="false">
-                        <span>
-                          <i class="icon-base ri ri-computer-line icon-md me-3" data-icon="computer-line"></i
-                          >System</span
-                        >
-                      </button>
-                    </li>
-                  </ul>
-                </li>
-                <!-- #endregion -->
-
-                <!-- #region [User] -->
-                <li class="nav-item navbar-dropdown dropdown-user dropdown">
-                  <a
-                    class="nav-link dropdown-toggle hide-arrow p-0"
-                    href="javascript:void(0);"
-                    data-bs-toggle="dropdown">
-                    <div class="avatar avatar-online">
-                      <img src="./assets/img/favicon/logo.png" alt="Logo" class="rounded-circle" />
-                    </div>
-                  </a>
-                  <ul class="dropdown-menu dropdown-menu-end mt-3 py-2">
-                    <li>
-                      <a class="dropdown-item" href="javaScript:void(0);">
-                        <div class="d-flex align-items-center">
-                          <div class="flex-shrink-0 me-2">
-                            <div class="avatar avatar-online">
-                              <img
-                                src="./assets/img/favicon/logo.png"
-                                alt="Logo"
-                                class="w-px-40 h-auto rounded-circle" />
-                            </div>
-                          </div>
-                          <div class="flex-grow-1">
-                            <h6 class="mb-0 small">User Name</h6>
-                            <small class="text-body-secondary">Admin</small>
-                          </div>
-                        </div>
-                      </a>
-                    </li>
-                    <li>
-                      <div class="dropdown-divider"></div>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="javaScript:void(0);">
-                        <i class="icon-base ri ri-user-3-line icon-22px me-2"></i>
-                        <span class="align-middle">My Profile</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="javaScript:void(0);">
-                        <i class="icon-base ri ri-settings-4-line icon-22px me-2"></i>
-                        <span class="align-middle">Settings</span>
-                      </a>
-                    </li>
-                    <li>
-                      <div class="d-grid px-4 pt-2 pb-1">
-                        <a class="btn btn-danger d-flex" href="javaScript:void(0);" target="_blank">
-                          <small class="align-middle">Logout</small>
-                          <i class="icon-base ri ri-logout-box-r-line ms-2 icon-16px"></i>
-                        </a>
-                      </div>
-                    </li>
-                  </ul>
-                </li>
-                <!-- #endregion -->
-              </ul>
-            </div>
-          </nav>
-          <!-- #endregion -->
-
           <!-- Content wrapper -->
           <div class="content-wrapper">
             <!-- Content -->
             <div class="container-fluid flex-grow-1">
-              <!-- Page Header -->
-              <!-- <div class="row">
-                <div class="col-12">
-                  <div class="card bg-primary text-white mb-4">
-                    <div class="card-body">
-                      <div class="row align-items-center">
-                        <div class="col-md-8">
-                          <h4 class="card-title text-white mb-2">
-                            <i class="ri-flask-line me-2"></i>
-                            Quản lý Chi tiết mẫu
-                          </h4>
-                          <p class="card-text mb-0 text-white-50">
-                            Theo dõi tiến độ phân tích từng chỉ tiêu theo thời gian thực
-                          </p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                          <div class="d-flex align-items-center justify-content-end">
-                            <div class="me-3">
-                              <small class="text-white-50 d-block">Tổng chỉ tiêu</small>
-                              <h5 class="text-white mb-0" id="totalIndicators">0</h5>
-                            </div>
-                            <div>
-                              <small class="text-white-50 d-block">Cần xử lý</small>
-                              <h5 class="text-white mb-0" id="pendingIndicators">0</h5>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> -->
-
-              <!-- Thống kê tiến độ compact -->
-              <div class="mb-3">
+              <!-- Thống kê tiến độ compact - Sticky -->
+              <div class="mb-3 sticky-stats-wrapper">
                 <div class="progress-stats-grid" id="progressStatsContainer">
-                  <!-- Các nút thống kê tiến độ sẽ được tạo động bằng JavaScript -->
+                  <!-- Chip Tất cả -->
+                  <button type="button" class="progress-stat-chip active" data-filter-type="trang_thai_tong_hop" data-filter="all" data-color="secondary">
+                    <span class="stat-label">Tất cả</span>
+                    <span class="stat-count badge bg-secondary" id="count-all">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Chờ mã hóa -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="CHO_MA_HOA" data-color="info">
+                    <i class="ri-qr-code-line" style="color: var(--bs-info)"></i>
+                    <span class="stat-label">Chờ mã hóa</span>
+                    <span class="stat-count badge bg-info text-dark" id="count-cho-ma-hoa">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Chờ chuyển mẫu -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="CHO_CHUYEN_MAU" data-color="primary">
+                    <i class="ri-truck-line" style="color: var(--bs-primary)"></i>
+                    <span class="stat-label">Chờ chuyển mẫu</span>
+                    <span class="stat-count badge bg-primary text-white" id="count-cho-chuyen-mau">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Chờ duyệt thầu -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="CHO_DUYET_THAU" data-color="warning">
+                    <i class="ri-file-list-3-line" style="color: var(--bs-warning)"></i>
+                    <span class="stat-label">Chờ duyệt thầu</span>
+                    <span class="stat-count badge bg-warning text-dark" id="count-cho-duyet-thau">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Chờ gửi mẫu thầu -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="CHO_GUI_MAU_THAU" data-color="info">
+                    <i class="ri-mail-send-line" style="color: var(--bs-info)"></i>
+                    <span class="stat-label">Chờ gửi mẫu thầu</span>
+                    <span class="stat-count badge bg-info text-dark" id="count-cho-gui-mau-thau">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Đang phân tích -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="DANG_PHAN_TICH" data-color="warning">
+                    <i class="ri-flask-line" style="color: var(--bs-warning)"></i>
+                    <span class="stat-label">Đang phân tích</span>
+                    <span class="stat-count badge bg-warning text-dark" id="count-dang-phan-tich">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Phân tích lại -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="PHAN_TICH_LAI" data-color="danger">
+                    <i class="ri-refresh-line" style="color: var(--bs-danger)"></i>
+                    <span class="stat-label">Phân tích lại</span>
+                    <span class="stat-count badge bg-danger text-white" id="count-phan-tich-lai">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Chờ duyệt KQ -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="CHO_DUYET_KQ" data-color="info">
+                    <i class="ri-check-line" style="color: var(--bs-info)"></i>
+                    <span class="stat-label">Chờ duyệt KQ</span>
+                    <span class="stat-count badge bg-info text-dark" id="count-cho-duyet-kq">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Hoàn thành -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="HOAN_THANH" data-color="success">
+                    <i class="ri-check-double-line" style="color: var(--bs-success)"></i>
+                    <span class="stat-label">Hoàn thành</span>
+                    <span class="stat-count badge bg-success text-white" id="count-hoan-thanh">0</span>
+                  </button>
+                  
+                  <span class="stat-separator">|</span>
+                  
+                  <!-- Hủy -->
+                  <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="HUY" data-color="dark">
+                    <i class="ri-close-line" style="color: var(--bs-dark)"></i>
+                    <span class="stat-label">Hủy</span>
+                    <span class="stat-count badge bg-dark text-white" id="count-huy">0</span>
+                  </button>
                 </div>
               </div>
 
-              <!-- Bulk Actions Toolbar đã được di chuyển vào trong card bên dưới -->
-              <!-- <hr class="my-2" /> -->
               <!-- DataTable -->
               <div class="card">
-                <div class="card-header d-flex justify-content-end align-items-center pb-0">
-                  <!-- <h6 class="card-title mb-0">
-                    <i class="ri-flask-line me-2"></i>Danh sách chi tiết mẫu - còn
-                    <span class="mb-0 text-danger" id="pendingIndicators">0</span>
-                    <span>chỉ tiêu cần xử lý</span>
-                  </h6> -->
+                <div class="card-header d-flex justify-content-between align-items-center pb-0 flex-wrap gap-2">
+                  <!-- Bulk Actions Toolbar - Hiển thị bên trái khi có checkbox được chọn -->
+                  <div id="bulkActionsToolbar" class="d-none">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <!-- Selected Count -->
+                      <div class="d-flex align-items-center">
+                        <i class="ri ri-checkbox-multiple-line me-1 text-primary"></i>
+                        <span class="small">Đã chọn <strong id="selectedCount">0</strong></span>
+                      </div>
 
-                  <div class="d-flex justify-content-end gap-2">
-                    <!-- Load More Button -->
-                    <!-- <button type="button" class="btn btn-primary btn-sm" id="loadMoreBtn">
-                      <i class="ri-refresh-line me-2"></i>
-                      Tải thêm dữ liệu
-                      <span class="badge bg-white text-primary ms-2" id="loadMoreBadge">
-                        Còn <span id="remainingRecords">0</span> records
-                      </span>
-                    </button> -->
+                      <!-- Bulk Action Buttons -->
+                      <button
+                        type="button"
+                        class="btn btn-warning btn-sm"
+                        id="bulkApproveThauBtn"
+                        style="display: none">
+                        <i class="ri ri-file-list-3-line"></i>
+                        <span class="d-none d-xl-inline ms-1">Duyệt thầu</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-success btn-sm"
+                        id="bulkReceiveBtn2"
+                        style="display: none">
+                        <i class="ri ri-inbox-line"></i>
+                        <span class="d-none d-xl-inline ms-1">Nhận mẫu</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-info btn-sm"
+                        id="bulkSendThauBtn"
+                        style="display: none">
+                        <i class="ri ri-mail-send-line"></i>
+                        <span class="d-none d-xl-inline ms-1">Gửi mẫu thầu</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-warning btn-sm"
+                        id="bulkUpdateResultBtn"
+                        style="display: none">
+                        <i class="ri ri-edit-line"></i>
+                        <span class="d-none d-xl-inline ms-1">Cập nhật KQ</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-sm"
+                        id="bulkApproveBtn"
+                        style="display: none">
+                        <i class="ri ri-check-double-line"></i>
+                        <span class="d-none d-xl-inline ms-1">Phê duyệt</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-success btn-sm"
+                        id="bulkReanalyzedBtn"
+                        style="display: none">
+                        <i class="ri ri-refresh-line"></i>
+                        <span class="d-none d-xl-inline ms-1">Đã PT lại</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        id="deselectAllBtn">
+                        <i class="ri ri-close-circle-line"></i>
+                        <span class="d-none d-xl-inline ms-1">Bỏ chọn</span>
+                      </button>
+                    </div>
+                  </div>
 
+                  <!-- Action Buttons - Luôn hiển thị bên phải -->
+                  <div class="d-flex gap-2 ms-auto">
                     <button type="button" style="display: none" class="btn btn-primary btn-sm" id="addNewBtn">
                       <i class="ri-add-line me-1"></i>Thêm mới
                     </button>
 
-                    <div class="mb-1 d-flex align-items-center">
-                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">From:</span>
+                    <div class="d-flex align-items-center">
+                      <span class="me-2 d-none d-md-block">From:</span>
                       <input
                         type="date"
-                        class="form-control"
-                        style="padding-block: 0.4806rem"
+                        class="form-control form-control-sm"
                         id="formFilterFromHanHoanThanh" />
                     </div>
 
-                    <div class="mb-1 d-flex align-items-center">
-                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">To:</span>
+                    <div class="d-flex align-items-center">
+                      <span class="me-2 d-none d-md-block">To:</span>
                       <input
                         type="date"
-                        class="form-control"
-                        style="padding-block: 0.4806rem"
+                        class="form-control form-control-sm"
                         id="formFilterToHanHoanThanh" />
                     </div>
 
-                    <!-- Search Button (Icon only) -->
-                    <button type="button" class="btn btn-primary" id="queryHanHoanThanhBtn" title="Truy vấn">
+                    <button type="button" class="btn btn-primary btn-sm" id="queryHanHoanThanhBtn" title="Truy vấn">
                       <i class="ri-search-line"></i>
                     </button>
 
-                    <!-- Group By Dropdown (Icon only) -->
-                    <div class="btn-group">
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary dropdown-toggle"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                        id="groupByDropdownBtn"
-                        title="Nhóm dữ liệu">
-                        <i class="ri-group-line"></i>
-                      </button>
-                      <ul class="dropdown-menu group-by-dropdown" id="groupByDropdown">
-                        <li class="dropdown-header">Chọn cột để nhóm (có thể chọn nhiều)</li>
-                        <li>
-                          <hr class="dropdown-divider" />
-                        </li>
-                        <!-- Options được tạo tự động bằng JS -->
-                        <li>
-                          <hr class="dropdown-divider" />
-                        </li>
-                        <li>
-                          <button class="dropdown-item text-center text-primary" id="applyGroupBtn">
-                            <i class="ri-check-line me-1"></i>Áp dụng nhóm
-                          </button>
-                        </li>
-                        <li>
-                          <button class="dropdown-item text-center text-danger" id="clearGroupBtn">
-                            <i class="ri-close-line me-1"></i>Bỏ nhóm
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <!-- Export Excel Button (Icon only) -->
-                    <button type="button" class="btn btn-success" id="exportExcelBtn" title="Xuất Excel">
+                    <button type="button" class="btn btn-success btn-sm" id="exportExcelBtn" title="Xuất Excel">
                       <i class="ri-file-excel-2-line"></i>
                     </button>
 
-                    <!-- Column Settings Button (Icon only) -->
-                    <button type="button" class="btn btn-secondary" id="columnSettingsBtn" title="Tùy chỉnh cột">
+                    <button type="button" class="btn btn-secondary btn-sm" id="columnSettingsBtn" title="Tùy chỉnh cột">
                       <i class="ri-settings-3-line"></i>
                     </button>
-                  </div>
-                </div>
-
-                <!-- <div class="card-header d-flex justify-content-end align-items-center pb-0">
-                  <div class="d-flex gap-2">
-                    <div class="mb-1 d-flex align-items-center">
-                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">From:</span>
-                      <input
-                        type="date"
-                        class="form-control"
-                        style="padding-block: 0.4806rem"
-                        id="formFilterFromHanHoanThanh" />
-                    </div>
-
-                    <div class="mb-1 d-flex align-items-center">
-                      <span class="mt-1 me-2 mt-md-0 d-none d-md-block">To:</span>
-                      <input
-                        type="date"
-                        class="form-control"
-                        style="padding-block: 0.4806rem"
-                        id="formFilterToHanHoanThanh" />
-                    </div>
-
-                    <div class="mb-1 d-flex align-items-center">
-                      <span class="mt-1 mt-md-0 d-none d-md-block">&nbsp;</span>
-                      <button type="button" class="btn btn-primary" id="queryHanHoanThanhBtn">
-                        <i class="ri-file-search-fill me-1"></i>Truy Vấn
-                      </button>
-                    </div>
-                  </div>
-                </div> -->
-
-                <!-- Bulk Actions Toolbar - Hiển thị khi có checkbox được chọn -->
-                <!-- Bulk Actions Toolbar - Compact Style -->
-                <div id="bulkActionsToolbar" class="d-none py-2 px-3 bg-light border-bottom mt-2">
-                  <div class="d-flex justify-content-between align-items-center flex-wrap">
-                    <!-- Left: Selected Count -->
-                    <div class="d-flex align-items-center me-3">
-                      <i class="ri ri-checkbox-multiple-line me-2 text-primary" style="font-size: 1.1rem"></i>
-                      <span class="small">Đã chọn <strong id="selectedCount">0</strong> bản ghi</span>
-                    </div>
-
-                    <!-- Right: Action Buttons -->
-                    <div class="d-flex align-items-center gap-1 flex-wrap">
-                      <!-- Bulk Action Buttons - NEW WORKFLOW (9 states) -->
-                      <button
-                        type="button"
-                        class="btn btn-warning btn-sm px-2 py-1"
-                        id="bulkApproveThauBtn"
-                        style="font-size: 0.8125rem; display: none">
-                        <i class="ri ri-file-list-3-line" style="font-size: 0.875rem"></i>
-                        <span class="d-none d-lg-inline ms-1">Duyệt thầu</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-success btn-sm px-2 py-1"
-                        id="bulkReceiveBtn2"
-                        style="font-size: 0.8125rem; display: none">
-                        <i class="ri ri-inbox-line" style="font-size: 0.875rem"></i>
-                        <span class="d-none d-lg-inline ms-1">Nhận mẫu</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-info btn-sm px-2 py-1"
-                        id="bulkSendThauBtn"
-                        style="font-size: 0.8125rem; display: none">
-                        <i class="ri ri-mail-send-line" style="font-size: 0.875rem"></i>
-                        <span class="d-none d-lg-inline ms-1">Gửi mẫu thầu</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-warning btn-sm px-2 py-1"
-                        id="bulkUpdateResultBtn"
-                        style="font-size: 0.8125rem; display: none">
-                        <i class="ri ri-edit-line" style="font-size: 0.875rem"></i>
-                        <span class="d-none d-lg-inline ms-1">Cập nhật KQ</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-primary btn-sm px-2 py-1"
-                        id="bulkApproveBtn"
-                        style="font-size: 0.8125rem; display: none">
-                        <i class="ri ri-check-double-line" style="font-size: 0.875rem"></i>
-                        <span class="d-none d-lg-inline ms-1">Phê duyệt</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-success btn-sm px-2 py-1"
-                        id="bulkReanalyzedBtn"
-                        style="font-size: 0.8125rem; display: none">
-                        <i class="ri ri-refresh-line" style="font-size: 0.875rem"></i>
-                        <span class="d-none d-lg-inline ms-1">Đã PT lại</span>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm px-2 py-1"
-                        id="deselectAllBtn"
-                        style="font-size: 0.8125rem">
-                        <i class="ri ri-close-circle-line" style="font-size: 0.875rem"></i>
-                        <span class="d-none d-lg-inline ms-1">Bỏ chọn</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
 
@@ -484,50 +322,6 @@
 
       <!-- Overlay -->
       <div class="layout-overlay layout-menu-toggle"></div>
-
-      <!-- Drag Target Area To SlideIn Menu On Small Screens -->
-      <div class="drag-target"></div>
-    </div>
-
-    <!-- Modal: Bulk Edit Spreadsheet -->
-    <div class="modal fade" id="bulkEditModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-spreadsheet">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="ri-edit-box-line me-2"></i>
-              Chỉnh sửa hàng loạt - <span id="bulkEditRecordCount">0</span> bản ghi
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="spreadsheet-toolbar">
-            <button type="button" class="btn btn-sm btn-outline-primary" id="addRowBtn">
-              <i class="ri-add-line me-1"></i>Thêm dòng
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-info" id="importExcelBtn">
-              <i class="ri-file-excel-2-line me-1"></i>Import Excel
-            </button>
-            <div class="ms-auto">
-              <small class="text-muted">Ctrl+C/V để copy/paste từ Excel</small>
-            </div>
-          </div>
-          <div class="modal-body" id="spreadsheetContainer">
-            <!-- x-spreadsheet will be initialized here -->
-            <div class="text-center p-5">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Đang tải...</span>
-              </div>
-              <p class="mt-2">Đang khởi tạo bảng tính...</p>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-            <button type="button" class="btn btn-primary" id="saveBulkChangesBtn">
-              <i class="ri-save-line me-1"></i>Lưu thay đổi
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Modal: Bulk Edit Spreadsheet -->
@@ -760,8 +554,6 @@
     <script src="./assets/vendor/libs/datatables-buttons-bs5/datatables-buttons-bootstrap5.js"></script>
     <!-- DataTables RowGroup from CDN -->
     <script src="https://cdn.datatables.net/rowgroup/1.4.0/js/dataTables.rowGroup.min.js"></script>
-    <!-- ❌ ColReorder REMOVED - Gây conflict với DataTables local bundle -->
-    <!-- <script src="https://cdn.datatables.net/colreorder/1.7.0/js/dataTables.colReorder.min.js"></script> -->
     <script src="./assets/vendor/libs/sweetalert2/sweetalert2.js"></script>
     <script src="./assets/vendor/libs/notyf/notyf.js"></script>
 
@@ -787,15 +579,9 @@
     <script type="module" src="./assets/js/configs/sample-details-table.config.js"></script>
 
     <!-- Service JS -->
-
-    <!-- Dịch vụ xử lý tham số tìm kiếm URL -->
     <script type="module" src="./assets/js/services/url-search.service.js"></script>
-
-    <!-- Dịch vụ xử lý bảng chi tiết mẫu -->
     <script type="module" src="./assets/js/services/sample-details-table.service.js"></script>
-
     <script src="./assets/js/services/form-builder.service.js"></script>
-    <script src="./assets/js/services/sample-details.service.js"></script>
     <script type="module" src="./assets/js/services/calc-by-formula.service.js"></script>
 
     <!-- Page JS -->

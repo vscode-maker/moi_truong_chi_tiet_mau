@@ -23,7 +23,7 @@
       chiTieu: '/cefinea/chi-tieu'
     },
     token: 'GPEMS-zzzz',
-    defaultLimit: 10,
+    defaultLimit: 500,
     timeout: 30000 // đợi 30 seconds cho mỗi request
   };
 
@@ -94,28 +94,27 @@
 
   /**
    * Bổ sung các trường còn thiếu mặc định để tránh lỗi
+   * ⭐ TỐI ƯU: Chỉ gán giá trị nếu field chưa có (tránh tạo object mới không cần thiết)
    */
-  const supplementDefaultFields = record => ({
-    ...record,
-    loai_phan_tich: record['loai_phan_tich'] || 'Chưa xác định',
-    trang_thai_phan_tich: record['trang_thai_phan_tich'] || 'Chưa xác định',
-    loai_don_hang: record['loai_don_hang'] || 'Chưa xác định',
-    // Ngày trả kết quả nếu không có thì để rỗng
-    ngay_tra_ket_qua: record['ngay_tra_ket_qua'] || 'Chưa có',
-    ma_khach_hang: record['ma_khach_hang'] || 'Chưa xác định',
-    ten_khach_hang: record['ten_khach_hang'] || 'Chưa xác định',
-    ten_nguoi_phan_tich: record['ten_nguoi_phan_tich'] || 'Chưa xác định',
-    ten_nguoi_duyet: record['ten_nguoi_duyet'] || 'Chưa xác định',
-    ten_don_hang: record['ten_don_hang'] || 'Chưa xác định',
-    ma_nguoi_phan_tich: record['ma_nguoi_phan_tich'] || 'Chưa xác định',
-    ma_nguoi_duyet: record['ma_nguoi_duyet'] || 'Chưa xác định',
-    ten_mau: record['ten_mau'] || record['maMau']?.['loai_mau'] || 'Chưa xác định',
-    trang_thai_tong_hop: record['trang_thai_tong_hop'] || 'Chưa xác định',
-    // "han_hoan_thanh_pt_gm": record["han_hoan_thanh_pt_gm"] || "Chưa có",
-
-    phe_duyet: record['phe_duyet'] || 'Chưa phê duyệt',
-    loai_mau: record['loai_mau'] || record['maMau']?.['loai_mau'] || 'Chưa xác định'
-  });
+  const supplementDefaultFields = record => {
+    // Mutate trực tiếp thay vì tạo object mới (nhanh hơn nhiều với dataset lớn)
+    record.loai_phan_tich ??= 'Chưa xác định';
+    record.trang_thai_phan_tich ??= 'Chưa xác định';
+    record.loai_don_hang ??= 'Chưa xác định';
+    record.ngay_tra_ket_qua ??= 'Chưa có';
+    record.ma_khach_hang ??= 'Chưa xác định';
+    record.ten_khach_hang ??= 'Chưa xác định';
+    record.ten_nguoi_phan_tich ??= 'Chưa xác định';
+    record.ten_nguoi_duyet ??= 'Chưa xác định';
+    record.ten_don_hang ??= 'Chưa xác định';
+    record.ma_nguoi_phan_tich ??= 'Chưa xác định';
+    record.ma_nguoi_duyet ??= 'Chưa xác định';
+    record.ten_mau ??= record.maMau?.loai_mau ?? 'Chưa xác định';
+    record.trang_thai_tong_hop ??= 'Chưa xác định';
+    record.phe_duyet ??= 'Chưa phê duyệt';
+    record.loai_mau ??= record.maMau?.loai_mau ?? 'Chưa xác định';
+    return record;
+  };
 
   /**
    * Helper function để tạo fetch với timeout
@@ -156,13 +155,24 @@
    */
   const searchSampleDetails = async (params = {}) => {
     try {
+      console.log('[4️⃣ API] searchSampleDetails - Params:', JSON.stringify(params));
+      console.time('[API] searchSampleDetails');
+      
       const url = `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.chiTietMau}/search`;
+      console.log('[4️⃣ API] URL:', url);
+      
       const response = await fetchWithTimeout(url, {
         method: 'POST',
         body: JSON.stringify(params)
       });
-      return await handleApiResponse(response);
+      
+      const result = await handleApiResponse(response);
+      console.log('[4️⃣ API] Response - Records:', result?.data?.length || 0, '| Pagination:', result?.pagination);
+      console.timeEnd('[API] searchSampleDetails');
+      
+      return result;
     } catch (error) {
+      console.error('[4️⃣ API] Lỗi:', error.message);
       throw new Error(`Lỗi tìm kiếm: ${error.message}`);
     }
   };
@@ -209,6 +219,8 @@
         `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.chiTietMau}`,
         queryParams
       );
+console.log("Tham số API chi tiết mẫu ",url,queryParams)
+
 
       const response = await fetchWithTimeout(url, {
         method: 'GET'
@@ -527,7 +539,7 @@
         `${POSTGRESQL_API_CONFIG.baseUrl}${POSTGRESQL_API_CONFIG.endpoints.nhanVien}`,
         queryParams
       );
-
+console.log("Tham số API ",url,queryParams)
       const response = await fetchWithTimeout(url, { method: 'GET' });
       return await handleApiResponse(response);
     } catch (error) {

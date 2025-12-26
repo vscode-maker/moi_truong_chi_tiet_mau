@@ -17,7 +17,7 @@
       .page {
         width: 210mm;
         min-height: 297mm;
-        padding: 0.92cm 1.05cm 1.43cm 1.9cm;
+        padding: 0.5cm 0.5cm 0.5cm 0.5cm; /* Lề: trên - phải - dưới - trái = 0.5cm */
         margin: 20px auto;
         background: white;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -157,20 +157,51 @@
       /* Bảng kết quả */
       /* Bắt buộc ngắt sang trang mới sau mỗi bảng kết quả */
       .result-table {
-        display: block; /* Giúp trình duyệt hiểu khối này cần ngắt */
-        width: 100%; /* Đảm bảo bảng vẫn rộng 100% khi display block */
+        display: table;
+        width: 100%;
+        font-size: 10pt; /* Giảm font để vừa A4 */
       }
 
       .result-table th,
       .result-table td {
         border: 1px solid black;
-        padding: 5px;
+        padding: 3px 4px; /* Giảm padding */
         text-align: center;
-        font-size: 12pt;
+        font-size: 10pt;
+        word-wrap: break-word;
       }
+      
+      .result-table tbody tr {
+        height: 25px; /* Chiều cao đồng đều cho các dòng */
+      }
+      
       .result-table th {
         background-color: #fff; /* Tránh màu nền khi in */
         /* background-color: #e8e8e8; */
+        position: relative; /* Để chứa resize handle */
+      }
+      
+      /* Resize handle cho cột */
+      .resize-handle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 5px;
+        height: 100%;
+        cursor: col-resize;
+        background-color: transparent;
+        z-index: 10;
+      }
+      
+      .resize-handle:hover {
+        background-color: #007bff;
+      }
+      
+      /* Ẩn resize handle khi in */
+      @media print {
+        .resize-handle {
+          display: none !important;
+        }
       }
 
       /* Ghi chú */
@@ -234,8 +265,8 @@
         @page {
           size: A4;
           /* QUAN TRỌNG: Thiết lập lề cứng cho máy in (Trên - Phải - Dưới - Trái) */
-          /* Giống như Page Setup trong Word */
-          margin: 1.5cm 1.5cm 1.5cm 2cm;
+          /* Lề = 0.5cm tất cả các cạnh */
+          margin: 0.5cm 0.5cm 0.5cm 0.5cm;
         }
 
         .page {
@@ -548,10 +579,47 @@
           }
         }
 
-        // merged-form.html?so_phieu=12/2025/PKQ&ky_hieu_mau=25.4999.NT1&ten_khach_hang=CÔNG%20TY%20A&ngay_nhan_mau=04/12/2025&dia_chi=Tỉnh%20B&loai_mau=Nước%20thải&ngay_in=14/12/2025&vi_tri_lay_mau=LA,TG,HCM,DT&ma_mau_ids=13e9024c,13e9024c,13e9024c,13e9024c
+        // merged-form.html?so_phieu=12/2025/PKQ&ky_hieu_mau=25.4999.NT1&ten_khach_hang=CÔNG%20TY%20A&ngay_nhan_mau=04/12/2025&dia_chi=Tỉnh%20B&loai_mau=Nước%20thải&ngay_in=14/12/2025&vi_tri_lay_mau=LA,TG,HCM,DT&ma_mau_ids=13e9024c,13e9024c,13e9024c,13e9024c&ma_mau_hien_thi=25-0003.NT01,25-0003.NT02
         // Xử lý đặc biệt cho bảng kết quả (Nếu truyền JSON qua URL)
         // Lấy tham số ma_mau_id
         const maMauIdsParam = getQueryParam('ma_mau_ids');
+        // ⭐ THÊM: Lấy tham số ma_mau_hien_thi để hiển thị thay vì ma_mau_ids
+        const maMauHienThiParam = getQueryParam('ma_mau_hien_thi');
+        const listMaMauHienThi = maMauHienThiParam ? maMauHienThiParam.split(',').map(s => s.trim()) : [];
+
+        // ⭐ THÊM: Lấy và parse tham số quy_chuan
+        // Format: "QCVN 2009:001 KKXQ | Không khí xung quanh | 1011 | Cột B | 90 , QCVN2025:01 KKXQ | ..."
+        const quyChuanParam = getQueryParam('quy_chuan');
+        let quyChuanList = []; // Danh sách tất cả quy chuẩn đã parse
+        let quyChuanHeaders = []; // Danh sách unique tên quy chuẩn cho header
+        let quyChuanMap = {}; // Map: ten_quy_chuan -> { cot, values: { chi_tieu_id: gia_tri } }
+
+        if (quyChuanParam) {
+          const items = quyChuanParam.split(',');
+          
+          items.forEach((item, idx) => {
+            const parts = item.split('|').map(s => s.trim());
+            
+            if (parts.length >= 5) {
+              const qc = {
+                ten: parts[0],           // QCVN 2009:001 KKXQ
+                loai: parts[1],          // Không khí xung quanh
+                chi_tieu_id: parts[2],   // 1011
+                cot: parts[3],           // Cột B
+                gia_tri: parts[4]        // 90
+              };
+              quyChuanList.push(qc);
+
+              // Tạo map để lookup nhanh giá trị theo tên quy chuẩn và chi_tieu_id
+              if (!quyChuanMap[qc.ten]) {
+                quyChuanMap[qc.ten] = { cot: qc.cot, values: {} };
+                quyChuanHeaders.push(qc.ten);
+              }
+              quyChuanMap[qc.ten].values[qc.chi_tieu_id] = qc.gia_tri;
+            }
+          });
+        }
+        
         // Cấu hình API PostgreSQL
         const POSTGRESQL_API_CONFIG = {
           baseUrl: 'https://api-cefinea.tamk.win',
@@ -599,7 +667,9 @@
 
               const valCell = document.createElement('td');
               valCell.colSpan = 3;
-              valCell.innerHTML = `: <span style="font-weight: bold">${listIds[index]}:</span>${viTri.split(':')[0]}`;
+              // ⭐ Sử dụng ma_mau_hien_thi thay vì ma_mau_ids
+              const displayName = listMaMauHienThi[index] || listIds[index];
+              valCell.innerHTML = `: <span style="font-weight: bold">${displayName}:</span>${viTri.split(':')[0]}`;
               row.appendChild(valCell);
 
               infoTable.appendChild(row);
@@ -628,8 +698,9 @@
 
               // Gom dữ liệu API và Tên mẫu lại thành 1 object dễ quản lý
               // Format: [{name: 'M1', data: [...]}, {name: 'M2', data: [...]}, ...]
+              // ⭐ Sử dụng ma_mau_hien_thi thay vì ma_mau_ids cho header
               const allSamples = results.map((res, index) => ({
-                name: listIds[index] || `Mẫu ${index + 1}`,
+                name: listMaMauHienThi[index] || listIds[index] || `Mẫu ${index + 1}`,
                 rows: res.data || []
               }));
 
@@ -664,62 +735,120 @@
         // --- HÀM VẼ BẢNG GỘP (Dynamic Column) ---
         function buildGroupTableHTML(groupSamples, tableIndex) {
           // groupSamples là mảng chứa từ 1 đến 3 đối tượng mẫu
-          // Lấy mẫu đầu tiên trong nhóm làm "xương sống" để dựng hàng (Chỉ tiêu, đơn vị...)
-          // Giả định: Các mẫu trong cùng đợt in có cùng danh sách chỉ tiêu
-          const baseSampleRows = groupSamples[0].rows;
+          
+          // ⭐ BƯỚC 1: Gộp tất cả chỉ tiêu từ mọi mẫu (dựa trên id_chi_tieu)
+          // Tạo map: id_chi_tieu -> thông tin chỉ tiêu
+          const allChiTieuMap = new Map();
+          groupSamples.forEach(sample => {
+            (sample.rows || []).forEach(row => {
+              const chiTieuId = row.id_chi_tieu;
+              if (chiTieuId && !allChiTieuMap.has(chiTieuId)) {
+                allChiTieuMap.set(chiTieuId, {
+                  id_chi_tieu: chiTieuId,
+                  ten_chi_tieu: row.ten_chi_tieu,
+                  don_vi_tinh: row.don_vi_tinh,
+                  phuong_phap_thu: row.phuong_phap_thu
+                });
+              }
+            });
+          });
+          
+          // Chuyển Map thành Array để duyệt
+          let allChiTieuList = Array.from(allChiTieuMap.values());
+          
+          // ⭐ Sắp xếp theo tên chỉ tiêu (alphabet)
+          allChiTieuList.sort((a, b) => {
+            const nameA = (a.ten_chi_tieu || '').toLowerCase();
+            const nameB = (b.ten_chi_tieu || '').toLowerCase();
+            return nameA.localeCompare(nameB, 'vi');
+          });
+          
+          // ⭐ BƯỚC 2: Tạo map kết quả cho từng mẫu: id_chi_tieu -> ket_qua_in_phieu
+          const sampleResultMaps = groupSamples.map(sample => {
+            const resultMap = new Map();
+            (sample.rows || []).forEach(row => {
+              if (row.id_chi_tieu) {
+                resultMap.set(row.id_chi_tieu, row.ket_qua_in_phieu);
+              }
+            });
+            return resultMap;
+          });
 
-          // 1. Xây dựng Header
+          // 1. Xây dựng Header cho cột Kết quả (tên mẫu)
           let headerColsHTML = '';
           groupSamples.forEach(sample => {
             headerColsHTML += `<th>${sample.name}</th>`;
           });
 
+          // ⭐ 1b. Xây dựng Header cho cột Quy chuẩn (nếu có)
+          let quyChuanHeaderRow1 = ''; // Dòng 1: Tên quy chuẩn
+          let quyChuanHeaderRow2 = ''; // Dòng 2: Cột quy chuẩn
+          if (quyChuanHeaders.length > 0) {
+            quyChuanHeaders.forEach(tenQC => {
+              quyChuanHeaderRow1 += `<th style="width: 65px;">${tenQC}</th>`;
+              quyChuanHeaderRow2 += `<th style="width: 65px;">${quyChuanMap[tenQC].cot || '-'}</th>`;
+            });
+          }
+
           // 2. Xây dựng Body
           let bodyRowsHTML = '';
-          if (baseSampleRows && baseSampleRows.length > 0) {
-            baseSampleRows.forEach((rowBase, rowIndex) => {
+          if (allChiTieuList.length > 0) {
+            allChiTieuList.forEach((chiTieu, rowIndex) => {
               let resultCellsHTML = '';
+              const chiTieuId = chiTieu.id_chi_tieu;
 
-              // Lặp qua từng mẫu trong nhóm để lấy kết quả tương ứng của dòng này
-              groupSamples.forEach(sample => {
-                // Lấy kết quả tại dòng rowIndex.
-                // Lưu ý: Cần đảm bảo thứ tự chỉ tiêu trả về từ API là giống nhau giữa các mẫu.
-                const cellData = sample.rows[rowIndex] ? sample.rows[rowIndex].ket_qua_in_phieu : '-';
+              // ⭐ Lặp qua từng mẫu và tìm kết quả theo id_chi_tieu
+              sampleResultMaps.forEach(resultMap => {
+                const cellData = resultMap.get(chiTieuId) || '-';
                 resultCellsHTML += `<td>${cellData}</td>`;
               });
+
+              // ⭐ Xây dựng cột giá trị quy chuẩn theo chi_tieu_id
+              let quyChuanCellsHTML = '';
+              if (quyChuanHeaders.length > 0) {
+                const chiTieuIdStr = String(chiTieuId || '');
+                
+                quyChuanHeaders.forEach(tenQC => {
+                  const giaTriQC = quyChuanMap[tenQC].values[chiTieuIdStr] || '-';
+                  quyChuanCellsHTML += `<td>${giaTriQC}</td>`;
+                });
+              }
 
               bodyRowsHTML += `
                     <tr>
                       <td>${rowIndex + 1}</td>
-                      <td style="text-align: left;">${rowBase.ten_chi_tieu || ''}</td>
-                      <td>${rowBase.don_vi_tinh || ''}</td>
-                      <td>${rowBase.phuong_phap_thu || ''}</td>
-                      ${resultCellsHTML} 
-                      <td>-</td>
-                      <td>-</td> 
+                      <td style="text-align: left;">${chiTieu.ten_chi_tieu || ''}</td>
+                      <td>${chiTieu.don_vi_tinh || ''}</td>
+                      <td>${chiTieu.phuong_phap_thu || ''}</td>
+                      ${resultCellsHTML}
+                      ${quyChuanCellsHTML}
                     </tr>`;
             });
           } else {
-            bodyRowsHTML = `<tr><td colspan="${4 + groupSamples.length + 2}">Không có dữ liệu</td></tr>`;
+            const totalCols = 4 + groupSamples.length + quyChuanHeaders.length;
+            bodyRowsHTML = `<tr><td colspan="${totalCols}">Không có dữ liệu</td></tr>`;
           }
 
           // 3. Ghép khung bảng
+          // ⭐ Chỉ hiển thị cột quy chuẩn nếu có dữ liệu
+          const quyChuanColspan = quyChuanHeaders.length > 0 ? quyChuanHeaders.length : 0;
+          // ⭐ Nếu không có quy chuẩn, cột kết quả chiếm hết chiều rộng còn lại
+          const ketQuaStyle = quyChuanHeaders.length === 0 ? 'style="width: auto;"' : '';
+          
           return `
             <table class="result-table" id="tbl-${tableIndex}">
                 <thead>
                     <tr>
-                        <th rowspan="2" style="width: 50px">TT</th>
+                        <th rowspan="2" style="width: 25px">TT</th>
                         <th rowspan="2">Chỉ tiêu</th>
-                        <th rowspan="2" style="width: 80px">Đơn vị</th>
-                        <th rowspan="2" style="width: 150px">Phương pháp thử</th>
+                        <th rowspan="2" style="width: 45px">Đơn vị</th>
+                        <th rowspan="2" style="width: 85px">Phương pháp thử</th>
                         <th colspan="${groupSamples.length}">Kết quả</th>
-                        <th>QCVN 19:2009 BTNMT</th>
-                        <th>QCVN 20:2009 BTNMT</th>
+                        ${quyChuanHeaderRow1}
                     </tr>
                     <tr>
                         ${headerColsHTML}
-                        <th>Cột B Kp=0,8 và Kv=1</th>
-                        <th>Nồng độ tối đa</th>
+                        ${quyChuanHeaderRow2}
                     </tr>
                 </thead>
                 <tbody>
@@ -731,23 +860,34 @@
 
         // --- HÀM TẠO HTML CHO 1 BẢNG ---
         function buildTableHTML(dataRows, tableIndex) {
+          // ⭐ Xây dựng Header cho cột Quy chuẩn (nếu có)
+          let quyChuanHeaderRow1 = '';
+          let quyChuanHeaderRow2 = '';
+          const quyChuanColWidth = quyChuanHeaders.length > 0 ? Math.floor(100 / quyChuanHeaders.length) : 0;
+          if (quyChuanHeaders.length > 0) {
+            quyChuanHeaders.forEach(tenQC => {
+              quyChuanHeaderRow1 += `<th style="width: 65px;">${tenQC}</th>`;
+              quyChuanHeaderRow2 += `<th style="width: 65px;">${quyChuanMap[tenQC].cot || '-'}</th>`;
+            });
+          }
+
           // Header bảng
+          // ⭐ Nếu không có quy chuẩn, cột kết quả chiếm hết chiều rộng còn lại
+          const ketQuaStyle = quyChuanHeaders.length === 0 ? 'style="width: auto;"' : '';
+          
           let html = `
             <table class="result-table" id="table-${tableIndex}">
                 <thead>
                     <tr>
-                        <th rowspan="2" style="width: 50px">TT</th>
+                        <th rowspan="2" style="width: 25px">TT</th>
                         <th rowspan="2">Chỉ tiêu</th>
-                        <th rowspan="2" style="width: 95px">Đơn vị</th>
-                        <th rowspan="2">Phương pháp thử</th>
-                        <th>Kết quả</th>
-                        <th>QCVN 19:2009 BTNMT</th>
-                        <th>QCVN 20:2009 BTNMT</th>
+                        <th rowspan="2" style="width: 45px">Đơn vị</th>
+                        <th rowspan="2" style="width: 85px">Phương pháp thử</th>
+                        <th rowspan="2" ${ketQuaStyle}>Kết quả</th>
+                        ${quyChuanHeaderRow1}
                     </tr>
                     <tr>
-                        <th><span style="color:red; font-weight:bold;"></span></th> 
-                        <th>Cột B Kp=0,8 và Kv=1</th>
-                        <th>Nồng độ tối đa</th>
+                        ${quyChuanHeaderRow2}
                     </tr>
                 </thead>
                 <tbody>
@@ -756,6 +896,17 @@
           // Body bảng (Dữ liệu API)
           if (dataRows && dataRows.length > 0) {
             dataRows.forEach((row, idx) => {
+              // ⭐ Xây dựng cột giá trị quy chuẩn theo chi_tieu_id
+              let quyChuanCellsHTML = '';
+              if (quyChuanHeaders.length > 0) {
+                // Lấy chi_tieu_id từ API - có thể là field 'id' hoặc 'chi_tieu_id'
+                const chiTieuId = String(row.chi_tieu_id || row.id || '');
+                quyChuanHeaders.forEach(tenQC => {
+                  const giaTriQC = quyChuanMap[tenQC].values[chiTieuId] || '-';
+                  quyChuanCellsHTML += `<td>${giaTriQC}</td>`;
+                });
+              }
+
               html += `
                     <tr>
                         <td>${idx + 1}</td>
@@ -763,12 +914,12 @@
                         <td>${row.don_vi_tinh || ''}</td>
                         <td>${row.phuong_phap_thu || ''}</td>
                         <td>${row.ket_qua_in_phieu || ''}</td>
-                        <td>40</td>
-                        <td>-</td>
+                        ${quyChuanCellsHTML}
                     </tr>`;
             });
           } else {
-            html += `<tr><td colspan="6">Không có dữ liệu chi tiết</td></tr>`;
+            const totalCols = 5 + quyChuanHeaders.length;
+            html += `<tr><td colspan="${totalCols}">Không có dữ liệu chi tiết</td></tr>`;
           }
 
           html += `</tbody></table>`;
@@ -792,6 +943,59 @@
             lastTable.style.breakAfter = 'auto';
             lastTable.style.marginBottom = '0px';
           }
+          
+          // Thêm tính năng resize cột sau khi render bảng
+          initColumnResize();
+        }
+        
+        // --- TÍNH NĂNG THAY ĐỔI ĐỘ RỘNG CỘT ---
+        function initColumnResize() {
+          const tables = document.querySelectorAll('.result-table');
+          
+          tables.forEach(table => {
+            // Lấy tất cả th trong thead (chỉ dòng đầu tiên)
+            const headerCells = table.querySelectorAll('thead tr:first-child th');
+            
+            headerCells.forEach((th, index) => {
+              // Thêm resize handle vào mỗi th (trừ cột cuối)
+              if (index < headerCells.length - 1) {
+                const resizer = document.createElement('div');
+                resizer.className = 'resize-handle';
+                th.appendChild(resizer);
+                
+                // Xử lý sự kiện kéo
+                let startX, startWidth, nextStartWidth;
+                const nextTh = headerCells[index + 1];
+                
+                resizer.addEventListener('mousedown', function(e) {
+                  startX = e.pageX;
+                  startWidth = th.offsetWidth;
+                  nextStartWidth = nextTh ? nextTh.offsetWidth : 0;
+                  
+                  document.addEventListener('mousemove', onMouseMove);
+                  document.addEventListener('mouseup', onMouseUp);
+                  
+                  e.preventDefault();
+                });
+                
+                function onMouseMove(e) {
+                  const diff = e.pageX - startX;
+                  const newWidth = startWidth + diff;
+                  
+                  // Đảm bảo độ rộng tối thiểu 30px
+                  if (newWidth >= 30) {
+                    th.style.width = newWidth + 'px';
+                    th.style.minWidth = newWidth + 'px';
+                  }
+                }
+                
+                function onMouseUp() {
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                }
+              }
+            });
+          });
         }
       };
     </script>

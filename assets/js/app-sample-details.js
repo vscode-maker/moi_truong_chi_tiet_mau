@@ -5,11 +5,8 @@
 
 // #region [IMPORTS]
 
-// Import data
-import { partners, indicators, staffs } from './data/data.js';
-
-// Import configs
-import { GROUP_BY_COLUMNS_CONFIG } from './configs/sample-details-table.config.js';
+// Import data - ⭐ Thêm loadMasterData để lazy load khi cần
+import { partners, indicators, staffs, loadMasterData } from './data/data.js';
 
 // Import services
 import notificationService from './services/notification.service.js';
@@ -45,8 +42,9 @@ import DateFormatter from './utils/date-formatter.js';
     return;
   }
 
-  // Service instance
-  const sampleDetailsService = window.SampleDetailsService;
+  // API instance - Gọi trực tiếp từ API layer
+  const chiTietMauAPI = window.PostgreSQL_ChiTietMau;
+  const doiTacAPI = window.PostgreSQL_DoiTac; // ⭐ THÊM: API đối tác
   const formConfig = window.SAMPLE_DETAILS_FORM_CONFIG;
   let formBuilder;
 
@@ -56,17 +54,16 @@ import DateFormatter from './utils/date-formatter.js';
   let chiTietMauTable;
   let chiTietMauData = [];
   let danhSachChiTieuData = []; // Dữ liệu danh sách chỉ tiêu (để lookup LOD)
+  let danhSachDoiTacData = []; // ⭐ THÊM: Dữ liệu danh sách đối tác từ API
   let selectedRows = new Map(); // Map để lưu các dòng đã chọn với thông tin chi tiết
   let bulkEditSpreadsheet;
   let bulkEditData = [];
-  let isGroupingEnabled = true; // ✅ ĐỔI: Bật grouping mặc định
-  let selectedGroupColumns = ['han_hoan_thanh_pt_gm']; // ✅ ĐỔI: Nhóm theo Hạn hoàn thành
   let currentStatusFilter = 'all'; // Track trạng thái filter hiện tại
 
   // Config load page
   let paginationState = {
     currentPage: 1,
-    pageSize: 50,
+    pageSize: 500,
     totalRecords: 0,
     totalPages: 0,
     isLoading: false,
@@ -697,6 +694,8 @@ import DateFormatter from './utils/date-formatter.js';
     columnSettings.visibility[5] = false; // Khách hàng (ẩn vì đã có trong tên đơn hàng)
     columnSettings.visibility[15] = false; // Tiền tố
     columnSettings.visibility[16] = false; // Ưu tiên
+    columnSettings.visibility[21] = false; // Thành tiền
+    columnSettings.visibility[22] = false; // Lịch sử
 
     if (saveToStorage) {
       saveColumnSettings();
@@ -1146,8 +1145,7 @@ import DateFormatter from './utils/date-formatter.js';
   function initializeProgressStats() {
     // console.log('📊 Khởi tạo thống kê tiến độ (13 trạng thái tổng hợp)...');
 
-    // Chỉ dùng 1 loại statistics duy nhất
-    generateProgressStatsButtons();
+    // HTML đã được render sẵn trong index.html, chỉ cần update số liệu
     updateProgressStats();
 
     // Bind events
@@ -1155,100 +1153,71 @@ import DateFormatter from './utils/date-formatter.js';
   }
 
   /**
-   * Tạo các chip thống kê tiến độ - 13 TRẠNG THÁI TỔNG HỢP
+   * ⚠️ DEPRECATED - HTML đã được render sẵn trong index.html
+   * Tạo các chip thống kê tiến độ - 9 TRẠNG THÁI TỔNG HỢP với màu sắc riêng
    */
   function generateProgressStatsButtons() {
-    const container = $('#progressStatsContainer');
-    container.empty(); // Clear trước khi tạo
+    // Không cần tạo HTML nữa, đã có sẵn trong index.html
+    console.log('ℹ️ Progress stats buttons đã được render sẵn trong HTML');
+  }
 
-    // Chip "Tất cả" (luôn hiển thị, active by default)
-    const allChipHtml = `
-      <button type="button" class="progress-stat-chip active" data-filter-type="trang_thai_tong_hop" data-filter="all">
-        <span class="stat-label">Tất cả</span>
-        <span class="stat-count" id="count-all">0</span>
-      </button>
-    `;
-    container.append(allChipHtml);
-
-    // Tạo sẵn TẤT CẢ 10 button từ TRANG_THAI_TONG_HOP (count sẽ được cập nhật sau)
-    TRANG_THAI_TONG_HOP.forEach((state, index) => {
-      // Thêm separator
-      container.append('<span class="stat-separator">|</span>');
-
-      // Tạo ID an toàn
-      const safeId = state.key.toLowerCase().replace(/_/g, '-');
-
-      // Tạo button với count = 0 (sẽ được cập nhật trong updateProgressStats)
-      const chipHtml = `
-        <button type="button" class="progress-stat-chip" data-filter-type="trang_thai_tong_hop" data-filter="${state.key}">
-          <i class="${state.icon}"></i>
-          <span class="stat-label">${state.label}</span>
-          <span class="stat-count" id="count-${safeId}">0</span>
-        </button>
-      `;
-      container.append(chipHtml);
-
-      // console.log(`✅ Button ${index + 1}/10: ${state.label} (khởi tạo count = 0)`);
-    });
-
-    console.log('✅ Đã tạo sẵn tất cả 10 button thống kê tiến độ');
+  // ⭐ CACHE: DOM elements cho stats (tối ưu hiệu năng)
+  let statsElements = null;
+  function getStatsElements() {
+    if (!statsElements) {
+      statsElements = {
+        countAll: document.getElementById('count-all'),
+        totalIndicators: document.getElementById('totalIndicators'),
+        pendingIndicators: document.getElementById('pendingIndicators'),
+        countElements: {}
+      };
+      // Cache tất cả count elements một lần
+      TRANG_THAI_TONG_HOP.forEach(state => {
+        const safeId = state.key.toLowerCase().replace(/_/g, '-');
+        statsElements.countElements[state.key] = document.getElementById(`count-${safeId}`);
+      });
+    }
+    return statsElements;
   }
 
   /**
    * Cập nhật số liệu thống kê - 10 TRẠNG THÁI TỔNG HỢP
+   * ⭐ TỐI ƯU: Sử dụng vanilla JS và cached elements
    */
   function updateProgressStats() {
     if (!chiTietMauData || chiTietMauData.length === 0) {
-      console.warn('⚠️ Không có dữ liệu để thống kê, các bảng dữ liệu đang rỗng');
       return;
     }
 
-    // Đếm theo từng trạng thái trang_thai_tong_hop
-    const stats = {};
-    let totalCount = 0;
+    // ⭐ TỐI ƯU: Đếm trong một vòng lặp duy nhất với object literal
+    const stats = Object.create(null); // Faster than {}
+    const len = chiTietMauData.length;
     let completedCount = 0;
 
-    chiTietMauData.forEach(item => {
-      const trangThai = item.trang_thai_tong_hop; // Sử dụng field mới
+    for (let i = 0; i < len; i++) {
+      const trangThai = chiTietMauData[i].trang_thai_tong_hop;
       stats[trangThai] = (stats[trangThai] || 0) + 1;
-      totalCount++;
+      if (trangThai === 'HOAN_THANH') completedCount++;
+    }
 
-      // Đếm các trạng thái "Hoàn thành"
-      if (trangThai === 'HOAN_THANH') {
-        completedCount++;
-      }
-    });
-
-    // console.log('📈 Thống kê tiến độ (trang_thai_tong_hop):', stats);
-    // console.log('✅ Tổng số mẫu đã hoàn thành:', completedCount);
-
+    // ⭐ TỐI ƯU: Sử dụng cached DOM elements và vanilla JS
+    const els = getStatsElements();
+    
     // Cập nhật số cho nút "Tất cả"
-    $('#count-all').text(totalCount);
+    if (els.countAll) els.countAll.textContent = len;
 
-    // Cập nhật count cho từng trạng thái (button đã được tạo sẵn trong generateProgressStatsButtons)
-    TRANG_THAI_TONG_HOP.forEach((state, index) => {
-      const count = stats[state.key] || 0;
-      const safeId = state.key.toLowerCase().replace(/_/g, '-');
-
-      // Chỉ cập nhật số count, không tạo lại button
-      $(`#count-${safeId}`).text(count);
-
-      if (count > 0) {
-        // console.log(`✅ Cập nhật ${state.label}: ${count}`);
-      }
-    });
+    // Cập nhật count cho từng trạng thái (không dùng jQuery trong vòng lặp)
+    for (let i = 0; i < TRANG_THAI_TONG_HOP.length; i++) {
+      const state = TRANG_THAI_TONG_HOP[i];
+      const el = els.countElements[state.key];
+      if (el) el.textContent = stats[state.key] || 0;
+    }
 
     // Cập nhật tổng số trong header
-    $('#totalIndicators').text(totalCount);
+    if (els.totalIndicators) els.totalIndicators.textContent = len;
+    if (els.pendingIndicators) els.pendingIndicators.textContent = len - completedCount;
 
-    // Tính số cần xử lý (chưa hoàn thành)
-    const pendingCount = totalCount - completedCount;
-    $('#pendingIndicators').text(pendingCount);
-
-    // console.log(`✅ Đã cập nhật thống kê tiến độ: 13 trạng thái (tất cả)`);
-    // console.log(`📊 Tổng: ${totalCount} | Hoàn thành: ${completedCount} | Đang xử lý: ${pendingCount}`);
-
-    // ⭐ THÊM: Cập nhật Load More button
+    // Cập nhật Load More button
     updateLoadMoreButton();
   }
 
@@ -1414,58 +1383,42 @@ import DateFormatter from './utils/date-formatter.js';
 
   /**
    * XỬ LÝ ÁP DỤNG FILTER TIẾN ĐỘ
+   * ⭐ TỐI ƯU: Giảm DOM operations và tránh draw không cần thiết
    */
-  async function applyProgressFilter(filter) {
-    if (!chiTietMauTable) {
-      console.warn('⚠️ DataTable chưa được khởi tạo');
-      return;
-    }
+  function applyProgressFilter(filter) {
+    if (!chiTietMauTable) return;
 
-    console.log('🔍 Áp dụng filter: ', filter);
-
-    // Clear tất cả selection khi chuyển filter
-    // Vì mỗi trạng thái có actions khác nhau, cần bỏ chọn các dòng cũ
+    // ⭐ TỐI ƯU: Clear selections với vanilla JS (nhanh hơn jQuery)
     selectedRows.clear();
-    $('.row-checkbox').prop('checked', false);
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    for (let i = 0; i < checkboxes.length; i++) {
+      checkboxes[i].checked = false;
+    }
     elements.selectAll.prop('checked', false);
-    elements.bulkActionsToolbar.addClass('d-none'); // Ẩn toolbar ngay lập tức
+    elements.bulkActionsToolbar.addClass('d-none');
 
     // Lưu trạng thái filter hiện tại
     currentStatusFilter = filter;
 
-    if (filter === 'all') {
-      // Hiển thị tất cả - clear custom filter
-      if ($.fn.dataTable.ext.search.length > 0) {
-        $.fn.dataTable.ext.search.pop();
-      }
-      chiTietMauTable.draw();
-    } else {
-      // Xóa custom filter cũ (nếu có)
-      if ($.fn.dataTable.ext.search.length > 0) {
-        $.fn.dataTable.ext.search.pop();
-      }
+    // ⭐ TỐI ƯU: Clear TẤT CẢ custom filters một lần
+    $.fn.dataTable.ext.search.length = 0;
 
-      // Thêm custom filter mới
+    if (filter !== 'all') {
+      // Thêm custom filter mới với closure đơn giản
       $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
         const row = chiTietMauTable.row(dataIndex).data();
-
-        // Filter theo cột trang_thai_tong_hop (Column 10)
-        const trangThai = row.trang_thai_tong_hop;
-        return trangThai === filter;
+        return row && row.trang_thai_tong_hop === filter;
       });
-
-      chiTietMauTable.draw();
     }
 
-    showLoading(false);
+    // ⭐ TỐI ƯU: Chỉ gọi draw một lần
+    chiTietMauTable.draw();
 
-    // Scroll to table
-    $('html, body').animate(
-      {
-        scrollTop: $('#chiTietMauTable_wrapper').offset().top
-      },
-      300
-    );
+    // ⭐ TỐI ƯU: Scroll không animation (nhanh hơn)
+    const wrapper = document.getElementById('chiTietMauTable_wrapper');
+    if (wrapper) {
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   /**
@@ -1483,6 +1436,7 @@ import DateFormatter from './utils/date-formatter.js';
     const tableConfig = {
       data: chiTietMauData,
       destroy: true,
+      deferRender: true, // ⭐ TỐI ƯU: Chỉ render rows khi cần (giảm thời gian init)
       scrollX: true, // Enable horizontal scrolling - HIỂN THỊ TẤT CẢ CỘT
       scrollY: calculateTableHeight() + 'px', // Chiều cao cố định cho scroll vertical
       scrollCollapse: true, // Thu gọn khi ít dữ liệu
@@ -1514,85 +1468,47 @@ import DateFormatter from './utils/date-formatter.js';
         '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
     };
 
-    // Thêm rowGroup config nếu đang bật chế độ nhóm
-    if (isGroupingEnabled && selectedGroupColumns.length > 0) {
-      // Tạo columnLabels từ GROUP_BY_COLUMNS_CONFIG
-      // Hiển thị ở đầu mỗi nhóm
-      const columnLabels = {};
-      GROUP_BY_COLUMNS_CONFIG.forEach(col => {
-        // Lấy emoji từ icon hoặc dùng icon string
-        const emoji = col.icon.includes('alarm')
-          ? '⏰'
-          : col.icon.includes('file-list')
-            ? '📦'
-            : col.icon.includes('barcode')
-              ? '🏷️'
-              : col.icon.includes('building')
-                ? '🏢'
-                : col.icon.includes('user')
-                  ? '👤'
-                  : col.icon.includes('test-tube')
-                    ? '🧪'
-                    : col.icon.includes('progress')
-                      ? '📊'
-                      : '📋';
-        columnLabels[col.value] = `${emoji} ${col.label}`;
-      });
+    // ⭐ Nhóm theo điều kiện kết hợp cố định: Hạn hoàn thành + Mã mẫu + Tên đơn hàng (1 cấp)
+    tableConfig.rowGroup = {
+      dataSrc: function (row) {
+        // Tạo composite key từ 3 trường
+        const hanHoanThanh = row.han_hoan_thanh_pt_gm || 'Chưa có';
+        const maMau = row.ma_mau || 'Chưa có';
+        const tenDonHang = row.ten_don_hang || 'Chưa có';
+        return `${hanHoanThanh}|${maMau}|${tenDonHang}`;
+      },
+      startRender: function (rows, group) {
+        const count = rows.count();
+        
+        // Parse composite key
+        const [hanHoanThanh, maMau, tenDonHang] = group.split('|');
+        
+        // Format ngày nếu là ngày hợp lệ
+        let displayHanHoanThanh = hanHoanThanh;
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (dateRegex.test(hanHoanThanh)) {
+          const [year, month, day] = hanHoanThanh.split('-');
+          displayHanHoanThanh = `${day}/${month}/${year}`;
+        }
 
-      // Nếu chọn nhiều cột, dùng array; nếu 1 cột, dùng string
-      const groupDataSrc = selectedGroupColumns.length === 1 ? selectedGroupColumns[0] : selectedGroupColumns;
+        return $('<tr/>')
+          .addClass('group-row')
+          .append(
+            '<td colspan="22">' +
+              '<strong>' + displayHanHoanThanh + '</strong>' +
+              ' <span class="text-muted mx-2">|</span> ' +
+              '<strong>' + maMau + '</strong>' +
+              ' <span class="text-muted mx-2">|</span> ' +
+              '<strong>' + tenDonHang + '</strong>' +
+              ' <span class="badge bg-primary ms-2">' + count + ' chỉ tiêu</span>' +
+              '</td>'
+          );
+      },
+      emptyDataGroup: '<td colspan="22"><em>Chưa có dữ liệu</em></td>'
+    };
 
-      tableConfig.rowGroup = {
-        dataSrc: groupDataSrc,
-        startRender: function (rows, group, level = 0) {
-          const count = rows.count();
-
-          // Xác định cột đang nhóm (nếu nhóm đa cấp)
-          let currentColumn = selectedGroupColumns[level] || selectedGroupColumns[0];
-          let label = columnLabels[currentColumn] || currentColumn;
-
-          // Xử lý giá trị null/undefined
-          let displayGroup = group || '<em class="text-muted">Chưa có dữ liệu</em>';
-
-          // Nếu display group là ngày thì format lại dd/mm/yyyy
-          // Kiểm tra có phải ngày không
-          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-          if (dateRegex.test(displayGroup)) {
-            const [year, month, day] = displayGroup.split('-');
-            displayGroup = `${day}/${month}/${year}`;
-          }
-
-          return $('<tr/>')
-            .addClass('group-row')
-            .append(
-              '<td colspan="22">' +
-                '<strong>' +
-                label +
-                ': ' +
-                displayGroup +
-                '</strong>' +
-                ' <span class="badge bg-primary ms-2">' +
-                count +
-                ' mẫu</span>' +
-                '</td>'
-            );
-        },
-        emptyDataGroup: '<td colspan="22"><em>Chưa có dữ liệu</em></td>'
-      };
-
-      // Sắp xếp theo cột nhóm đầu tiên
-      const firstGroupColumn = selectedGroupColumns[0];
-      const columnIndex = sampleDetailsTableService.getColumnIndexByValue(GROUP_BY_COLUMNS_CONFIG, firstGroupColumn);
-      tableConfig.order = [[columnIndex, 'asc']];
-    } else {
-      // Sắp xếp theo Hạn hoàn thành khi tắt grouping (ASCENDING - sớm nhất trước)
-      // Lấy index của cột mặc định
-      const defaultColumnIndex = sampleDetailsTableService.getColumnIndexByValue(
-        GROUP_BY_COLUMNS_CONFIG,
-        'han_hoan_thanh_pt_gm'
-      );
-      tableConfig.order = [[defaultColumnIndex, 'asc']];
-    }
+    // Sắp xếp theo Hạn hoàn thành (cột index 3)
+    tableConfig.order = [[3, 'asc']];
 
     // Thêm columnDefs - ĐÃ XÓA RESPONSIVE PRIORITY - HIỂN THỊ TẤT CẢ CỘT
     tableConfig.columnDefs = [
@@ -1763,33 +1679,7 @@ import DateFormatter from './utils/date-formatter.js';
         width: '150px',
         render: function (data, type, row) {
           const tenMau = handleNullValue(data, '-');
-
-          // Color mapping cho từng loại mẫu
-          const colorMap = {
-            'Nước mặt': 'info',
-            'Nước dưới đất': 'primary',
-            'Nước mưa': 'info',
-            'Nước Biển': 'info',
-            'Nước Thải': 'warning',
-            'Không khí xung quanh': 'secondary',
-            'Khí Thải': 'danger',
-            Đất: 'success',
-            'Trầm tích': 'success',
-            'Bùn thải': 'warning',
-            'Chất thải rắn': 'danger',
-            'Nước sạch': 'primary',
-            'Nước uống': 'primary',
-            'Nước cấp': 'primary',
-            'Nước sinh hoạt': 'primary',
-            'Không khí làm việc': 'secondary',
-            'Khí thải': 'danger',
-            'Nước thải': 'warning',
-            'Chất thải': 'danger',
-            'Thực phẩm': 'success'
-          };
-
-          const color = colorMap[tenMau] || 'secondary';
-          return `<span class="badge bg-${color}">${tenMau}</span>`;
+          return tenMau;
         }
       },
       {
@@ -1811,7 +1701,7 @@ import DateFormatter from './utils/date-formatter.js';
 
           let hanHoanThanh = handleNullValue(data);
           hanHoanThanh = hanHoanThanh ? DateFormatter.toVietnamese(hanHoanThanh) : '';
-          return `<span class="text-danger fw-semibold"><i class="ri-alarm-warning-line me-1"></i>${hanHoanThanh}</span>`;
+          return hanHoanThanh;
         }
       },
       {
@@ -1905,17 +1795,7 @@ import DateFormatter from './utils/date-formatter.js';
         render: function (data, type, row) {
           const loaiPT = getLoaiPhanTich(row);
           if (!loaiPT) return '<span class="text-muted">-</span>';
-
-          // Màu sắc cho từng loại phân tích
-          const classifyColors = {
-            'PT-VIM': 'info',
-            'KPT-VIM': 'purple',
-            'KPT-TK': 'warning',
-            'PT-TK': 'success'
-          };
-
-          const color = classifyColors[loaiPT] || 'secondary';
-          return `<span class="badge bg-${color}">${loaiPT}</span>`;
+          return loaiPT;
         }
       },
       {
@@ -2023,15 +1903,7 @@ import DateFormatter from './utils/date-formatter.js';
         title: 'Phê duyệt',
         width: '140px',
         render: function (data, type, row) {
-          const approvalColors = {
-            '1.Đạt': 'success',
-            '2.Không đạt': 'danger',
-            '3.Chờ duyệt': 'primary'
-          };
           const pheDuyet = handleNullValue(data, '-');
-          const color = approvalColors[data] || 'secondary';
-
-          let html = `<span class="badge bg-${color}">${pheDuyet}</span>`;
 
           // Hiển thị thông tin người duyệt và thời gian duyệt nếu có
           const nguoiDuyet = handleNullValue(row.nguoi_duyet);
@@ -2042,7 +1914,7 @@ import DateFormatter from './utils/date-formatter.js';
           } else {
             tooltipContent = 'Chưa có thông tin phê duyệt';
           }
-          html = `<div data-bs-toggle="tooltip" data-bs-placement="left" title="${tooltipContent}">${html}</div>`;
+          const html = `<div data-bs-toggle="tooltip" data-bs-placement="left" title="${tooltipContent}">${pheDuyet}</div>`;
 
           return html;
         }
@@ -2089,13 +1961,7 @@ import DateFormatter from './utils/date-formatter.js';
         width: '150px',
         render: function (data, type, row) {
           const loai = handleNullValue(data, 'Chưa xác định');
-          const colorMap = {
-            'Mẫu gửi': 'primary',
-            'Quan trắc MT': 'info',
-            'Môi trường lao động': 'warning'
-          };
-          const color = colorMap[loai] || 'secondary';
-          return `<span class="badge bg-${color}">${loai}</span>`;
+          return loai;
         }
       },
       {
@@ -2160,19 +2026,29 @@ import DateFormatter from './utils/date-formatter.js';
       }
     ];
 
+    // ⭐ TỐI ƯU: Debounce tooltip init để tránh gọi nhiều lần
+    let tooltipTimeout = null;
+    
     // Thêm drawCallback
     tableConfig.drawCallback = function () {
       // Cập nhật trạng thái checkbox "Chọn tất cả"
       updateSelectAllCheckbox();
 
-      // Reinitialize tooltips và dropdowns nếu cần
-      $('[data-bs-toggle="tooltip"]').tooltip();
+      // ⭐ TỐI ƯU: Debounce tooltip initialization
+      if (tooltipTimeout) clearTimeout(tooltipTimeout);
+      tooltipTimeout = setTimeout(() => {
+        // Dispose tooltips cũ trước khi init mới
+        const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipElements.forEach(el => {
+          const existingTooltip = bootstrap.Tooltip.getInstance(el);
+          if (existingTooltip) existingTooltip.dispose();
+        });
+        // Init tooltips mới
+        tooltipElements.forEach(el => new bootstrap.Tooltip(el));
+      }, 100);
 
       // ⭐ THÊM: Khởi tạo infinite scroll sau lần draw đầu tiên
       if (!isInfiniteScrollInitialized) {
-        setTimeout(() => {
-          // initializeInfiniteScroll();
-        }, 500);
         isInfiniteScrollInitialized = true;
       }
     };
@@ -2211,33 +2087,6 @@ import DateFormatter from './utils/date-formatter.js';
 
     // ⭐ THÊM: Bind column settings events
     bindColumnSettingsEvents();
-
-    // === GROUP BY DROPDOWN EVENTS ===
-    // Xử lý checkbox trong dropdown (không đóng dropdown khi click)
-    $('.group-by-option').on('click', function (e) {
-      e.stopPropagation(); // Ngăn dropdown đóng
-      const checkbox = $(this).find('.form-check-input');
-      checkbox.prop('checked', !checkbox.prop('checked'));
-      updateGroupByLabel();
-    });
-
-    // Xử lý click trực tiếp vào checkbox
-    $('.group-by-checkbox').on('click', function (e) {
-      e.stopPropagation();
-      updateGroupByLabel();
-    });
-
-    // Nút "Áp dụng nhóm"
-    $('#applyGroupBtn').on('click', function (e) {
-      e.preventDefault();
-      applyGrouping();
-    });
-
-    // Nút "Bỏ nhóm"
-    $('#clearGroupBtn').on('click', function (e) {
-      e.preventDefault();
-      clearGrouping();
-    });
 
     // Các nút thao tác trong bảng
     elements.table.on('click', '.edit-btn', handleEdit);
@@ -2430,44 +2279,75 @@ import DateFormatter from './utils/date-formatter.js';
     updateSelectAllCheckbox();
   }
 
+  // ⭐ CACHE: Map cho lookup nhanh chi tiết mẫu theo ID
+  let chiTietMauMap = null;
+  function getChiTietMauMap() {
+    if (!chiTietMauMap || chiTietMauMap.size !== chiTietMauData.length) {
+      chiTietMauMap = new Map(chiTietMauData.map(item => [item.id, item]));
+    }
+    return chiTietMauMap;
+  }
+
   /**
    * Cập nhật danh sách các dòng đã chọn
+   * ⭐ TỐI ƯU: Sử dụng vanilla JS và Map lookup O(1)
    */
   function updateSelectedRows() {
     selectedRows.clear();
-    $('.row-checkbox:checked').each(function () {
-      const id = $(this).val();
-      const rowData = chiTietMauData.find(item => item.id === id);
+    const dataMap = getChiTietMauMap();
+    const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+    
+    for (let i = 0; i < checkedBoxes.length; i++) {
+      const id = checkedBoxes[i].value;
+      const rowData = dataMap.get(id);
       if (rowData) {
         selectedRows.set(id, rowData);
       }
-    });
-    console.log(`📌 Đã chọn ${selectedRows.size} dòng`);
+    }
     updateBulkActionsToolbar();
   }
 
   /**
    * Cập nhật trạng thái checkbox "Chọn tất cả"
+   * ⭐ TỐI ƯU: Sử dụng querySelectorAll một lần
    */
   function updateSelectAllCheckbox() {
-    const totalCheckboxes = $('.row-checkbox').length;
-    const checkedCheckboxes = $('.row-checkbox:checked').length;
+    const allCheckboxes = document.querySelectorAll('.row-checkbox');
+    const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+    const total = allCheckboxes.length;
+    const checked = checkedCheckboxes.length;
+    const selectAllEl = elements.selectAll[0];
 
-    if (checkedCheckboxes === 0) {
-      elements.selectAll.prop('indeterminate', false);
-      elements.selectAll.prop('checked', false);
-    } else if (checkedCheckboxes === totalCheckboxes) {
-      elements.selectAll.prop('indeterminate', false);
-      elements.selectAll.prop('checked', true);
+    if (checked === 0) {
+      selectAllEl.indeterminate = false;
+      selectAllEl.checked = false;
+    } else if (checked === total) {
+      selectAllEl.indeterminate = false;
+      selectAllEl.checked = true;
     } else {
-      elements.selectAll.prop('indeterminate', true);
-      elements.selectAll.prop('checked', false);
+      selectAllEl.indeterminate = true;
+      selectAllEl.checked = false;
     }
+  }
+
+  // ⭐ CACHE: Bulk action buttons DOM elements
+  let bulkActionButtonsCache = null;
+  function getBulkActionButtons() {
+    if (!bulkActionButtonsCache) {
+      bulkActionButtonsCache = {};
+      Object.entries(BULK_ACTION_ELEMENTS).forEach(([key, el]) => {
+        bulkActionButtonsCache[key] = document.getElementById(el.id);
+      });
+      bulkActionButtonsCache.cancel = document.getElementById('bulkCancelBtn2');
+      bulkActionButtonsCache.deselect = document.getElementById('deselectAllBtn');
+      bulkActionButtonsCache.selectedCount = document.getElementById('selectedCount');
+    }
+    return bulkActionButtonsCache;
   }
 
   /**
    * Cập nhật bulk actions toolbar dựa trên trạng thái filter
-   * Sử dụng BULK_ACTIONS_CONFIG để xác định actions được phép hiển thị
+   * ⭐ TỐI ƯU: Sử dụng cached elements và vanilla JS
    */
   function updateBulkActionsToolbar() {
     const selectedCount = selectedRows.size;
@@ -2480,36 +2360,41 @@ import DateFormatter from './utils/date-formatter.js';
     // Hiển thị toolbar
     elements.bulkActionsToolbar.removeClass('d-none');
 
-    // Cập nhật text với số lượng đã chọn
-    $('#selectedCount').text(selectedCount);
-
-    // === SỬ DỤNG CONFIG ĐỂ HIỂN THỊ BUTTONS ===
-    console.log('📊 Current filter:', currentStatusFilter);
+    // ⭐ TỐI ƯU: Sử dụng cached elements
+    const buttons = getBulkActionButtons();
+    if (buttons.selectedCount) buttons.selectedCount.textContent = selectedCount;
 
     // Lấy config cho trạng thái hiện tại
     const config = BULK_ACTIONS_CONFIG[currentStatusFilter] || BULK_ACTIONS_CONFIG.all;
     const allowedActions = config.allowedActions;
 
-    console.log('✅ Allowed actions:', allowedActions);
-    console.log('📝 Description:', config.description);
-
-    // Ẩn TẤT CẢ buttons trước (bao gồm cả nút Hủy)
-    Object.values(BULK_ACTION_ELEMENTS).forEach(element => {
-      $(`#${element.id}`).hide().prop('disabled', true);
-    });
-    $('#bulkCancelBtn2').hide().prop('disabled', true);
-
-    // Hiển thị chỉ các buttons được phép theo config
-    allowedActions.forEach(actionKey => {
-      const element = BULK_ACTION_ELEMENTS[actionKey];
-      if (element) {
-        $(`#${element.id}`).show().prop('disabled', false);
-        console.log(`  ✓ Hiển thị: ${element.label}`);
+    // Ẩn TẤT CẢ buttons trước
+    Object.keys(BULK_ACTION_ELEMENTS).forEach(key => {
+      const btn = buttons[key];
+      if (btn) {
+        btn.style.display = 'none';
+        btn.disabled = true;
       }
     });
+    if (buttons.cancel) {
+      buttons.cancel.style.display = 'none';
+      buttons.cancel.disabled = true;
+    }
 
-    // Luôn hiển thị nút "Bỏ chọn tất cả" (deselectAll)
-    $('#deselectAllBtn').show().prop('disabled', false);
+    // Hiển thị chỉ các buttons được phép
+    for (let i = 0; i < allowedActions.length; i++) {
+      const btn = buttons[allowedActions[i]];
+      if (btn) {
+        btn.style.display = '';
+        btn.disabled = false;
+      }
+    }
+
+    // Luôn hiển thị nút "Bỏ chọn tất cả"
+    if (buttons.deselect) {
+      buttons.deselect.style.display = '';
+      buttons.deselect.disabled = false;
+    }
   }
 
   /**
@@ -2675,109 +2560,6 @@ import DateFormatter from './utils/date-formatter.js';
     }
   }
 
-  /**
-   * Cập nhật label của nút Group By dropdown
-   */
-  function updateGroupByLabel() {
-    const checkedCount = $('.group-by-checkbox:checked').length;
-    const btn = $('#groupByDropdownBtn');
-    const label = $('#groupByLabel');
-
-    if (checkedCount === 0) {
-      label.text('Nhóm dữ liệu');
-      btn.removeClass('active');
-    } else if (checkedCount === 1) {
-      const checkedValue = $('.group-by-checkbox:checked').val();
-
-      //  Tạo column names từ GROUP COLUMNS CONFIG
-      const columnNames = GROUP_BY_COLUMNS_CONFIG.reduce((acc, col) => {
-        acc[col.value] = col.label;
-        return acc;
-      }, {});
-
-      label.text('Nhóm: ' + columnNames[checkedValue]);
-      btn.addClass('active');
-    } else {
-      label.text(`Nhóm: ${checkedCount} cột`);
-      btn.addClass('active');
-    }
-  }
-
-  /**
-   * Áp dụng nhóm với các cột đã chọn
-   */
-  function applyGrouping() {
-    try {
-      // Lấy danh sách các cột được chọn
-      selectedGroupColumns = [];
-      $('.group-by-checkbox:checked').each(function () {
-        selectedGroupColumns.push($(this).val());
-      });
-
-      if (selectedGroupColumns.length === 0) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Chưa chọn cột',
-          text: 'Vui lòng chọn ít nhất 1 cột để nhóm dữ liệu',
-          confirmButtonText: 'Đã hiểu'
-        });
-        return;
-      }
-
-      isGroupingEnabled = true;
-
-      // Đóng dropdown
-      $('#groupByDropdownBtn').dropdown('hide');
-
-      // Rebuild DataTable
-      if (chiTietMauTable) {
-        chiTietMauTable.destroy();
-      }
-      initializeDataTable();
-
-      console.log('✅ Đã áp dụng nhóm theo:', selectedGroupColumns);
-    } catch (error) {
-      console.error('❌ Lỗi khi áp dụng nhóm:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Có lỗi khi áp dụng nhóm dữ liệu'
-      });
-    }
-  }
-
-  /**
-   * Bỏ nhóm dữ liệu
-   */
-  function clearGrouping() {
-    try {
-      isGroupingEnabled = false;
-      selectedGroupColumns = [];
-
-      // Bỏ check tất cả checkbox
-      $('.group-by-checkbox').prop('checked', false);
-      updateGroupByLabel();
-
-      // Đóng dropdown
-      $('#groupByDropdownBtn').dropdown('hide');
-
-      // Rebuild DataTable
-      if (chiTietMauTable) {
-        chiTietMauTable.destroy();
-      }
-      initializeDataTable();
-
-      console.log('✅ Đã bỏ nhóm dữ liệu');
-    } catch (error) {
-      console.error('❌ Lỗi khi bỏ nhóm:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi',
-        text: 'Có lỗi khi bỏ nhóm dữ liệu'
-      });
-    }
-  }
-
   // #region [ XỬ LÝ FORM DỰA TRÊN CONFIG ]
   /**
    * Render form modal động từ config
@@ -2832,8 +2614,12 @@ import DateFormatter from './utils/date-formatter.js';
 
       newData.id = 'chi_tiet_mau_' + Date.now(); // Tạo ID tạm thời
 
-      // Gọi Service
-      const createdData = await sampleDetailsService.create(newData);
+      // Gọi API trực tiếp
+      const response = await chiTietMauAPI.taoMoi(newData);
+      if (!response.success) {
+        throw new Error('Tạo chi tiết mẫu thất bại');
+      }
+      const createdData = response.data;
 
       // Cập nhật local data
       chiTietMauData.push(createdData);
@@ -2862,8 +2648,12 @@ import DateFormatter from './utils/date-formatter.js';
 
       const id = updateData.id;
 
-      // Cập nhật dữ liệu vào database
-      const updatedData = await sampleDetailsService.update(id, updateData);
+      // Cập nhật dữ liệu vào database - Gọi API trực tiếp
+      const response = await chiTietMauAPI.capNhat(id, updateData);
+      if (!response.success) {
+        throw new Error(`Cập nhật chi tiết mẫu ID ${id} thất bại`);
+      }
+      const updatedData = response.data;
 
       // Cập nhật local data
       const index = chiTietMauData.findIndex(item => item.id == id);
@@ -2897,10 +2687,13 @@ import DateFormatter from './utils/date-formatter.js';
     try {
       const id = updateData.id;
 
-      // Cập nhật dữ liệu vào database
-      await sampleDetailsService.updateNotValidated(id, updateData);
+      // Cập nhật dữ liệu vào database - Gọi API trực tiếp
+      const response = await chiTietMauAPI.capNhat(id, updateData);
+      if (!response.success) {
+        throw new Error(`Cập nhật trạng thái ID ${id} thất bại`);
+      }
     } catch (error) {
-      console.error('❌ Lỗi ở hàm updateStatus xảy ra khi update cho id', id, ':', error.message);
+      console.error('❌ Lỗi ở hàm updateStatus xảy ra khi update cho id', updateData.id, ':', error.message);
     }
   }
 
@@ -2928,8 +2721,8 @@ import DateFormatter from './utils/date-formatter.js';
 
       showLoading(true);
 
-      // Gọi Service
-      await sampleDetailsService.delete(id);
+      // Gọi API trực tiếp
+      await chiTietMauAPI.xoa(id);
 
       // Cập nhật local data
       chiTietMauData = chiTietMauData.filter(item => item.id != id);
@@ -2956,8 +2749,12 @@ import DateFormatter from './utils/date-formatter.js';
     try {
       showLoading(true);
 
-      // Gọi Service
-      const createdData = await sampleDetailsService.bulkCreate(dataArray);
+      // Gọi API trực tiếp
+      const response = await chiTietMauAPI.bulkCreate(dataArray);
+      if (!response.success) {
+        throw new Error('Tạo hàng loạt thất bại');
+      }
+      const createdData = response.data;
 
       // Cập nhật local data
       chiTietMauData.push(...createdData);
@@ -2984,8 +2781,12 @@ import DateFormatter from './utils/date-formatter.js';
     try {
       showLoading(true);
 
-      // Gọi Service
-      const updatedData = await sampleDetailsService.bulkUpdate(updates);
+      // Gọi API trực tiếp
+      const response = await chiTietMauAPI.bulkUpdate(updates);
+      if (!response.success) {
+        throw new Error('Cập nhật hàng loạt thất bại');
+      }
+      const updatedData = response.data;
 
       // Cập nhật local data
       updatedData.forEach(updatedItem => {
@@ -3162,14 +2963,41 @@ import DateFormatter from './utils/date-formatter.js';
       return;
     }
 
+    // ⭐ DEBUG: Log trạng thái thực tế của các items đã chọn
+    console.log('📊 [DEBUG] Selected items trang_thai_tong_hop:', selectedItems.map(item => ({
+      id: item.id,
+      trang_thai_tong_hop: item.trang_thai_tong_hop,
+      ten_chi_tieu: item.ten_chi_tieu
+    })));
+    console.log('📊 [DEBUG] Expected status:', crrStatus);
+
     // Kiểm tra và lọc ra các items ở trạng thái phù hợp
-    const validItems = selectedItems.filter(item => item.trang_thai_tong_hop === crrStatus);
-    const invalidItems = selectedItems.filter(item => item.trang_thai_tong_hop !== crrStatus);
+    // ⭐ FIX: Hỗ trợ cả requiredStatus là array (như DANG_PHAN_TICH, PHAN_TICH_LAI)
+    const transition = BULK_ACTION_STATUS_TRANSITIONS[Object.keys(BULK_ACTION_STATUS_TRANSITIONS).find(
+      key => {
+        const t = BULK_ACTION_STATUS_TRANSITIONS[key];
+        if (Array.isArray(t.requiredStatus)) {
+          return t.requiredStatus.includes(crrStatus);
+        }
+        return t.requiredStatus === crrStatus;
+      }
+    )];
+    
+    // Nếu có transition config với array status, kiểm tra linh hoạt hơn
+    let validItems, invalidItems;
+    if (transition && Array.isArray(transition.requiredStatus)) {
+      validItems = selectedItems.filter(item => transition.requiredStatus.includes(item.trang_thai_tong_hop));
+      invalidItems = selectedItems.filter(item => !transition.requiredStatus.includes(item.trang_thai_tong_hop));
+    } else {
+      validItems = selectedItems.filter(item => item.trang_thai_tong_hop === crrStatus);
+      invalidItems = selectedItems.filter(item => item.trang_thai_tong_hop !== crrStatus);
+    }
 
     // Nếu có mục không hợp lệ, thông báo và chỉ xử lý mục hợp lệ
     if (invalidItems.length > 0) {
+      console.log('❌ [DEBUG] Invalid items:', invalidItems.map(i => i.trang_thai_tong_hop));
       notificationService.show(
-        `⚠️ Có ${invalidItems.length} mục không ở trạng thái "${crrStatus}". Chỉ nhận được ${validItems.length} mục hợp lệ.`,
+        `⚠️ Có ${invalidItems.length} mục không ở trạng thái phù hợp. Chỉ nhận được ${validItems.length} mục hợp lệ.`,
         'warning'
       );
       if (validItems.length === 0) return;
@@ -3363,9 +3191,14 @@ import DateFormatter from './utils/date-formatter.js';
    * [CHỜ DUYỆT THẦU] DUYỆT THẦU -> [CHỜ GỬI MẪU THẦU]
    */
   async function executeBulkApproveThauV1(validItems) {
-    let optionHtml = '';
-    partners.forEach((partner, index) => {
-      optionHtml += `<option ${index == 0 ? 'selected ' : ''}value="${partner.ten_doi_tac}">${partner.ten_doi_tac}</option>`;
+    // ⭐ Sử dụng danhSachDoiTacData từ API, chỉ lấy ma_doi_tac
+    let optionHtml = '<option value="">-- Chọn đối tác --</option>';
+    const doiTacList = danhSachDoiTacData.length > 0 ? danhSachDoiTacData : partners;
+    doiTacList.forEach((partner) => {
+      const maDoiTac = partner.ma_doi_tac || '';
+      if (maDoiTac) {
+        optionHtml += `<option value="${maDoiTac}">${maDoiTac}</option>`;
+      }
     });
 
     const result = await Swal.fire({
@@ -3471,9 +3304,14 @@ import DateFormatter from './utils/date-formatter.js';
     const tbody = $('#updateContractorTableBody');
     tbody.empty();
 
-    let optionHtml = '';
-    partners.forEach((partner, index) => {
-      optionHtml += `<option ${index == 0 ? 'selected ' : ''}value="${partner.ten_doi_tac}">${partner.ten_doi_tac}</option>`;
+    // ⭐ Sử dụng danhSachDoiTacData từ API, chỉ lấy ma_doi_tac
+    let optionHtml = '<option value="">-- Chọn đối tác --</option>';
+    const doiTacList = danhSachDoiTacData.length > 0 ? danhSachDoiTacData : partners;
+    doiTacList.forEach((partner) => {
+      const maDoiTac = partner.ma_doi_tac || '';
+      if (maDoiTac) {
+        optionHtml += `<option value="${maDoiTac}">${maDoiTac}</option>`;
+      }
     });
 
     validItems.forEach((item, index) => {
@@ -4077,6 +3915,10 @@ import DateFormatter from './utils/date-formatter.js';
    * @returns {Promise<Object>}
    */
   async function loadDanhSachChiTieuPaginated(page = 1, pageSize = 50, additionalFilters = {}) {
+    console.log('\n--- [LOAD DATA] loadDanhSachChiTieuPaginated ---');
+    console.log('[LOAD DATA] Page:', page, '| PageSize:', pageSize);
+    console.log('[LOAD DATA] additionalFilters:', additionalFilters);
+    
     try {
       // Prevent multiple concurrent requests
       if (paginationState.isLoading) {
@@ -4091,22 +3933,25 @@ import DateFormatter from './utils/date-formatter.js';
           ngay_bat_dau: paginationState.ngayBatDau,
           ngay_ket_thuc: paginationState.ngayKetThuc
         };
+        console.log('[LOAD DATA] Đã thêm filter ngày:', paginationState.ngayBatDau, '->', paginationState.ngayKetThuc);
       }
 
       // 1️⃣ Build API search query (server-side filtering)
+      console.log('[LOAD DATA] Gọi permissionService.buildAPISearchQuery...');
       const apiQuery = permissionService.buildAPISearchQuery({
         // Có thể thêm search điều kiện khác
         // canh_bao_phan_tich: "Đã quá hạn"
         ...additionalFilters
       });
+      console.log('[LOAD DATA] API Query:', JSON.stringify(apiQuery));
 
       paginationState.isLoading = true;
       showLoading(true);
 
       // ⭐ Kết hợp keyword từ searchState vào filters
       const searchParams = {
-        // limit: pageSize,
-        // offset: (page - 1) * pageSize,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
         ...apiQuery
       };
 
@@ -4133,27 +3978,35 @@ import DateFormatter from './utils/date-formatter.js';
       //   'info'
       // );
 
-      const response = await sampleDetailsService.search(searchParams);
+      // Gọi API trực tiếp
+      console.log('[LOAD DATA] Gọi chiTietMauAPI.search...');
+      const response = await chiTietMauAPI.search(searchParams);
 
       // ⭐ KIỂM TRA: Response có đúng format không?
-      if (!response || !response.data) {
+      if (!response || !response.success || !response.data) {
         throw new Error('Response không hợp lệ hoặc không có data');
       }
 
-      // console.log('📥 API response:', response);
+      console.log('[LOAD DATA] API Response - success:', response.success);
+      console.log('[LOAD DATA] API Response - raw data count:', response.data?.length || 0);
 
       // Update pagination state
       paginationState.currentPage = page;
       paginationState.pageSize = pageSize;
       paginationState.totalRecords = response.pagination.total;
       paginationState.totalPages = response.pagination.pages;
-
-      // console.log(`✅ Loaded page ${page}/${paginationState.totalPages} (${response.data.length} records)`);
-      //console.log('📊 Pagination State:', paginationState);
+      console.log('[LOAD DATA] Pagination:', {
+        currentPage: paginationState.currentPage,
+        totalPages: paginationState.totalPages,
+        totalRecords: paginationState.totalRecords
+      });
 
       // Client-side filtering
+      console.log('[LOAD DATA] Gọi permissionService.filterData...');
       response.prevData = response.data;
       response.data = permissionService.filterData(response.data.results || response.data);
+      console.log('[LOAD DATA] Sau filter:', response.data.length, 'records');
+      console.log('--- [LOAD DATA] KẾT THÚC ---\n');
 
       return response;
     } catch (error) {
@@ -4190,23 +4043,21 @@ import DateFormatter from './utils/date-formatter.js';
 
   /**
    * Khởi tạo ứng dụng
+   * ⭐ TỐI ƯU: Giảm console.log trong production, tối ưu thứ tự khởi tạo
    */
   async function initializeApp() {
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
     // Kiểm tra quyền truy cập
     if (permissionService.matchedGroups.length === 0) {
-      console.error('❌ Không có quyền truy cập trang này');
       window.location.href = './access-denied.html';
       return;
     }
 
-    // console.log('🚀 Init Sample Details Management');
-
     // Cấu hình SweetAlert2 mặc định
     if (typeof Swal !== 'undefined') {
       Swal.mixin({
-        customClass: {
-          container: 'swal2-container-custom'
-        },
+        customClass: { container: 'swal2-container-custom' },
         target: 'body',
         allowOutsideClick: false,
         allowEscapeKey: true,
@@ -4217,51 +4068,52 @@ import DateFormatter from './utils/date-formatter.js';
     }
 
     try {
-      // Load column settings từ localStorage
+      // ⭐ TỐI ƯU: Batch sync operations
       loadColumnSettings();
-
-      // Render filter hạn hoàn thành mặc định
       renderFilterHanHoanThanh();
-
-      // Initialize Form Builder
       formBuilder = new window.FormBuilderService(formConfig);
-
-      // Render form dynamically
       renderFormModal();
+      
+      // Gán danh sách chỉ tiêu từ static data
+      danhSachChiTieuData = indicators;
+      
+      // ⭐ TỐI ƯU: Invalidate cache khi load data mới
+      chiTietMauMap = null;
+      statsElements = null;
+      bulkActionButtonsCache = null;
 
       showLoading(true);
 
-      // Load trang đầu tiên với lazy loading
-      const response = await loadDanhSachChiTieuPaginated(1, paginationState.pageSize);
+      // ⭐ TỐI ƯU: Gọi nhiều API song song (bất đồng bộ)
+      const [chiTietMauResponse, doiTacResponse] = await Promise.all([
+        loadDanhSachChiTieuPaginated(1, paginationState.pageSize),
+        doiTacAPI.layDanhSach({ limit: 500 }) // Gọi API đối tác song song
+      ]);
 
-      if (response && response.data) {
-        // console.warn(response.data);
-        chiTietMauData = response.data;
+      // Xử lý response chi tiết mẫu
+      if (chiTietMauResponse && chiTietMauResponse.data) {
+        chiTietMauData = chiTietMauResponse.data;
       } else {
-        throw new Error('Không có dữ liệu');
+        throw new Error('Không có dữ liệu chi tiết mẫu');
       }
 
-      // Load danh sách chỉ tiêu
-      await loadDanhSachChiTieu();
+      // ⭐ THÊM: Xử lý response đối tác
+      if (doiTacResponse && doiTacResponse.data) {
+        danhSachDoiTacData = doiTacResponse.data;
+        if (isDev) console.log('✅ Đã load', danhSachDoiTacData.length, 'đối tác từ API');
+      } else {
+        console.warn('⚠️ Không có dữ liệu đối tác, sử dụng static data');
+        danhSachDoiTacData = partners; // Fallback về static data
+      }
 
-      // Khởi tạo UI
+      // Khởi tạo UI (sau khi có data)
       initializeDataTable();
       initializeProgressStats();
-
-      // Render Group By dropdown
-      sampleDetailsTableService.renderGroupByDropdown(GROUP_BY_COLUMNS_CONFIG);
       bindEvents();
 
-      // Set checkbox checked cho grouping mặc định
-      if (isGroupingEnabled && selectedGroupColumns.length > 0) {
-        selectedGroupColumns.forEach(col => {
-          $(`#group_${col}`).prop('checked', true);
-        });
-        updateGroupByLabel();
-      }
-
       showLoading(false);
-      console.log('✅ Khởi tạo thành công');
+      
+      if (isDev) console.log('✅ App khởi tạo thành công với', chiTietMauData.length, 'records');
     } catch (error) {
       showLoading(false);
       console.error('❌ Lỗi khởi tạo:', error);
@@ -4269,10 +4121,12 @@ import DateFormatter from './utils/date-formatter.js';
     }
   }
 
-  // Initialize when document is ready
-  $(window).on('load', function () {
+  // ⭐ TỐI ƯU: Sử dụng DOMContentLoaded thay vì window.load (nhanh hơn)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  } else {
     initializeApp();
-  });
+  }
 
   // Thêm resize handler
   let resizeTimeout;

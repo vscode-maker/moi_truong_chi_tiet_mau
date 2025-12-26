@@ -20,12 +20,19 @@ class PermissionService {
    * ============================================
    */
   init() {
+    console.log('[1️⃣ PERMISSION] Đang khởi tạo Permission Service...');
+    console.time('[PERMISSION] Thời gian init');
+    
     // Lấy tất cả URL parameters liên quan phân quyền
     this.userParams = this.extractURLParams();
+    console.log('[1️⃣ PERMISSION] URL Params:', this.userParams);
 
     // Xác định các nhóm quyền phù hợp
     this.matchedGroups = this.determinePermissionGroups();
+    console.log('[1️⃣ PERMISSION] Matched Groups:', this.matchedGroups.map(g => g.name));
+    
     this.initialized = true;
+    console.timeEnd('[PERMISSION] Thời gian init');
 
     return {
       userParams: this.userParams,
@@ -35,11 +42,15 @@ class PermissionService {
 
   /**
    * Lấy tất cả URL parameters liên quan phân quyền
+   * ⭐ TỐI ƯU: Lấy tất cả params một lần thay vì gọi getParam() nhiều lần
    */
   extractURLParams() {
     const params = {};
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Lấy tất cả params cần thiết trong 1 lần duyệt
     PERMISSION_CONFIG.URL_PARAMS.forEach(key => {
-      const value = urlSearchService.getParam(key);
+      const value = urlParams.get(key);
       if (value !== null && value !== '') {
         params[key] = value;
       }
@@ -127,16 +138,21 @@ class PermissionService {
    * Chỉ áp dụng các điều kiện mà API hỗ trợ
    */
   buildAPISearchQuery(additionalSearch = {}) {
+    console.log('[2️⃣ PERMISSION] buildAPISearchQuery - additionalSearch:', additionalSearch);
+    
     if (!this.initialized || this.matchedGroups.length === 0) {
+      console.log('[2️⃣ PERMISSION] Không có nhóm quyền, trả về additionalSearch');
       return { search: additionalSearch };
     }
 
     // Lấy nhóm quyền có priority cao nhất
     const primaryGroup = this.matchedGroups[0];
     const dataFilter = primaryGroup.config.dataFilter;
+    console.log('[2️⃣ PERMISSION] Primary Group:', primaryGroup.name, '| dataFilter:', dataFilter);
 
     // Nếu là FULL_ACCESS → không cần filter
     if (dataFilter === 'ALL') {
+      console.log('[2️⃣ PERMISSION] FULL_ACCESS - không cần filter');
       return { search: additionalSearch };
     }
 
@@ -168,6 +184,9 @@ class PermissionService {
    * Lọc dữ liệu phía client với các điều kiện phức tạp
    */
   filterData(data) {
+    console.log('[3️⃣ PERMISSION] filterData - Input records:', data?.length || 0);
+    console.time('[PERMISSION] filterData');
+    
     if (!this.initialized) {
       console.warn('⚠️ Permission Service chưa được khởi tạo');
       return [];
@@ -184,10 +203,20 @@ class PermissionService {
       return [];
     }
 
+    // ⭐ FAST PATH: Nếu có FULL_ACCESS, trả về ngay không cần filter
+    const hasFullAccess = this.matchedGroups.some(group => group.config.dataFilter === 'ALL');
+    if (hasFullAccess) {
+      console.log('[3️⃣ PERMISSION] FULL_ACCESS - Skip filter, trả về toàn bộ', data.length, 'records');
+      console.timeEnd('[PERMISSION] filterData');
+      return data; // Skip filtering hoàn toàn
+    }
+
     // Áp dụng filter từ TẤT CẢ các nhóm quyền (OR logic)
     const filteredData = data.filter(item => {
       return this.matchedGroups.some(group => this.checkItemPermission(item, group.config.dataFilter));
     });
+    console.log('[3️⃣ PERMISSION] Sau filter:', filteredData.length, '/', data.length, 'records');
+    console.timeEnd('[PERMISSION] filterData');
 
     return filteredData;
   }
