@@ -125,6 +125,56 @@ table.dataTable thead th,
   font-size: 0.875rem;
 }
 
+/* Row Group Styling */
+.group-row {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.group-row:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.group-row td {
+  padding: 12px 10px !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #ffffff !important;
+  border: none !important;
+  letter-spacing: 0.3px;
+}
+
+.group-row strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.group-row .text-muted {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.group-row .badge {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Dark mode support for group row */
+[data-bs-theme="dark"] .group-row {
+  background: linear-gradient(135deg, #434343 0%, #000000 100%) !important;
+}
+
+[data-bs-theme="dark"] .group-row:hover {
+  background: linear-gradient(135deg, #000000 0%, #434343 100%) !important;
+}
+
 /* Never hidden columns - always visible */
 .never-hidden {
   display: table-cell !important;
@@ -893,21 +943,36 @@ table.dataTable tbody tr.dtrg-group.collapsed td::before {
 /* Responsive design for inline list */
 @media (max-width: 768px) {
   .progress-stats-grid {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px 0;
   }
 
   .progress-stat-chip {
-    font-size: 12px;
-    padding: 5px 10px;
+    font-size: 11px;
+    padding: 6px 8px;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+    min-height: 60px;
+    justify-content: center;
   }
 
   .progress-stat-chip i {
-    font-size: 14px;
+    font-size: 16px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    line-height: 1.2;
+    max-width: 100%;
+    word-wrap: break-word;
   }
 
   .stat-count {
     padding: 2px 6px;
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .stat-separator {

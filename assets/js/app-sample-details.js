@@ -495,6 +495,7 @@ import DateFormatter from './utils/date-formatter.js';
 
       if (response && response.data) {
         chiTietMauData = [...chiTietMauData, ...response.data];
+        chiTietMauMap = null; // ⭐ Invalidate cache
 
         if (chiTietMauTable) {
           chiTietMauTable.clear();
@@ -537,6 +538,7 @@ import DateFormatter from './utils/date-formatter.js';
 
       if (response && response.data) {
         chiTietMauData = response.data;
+        chiTietMauMap = null; // ⭐ Invalidate cache
 
         // Redraw table
         if (chiTietMauTable) {
@@ -1397,6 +1399,10 @@ import DateFormatter from './utils/date-formatter.js';
     elements.selectAll.prop('checked', false);
     elements.bulkActionsToolbar.addClass('d-none');
 
+    // ⭐ Ẩn/hiện cột checkbox dựa trên filter
+    const shouldHideCheckbox = (filter === 'all' || filter === 'CHO_MA_HOA');
+    chiTietMauTable.column(0).visible(!shouldHideCheckbox);
+
     // Lưu trạng thái filter hiện tại
     currentStatusFilter = filter;
 
@@ -1507,8 +1513,13 @@ import DateFormatter from './utils/date-formatter.js';
       emptyDataGroup: '<td colspan="22"><em>Chưa có dữ liệu</em></td>'
     };
 
-    // Sắp xếp theo Hạn hoàn thành (cột index 3)
-    tableConfig.order = [[3, 'asc']];
+    // ⭐ FIX: Sắp xếp theo đúng thứ tự 3 trường để group row hoạt động đúng
+    // Thứ tự: Hạn hoàn thành (3) → Mã mẫu (1) → Tên đơn hàng (7)
+    tableConfig.order = [
+      [3, 'asc'],  // han_hoan_thanh_pt_gm
+      [1, 'asc'],  // ma_mau
+      [7, 'asc']   // ten_don_hang
+    ];
 
     // Thêm columnDefs - ĐÃ XÓA RESPONSIVE PRIORITY - HIỂN THỊ TẤT CẢ CỘT
     tableConfig.columnDefs = [
@@ -2661,6 +2672,9 @@ import DateFormatter from './utils/date-formatter.js';
         // Cập nhật dữ liệu
         chiTietMauData[index] = { ...chiTietMauData[index], ...updatedData };
 
+        // ⭐ Invalidate cache Map
+        chiTietMauMap = null;
+
         // Refresh UI
         chiTietMauTable.clear().rows.add(chiTietMauData).draw();
         updateProgressStats();
@@ -2726,6 +2740,7 @@ import DateFormatter from './utils/date-formatter.js';
 
       // Cập nhật local data
       chiTietMauData = chiTietMauData.filter(item => item.id != id);
+      chiTietMauMap = null; // ⭐ Invalidate cache
 
       // Refresh UI
       chiTietMauTable.clear().rows.add(chiTietMauData).draw();
@@ -2795,6 +2810,9 @@ import DateFormatter from './utils/date-formatter.js';
           chiTietMauData[index] = updatedItem;
         }
       });
+
+      // ⭐ Invalidate cache Map
+      chiTietMauMap = null;
 
       // Refresh UI
       chiTietMauTable.clear().rows.add(chiTietMauData).draw();
@@ -2876,6 +2894,9 @@ import DateFormatter from './utils/date-formatter.js';
           ...chiTietMauData[dataIndex],
           ...updatedItem
         };
+
+        // ⭐ Invalidate cache Map để force rebuild lần tới
+        chiTietMauMap = null;
 
         // Cập nhật dòng cụ thể mà không redraw toàn bộ bảng
         const row = chiTietMauTable.row(targetRowIndex);
@@ -2970,6 +2991,7 @@ import DateFormatter from './utils/date-formatter.js';
       ten_chi_tieu: item.ten_chi_tieu
     })));
     console.log('📊 [DEBUG] Expected status:', crrStatus);
+    console.log('📊 [DEBUG] Actual statuses:', selectedItems.map(i => i.trang_thai_tong_hop).join(', '));
 
     // Kiểm tra và lọc ra các items ở trạng thái phù hợp
     // ⭐ FIX: Hỗ trợ cả requiredStatus là array (như DANG_PHAN_TICH, PHAN_TICH_LAI)
@@ -2986,19 +3008,46 @@ import DateFormatter from './utils/date-formatter.js';
     // Nếu có transition config với array status, kiểm tra linh hoạt hơn
     let validItems, invalidItems;
     if (transition && Array.isArray(transition.requiredStatus)) {
-      validItems = selectedItems.filter(item => transition.requiredStatus.includes(item.trang_thai_tong_hop));
-      invalidItems = selectedItems.filter(item => !transition.requiredStatus.includes(item.trang_thai_tong_hop));
+      validItems = selectedItems.filter(item => {
+        const itemStatus = (item.trang_thai_tong_hop || '').toString().trim();
+        return transition.requiredStatus.some(status => itemStatus === status);
+      });
+      invalidItems = selectedItems.filter(item => {
+        const itemStatus = (item.trang_thai_tong_hop || '').toString().trim();
+        return !transition.requiredStatus.some(status => itemStatus === status);
+      });
     } else {
-      validItems = selectedItems.filter(item => item.trang_thai_tong_hop === crrStatus);
-      invalidItems = selectedItems.filter(item => item.trang_thai_tong_hop !== crrStatus);
+      validItems = selectedItems.filter(item => {
+        const itemStatus = (item.trang_thai_tong_hop || '').toString().trim();
+        return itemStatus === crrStatus;
+      });
+      invalidItems = selectedItems.filter(item => {
+        const itemStatus = (item.trang_thai_tong_hop || '').toString().trim();
+        return itemStatus !== crrStatus;
+      });
     }
 
     // Nếu có mục không hợp lệ, thông báo và chỉ xử lý mục hợp lệ
     if (invalidItems.length > 0) {
       console.log('❌ [DEBUG] Invalid items:', invalidItems.map(i => i.trang_thai_tong_hop));
+      
+      // Hiển thị chi tiết các trạng thái không hợp lệ
+      const statusCounts = {};
+      invalidItems.forEach(item => {
+        const status = item.trang_thai_tong_hop || 'undefined';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      const statusDetails = Object.entries(statusCounts)
+        .map(([status, count]) => `${status} (${count} mục)`)
+        .join(', ');
+      
       notificationService.show(
-        `⚠️ Có ${invalidItems.length} mục không ở trạng thái phù hợp. Chỉ nhận được ${validItems.length} mục hợp lệ.`,
-        'warning'
+        `⚠️ Có ${invalidItems.length} mục không ở trạng thái phù hợp.<br>` +
+        `Yêu cầu: <strong>${crrStatus}</strong><br>` +
+        `Thực tế: ${statusDetails}<br>` +
+        `Chỉ nhận được ${validItems.length} mục hợp lệ.`,
+        'warning',
+        10000
       );
       if (validItems.length === 0) return;
     }
@@ -3012,13 +3061,8 @@ import DateFormatter from './utils/date-formatter.js';
    */
   function handleStatusUpdateSuccess(validItems, updatedCount) {
     try {
-      // Cập nhật DataTable mà không thay đổi sort order
-      const updatedItems = validItems
-        .map(item => {
-          const originalItem = chiTietMauData.find(data => data.id === item.id);
-          return originalItem ? { id: originalItem.id } : null;
-        })
-        .filter(Boolean);
+      // ⭐ Truyền toàn bộ item đã update (không chỉ id) để updateTableRowInPlace cập nhật đúng dữ liệu
+      const updatedItems = validItems.filter(item => item && item.id);
 
       const updatedRowsCount = updateTableRowInPlace(updatedItems);
 
@@ -3045,10 +3089,22 @@ import DateFormatter from './utils/date-formatter.js';
       return;
     }
 
+    // ⭐ Lấy thông tin người dùng từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUserName = urlParams.get('ho_ten') || '';
+    const currentUserCode = urlParams.get('ma_nv') || '';
+
     let optionHtml = '';
     staffs.forEach((item, index) => {
-      optionHtml += `<option ${index == 0 ? 'selected ' : ''}value="${item.ho_va_ten}">${item.ho_va_ten}</option>`;
+      // ⭐ Auto-select người dùng hiện tại nếu khớp tên
+      const isCurrentUser = currentUserName && item.ho_va_ten === currentUserName;
+      optionHtml += `<option ${isCurrentUser ? 'selected ' : ''}value="${item.ho_va_ten}" data-ma-nv="${item.ma_nv || ''}">${item.ho_va_ten}</option>`;
     });
+
+    // Nếu không tìm thấy trong danh sách, thêm option cho người dùng hiện tại
+    if (currentUserName && !staffs.some(s => s.ho_va_ten === currentUserName)) {
+      optionHtml = `<option selected value="${currentUserName}" data-ma-nv="${currentUserCode}">${currentUserName}</option>` + optionHtml;
+    }
 
     // Kiểm tra tất cả items đều ở trạng thái CHO_CHUYEN_MAU
     const validItems = selectedItems.filter(item => item.trang_thai_tong_hop === 'CHO_CHUYEN_MAU');
@@ -3074,16 +3130,8 @@ import DateFormatter from './utils/date-formatter.js';
             <div><strong>Chờ chuyển mẫu</strong> → <span class="badge bg-warning">Đang phân tích</span></div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Chọn người phân tích:</label>
-            <select id="receiverSelect" class="form-select">
-              ${optionHtml}
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Ngày nhận mẫu:</label>
-            <input type="date" id="receiveDate" class="form-control" value="${
-              new Date().toISOString().split('T')[0]
-            }" />
+            <label class="form-label">Người phân tích:</label>
+            <div class="form-control-plaintext"><strong>${currentUserName || 'Không xác định'}</strong></div>
           </div>
           <div class="mb-3">
             <label class="form-label">Ghi chú:</label>
@@ -3098,21 +3146,22 @@ import DateFormatter from './utils/date-formatter.js';
       confirmButtonText: '✅ Xác nhận nhận',
       cancelButtonText: 'Hủy',
       preConfirm: () => {
-        const receiverName = document.getElementById('receiverSelect').value.trim();
-        const receiveDate = document.getElementById('receiveDate').value;
         const receiveNote = document.getElementById('receiveNote').value.trim();
+        const receiverName = currentUserName;
+        const receiverCode = currentUserCode;
+        const receiveDate = new Date().toISOString().split('T')[0];
 
         if (!receiverName) {
-          Swal.showValidationMessage('Vui lòng nhập tên người nhận');
+          Swal.showValidationMessage('Không tìm thấy thông tin người nhận từ URL (thiếu tham số ho_ten)');
           return false;
         }
 
-        return { receiverName, receiveDate, receiveNote };
+        return { receiverName, receiverCode, receiveDate, receiveNote };
       }
     });
 
     if (result.isConfirmed) {
-      const { receiverName, receiveDate, receiveNote } = result.value;
+      const { receiverName, receiverCode, receiveDate, receiveNote } = result.value;
 
       try {
         showLoading(true);
@@ -3144,6 +3193,9 @@ import DateFormatter from './utils/date-formatter.js';
             trang_thai_tong_hop: 'DANG_PHAN_TICH',
             trang_thai_phan_tich: 'Đang phân tích',
             nguoi_phan_tich: receiverName,
+            ten_nguoi_phan_tich: receiverName,
+            nguoi_nhan: receiverName,
+            ma_nguoi_phan_tich: receiverCode,
             ngay_nhan_mau: receiveDate,
             history: originalItem.history,
             ghi_chu: originalItem.ghi_chu || ''
@@ -3158,26 +3210,10 @@ import DateFormatter from './utils/date-formatter.js';
         const results = await Promise.allSettled(updatePromises);
         const updatedCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
 
-        // Cập nhật DataTable mà không thay đổi sort order
-        const updatedItems = validItems
-          .map(item => {
-            const originalItem = chiTietMauData.find(data => data.id === item.id);
-            return originalItem ? { id: originalItem.id } : null;
-          })
-          .filter(Boolean);
+        // ⭐ Truyền toàn bộ validItems (đã update) thay vì chỉ { id }
+        handleStatusUpdateSuccess(validItems, updatedCount);
 
-        const updatedRowsCount = updateTableRowInPlace(updatedItems);
-
-        // Clear selection
-        refreshAfterBulkAction();
-
-        // Hiển thị thông báo thành công
-        notificationService.show(
-          `✅ Đã nhận thành công ${updatedCount} mẫu phân tích. Trạng thái chuyển sang "Đang phân tích".`,
-          'success'
-        );
-
-        console.log(`✅ Bulk receive completed: ${updatedCount} items updated, ${updatedRowsCount} rows highlighted`);
+        console.log(`✅ Bulk receive completed: ${updatedCount} items updated`);
       } catch (error) {
         console.error('❌ Lỗi khi nhận chỉ tiêu:', error);
         notificationService.show('Có lỗi xảy ra khi nhận chỉ tiêu: ' + error.message, 'error');
@@ -3610,6 +3646,13 @@ import DateFormatter from './utils/date-formatter.js';
       const results = await Promise.allSettled(updatePromises.toArray());
       const updatedCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
 
+      // ⭐ DEBUG: Log validItems trước khi gọi handleStatusUpdateSuccess
+      console.log('📊 [BULK UPDATE RESULT] validItems before handleStatusUpdateSuccess:', validItems.map(item => ({
+        id: item.id,
+        trang_thai_tong_hop: item.trang_thai_tong_hop,
+        phe_duyet: item.phe_duyet
+      })));
+
       handleStatusUpdateSuccess(validItems, updatedCount);
 
       // Đóng modal
@@ -3627,6 +3670,11 @@ import DateFormatter from './utils/date-formatter.js';
    * [CHỜ DUYỆT KẾT QUẢ] PHÊ DUYỆT -> [HOÀN THÀNH / PHÂN TÍCH LẠI]
    */
   async function executeBulkApproveResult(validItems) {
+    // ⭐ Lấy thông tin người duyệt từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentUserName = urlParams.get('ho_ten') || '';
+    const currentUserCode = urlParams.get('ma_nv') || '';
+
     const result = await Swal.fire({
       title: `✅ Phê duyệt kết quả`,
       html: `
@@ -3640,21 +3688,19 @@ import DateFormatter from './utils/date-formatter.js';
           </div>
           <div class="mb-3">
             <label class="form-label">Người duyệt:</label>
-            <input type="text" id="approverName" class="form-control" placeholder="Nhập tên người duyệt..." />
+            <div class="form-control-plaintext"><strong>${currentUserName || 'Không xác định'}</strong></div>
           </div>
           <div class="mb-3">
             <label class="form-label">Quyết định phê duyệt:</label>
-            <select id="approvalDecision" class="form-select">
-              <option selected value="DAT">✅ Đạt - Chuyển sang Hoàn thành</option>
-              <option value="KHONG_DAT">🔄 Không đạt - Phân tích lại</option>
-            </select>
+            <div class="d-flex gap-2 justify-content-center">
+              <span class="approval-option active" data-value="DAT" style="cursor: pointer; padding: 12px 24px; border: 2px solid #28a745; background-color: #28a745; color: white; border-radius: 8px; font-weight: 500; transition: all 0.3s;">
+                ✅ Đạt
+              </span>
+              <span class="approval-option" data-value="KHONG_DAT" style="cursor: pointer; padding: 12px 24px; border: 2px solid #dc3545; background-color: transparent; color: #dc3545; border-radius: 8px; font-weight: 500; transition: all 0.3s;">
+                ❌ Không đạt
+              </span>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Ngày duyệt:</label>
-            <input type="date" id="approveDate" class="form-control" value="${
-              new Date().toISOString().split('T')[0]
-            }" />
-          </div>          
           <div class="mb-3">
             <label class="form-label">Ghi chú:</label>
             <textarea id="note" class="form-control" rows="3" placeholder="Nhập ghi chú..."></textarea>
@@ -3667,23 +3713,55 @@ import DateFormatter from './utils/date-formatter.js';
       cancelButtonColor: '#6c757d',
       confirmButtonText: '✅ Xác nhận phê duyệt',
       cancelButtonText: 'Hủy',
+      didOpen: () => {
+        // Xử lý click chọn quyết định phê duyệt
+        const options = document.querySelectorAll('.approval-option');
+        options.forEach(option => {
+          option.addEventListener('click', function() {
+            // Remove active class from all options
+            options.forEach(opt => {
+              opt.classList.remove('active');
+              const value = opt.getAttribute('data-value');
+              if (value === 'DAT') {
+                opt.style.backgroundColor = 'transparent';
+                opt.style.color = '#28a745';
+              } else {
+                opt.style.backgroundColor = 'transparent';
+                opt.style.color = '#dc3545';
+              }
+            });
+            
+            // Add active class to clicked option
+            this.classList.add('active');
+            const value = this.getAttribute('data-value');
+            if (value === 'DAT') {
+              this.style.backgroundColor = '#28a745';
+              this.style.color = 'white';
+            } else {
+              this.style.backgroundColor = '#dc3545';
+              this.style.color = 'white';
+            }
+          });
+        });
+      },
       preConfirm: () => {
-        const approvalDecision = document.getElementById('approvalDecision').value;
-        const approveDate = document.getElementById('approveDate').value;
+        const selectedOption = document.querySelector('.approval-option.active');
+        const approvalDecision = selectedOption ? selectedOption.getAttribute('data-value') : 'DAT';
         const note = document.getElementById('note').value.trim();
-        const approverName = document.getElementById('approverName').value.trim();
+        const approverName = currentUserName;
+        const approverCode = currentUserCode;
 
         if (!approverName) {
-          Swal.showValidationMessage('Vui lòng nhập tên người duyệt');
+          Swal.showValidationMessage('Không tìm thấy thông tin người duyệt từ URL (thiếu tham số ho_ten)');
           return false;
         }
 
-        return { approvalDecision, approveDate, note, approverName };
+        return { approvalDecision, note, approverName, approverCode };
       }
     });
 
     if (result.isConfirmed) {
-      const { approvalDecision, approveDate, note, approverName } = result.value;
+      const { approvalDecision, note, approverName, approverCode } = result.value;
 
       try {
         showLoading(true);
@@ -3692,7 +3770,8 @@ import DateFormatter from './utils/date-formatter.js';
 
         const pheDuyetText = approvalDecision === 'DAT' ? '1.Đạt' : '2.Không đạt';
 
-        // Giữ định dạng này để phù hợp với cấu trúc dữ liệu trong database
+        // Ngày duyệt tự động lấy thời gian hiện tại
+        const approveDate = new Date().toISOString().split('T')[0];
         const approvalTime = new Date().toISOString();
 
         const crrTime = new Date().toLocaleString('vi-VN');
@@ -3706,6 +3785,8 @@ import DateFormatter from './utils/date-formatter.js';
           originalItem.trang_thai_phan_tich = analysisStatus;
           originalItem.thoi_gian_duyet = approvalTime;
           originalItem.nguoi_duyet = approverName;
+          originalItem.ten_nguoi_duyet = approverName;
+          originalItem.ma_nguoi_duyet = approverCode;
           originalItem.phe_duyet = pheDuyetText;
           originalItem.ngay_hoan_thanh_pt_gm = approvalDecision === 'DAT' ? approveDate : '';
 
@@ -3725,6 +3806,8 @@ import DateFormatter from './utils/date-formatter.js';
             trang_thai_tong_hop: summaryStatus,
             trang_thai_phan_tich: analysisStatus,
             nguoi_duyet: approverName,
+            ten_nguoi_duyet: approverName,
+            ma_nguoi_duyet: approverCode,
             phe_duyet: pheDuyetText,
             thoi_gian_duyet: approvalTime,
             history: originalItem.history,
