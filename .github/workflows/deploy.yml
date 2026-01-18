@@ -1,0 +1,52 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Copy Files to VPS via SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_PORT }}
+        source: "."
+        target: "/var/www/cefinea/source"
+
+    - name: Execute Remote Commands
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_PORT }}
+        script: |
+          # 1. SERVER DEPLOYMENT
+          echo ">>> Deploying Server..."
+          cd /var/www/cefinea/source
+          npm install --production
+          # Restart server (Root server.js)
+          pm2 restart all || pm2 start server.js --name "vnode-server"
+
+          # 2. CLIENT BUILD
+          echo ">>> Building Client..."
+          cd cefinea-react
+          npm install
+          npm run build
+
+          # 3. UPDATE PUBLIC FOLDER (For Nginx)
+          echo ">>> Updating Nginx Web Folder..."
+          # Remove old files (Keep folder)
+          rm -rf /var/www/cefinea/client/*
+          # Copy new dist files to the folder Nginx is serving
+          cp -r dist/* /var/www/cefinea/client/
+          
+          echo ">>> DEPLOYMENT SUCCESSFUL!"
